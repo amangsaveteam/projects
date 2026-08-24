@@ -154,7 +154,11 @@ my-release/
 python3 build_run_package.py --manifest my-release/version.json --dry-run
 
 # 构建 run 包；为空的 build_time 会自动填入当前构建时间
-python3 build_run_package.py --manifest my-release/version.json --output-dir dist
+python3 build_run_package.py --manifest my-release/version.json
+
+# 默认产物目录：system_deployment 上一级目录的 dist/
+# 如需覆盖，--output-dir 的相对路径仍相对于 system_deployment/ 解析
+# python3 build_run_package.py --manifest my-release/version.json --output-dir ../my-dist
 
 # 自动检测设备；无法检测或同时检测到两种设备时，显式指定平台
 sudo ./dist/Middleware_*.run install --device ORIN

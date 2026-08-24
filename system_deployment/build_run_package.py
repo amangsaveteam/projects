@@ -34,7 +34,11 @@ class PackageBuildError(RuntimeError):
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", required=True, help="JSON/JSONC manifest, relative to this project or absolute")
-    parser.add_argument("--output-dir", default="dist", help="directory for the generated .run file")
+    parser.add_argument(
+        "--output-dir",
+        default="../dist",
+        help="directory for the generated .run file (default: projects/dist)",
+    )
     parser.add_argument("--dry-run", action="store_true", help="validate and print the plan without downloading")
     return parser.parse_args()
 
