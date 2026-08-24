@@ -46,7 +46,9 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 /tmp/projects/dist/common/orin/base/navi_common_dep-2.0.0-release-jazzy-arm64.deb
 ```
 
-当前 payload 包含 `libyaml-cpp0.8` 与 `spdlog (>= 1.9.2)` 的开发/运行时依赖，carrier
+当前 payload 包含 `libyaml-cpp0.8`、`spdlog (>= 1.9.2)` 的开发/运行时依赖、
+`ros-jazzy-rmw-cyclonedds-cpp`，以及
+`python3.12-venv` 与其离线 pip/setuptools wheel，carrier
 内部包名为 `navi-common-dep`。
 
 ### 传输到离线 Orin

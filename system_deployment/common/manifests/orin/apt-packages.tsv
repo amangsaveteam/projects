@@ -10,3 +10,7 @@ libspdlog1.12	1.12.0	spdlog runtime required by libspdlog-dev on Noble
 libfmt-dev	9.0.0	fmt headers and CMake package required by spdlog
 libfmt9	9.0.0	fmt runtime required by libfmt-dev on Noble
 catch2	3.0.0	Catch2 dependency required by libspdlog-dev on Noble
+ros-jazzy-rmw-cyclonedds-cpp	2.2.3	ROS 2 Jazzy CycloneDDS RMW implementation
+python3.12-venv	3.12.3	Python 3.12 virtual-environment support for Orin modules
+python3-pip-whl	22.2	Offline pip wheel required by python3.12-venv
+python3-setuptools-whl	68.1.2	Offline setuptools wheel required by python3.12-venv
