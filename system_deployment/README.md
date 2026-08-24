@@ -95,7 +95,8 @@ Pico 包同样会安装唯一的 `/etc/profile.d/zj_humanoid.sh`。该脚本按 
 三个 common carrier 会在安装 carrier 的第一步写入统一模块环境文件：Orin 为
 `/etc/naviai/Middleware.env`，Pico 为 `/etc/nav01/Middleware.env`。它们是 Debian
 conffile，因此模块 deb 的 `postinst` 可在 payload 安装前安全 source；现场修改不会在
-common 升级时被静默覆盖。
+common 升级时被静默覆盖。该文件会加载当前平台的 ROS 2 setup（Orin 22.04 为 Humble、
+Orin 24.04 为 Jazzy、Pico 为 Humble），从而提供 ROS 的运行时库路径。
 
 原有 `scripts/build/build_common_deb.sh` 与 `build_pico_common_deb.sh` 是兼容入口，
 会转发到这个项目。`scripts/build/build_dependency_deb.py --config orin-common`

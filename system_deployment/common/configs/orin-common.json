@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "orin-common",
   "package_name": "navi-common-dep",
-  "release_version": "2.0.0~jazzy+11",
+  "release_version": "2.0.0~jazzy+12",
   "device_config_target": "orin-jazzy",
   "description": "Native Orin Jazzy offline common dependency bootstrap",
   "target": {

@@ -347,9 +347,43 @@ def copy_to_stage(source: Path, stage_root: Path, destination: PurePosixPath) ->
 
 def environment_lines(build: Dict[str, str], device: Dict[str, Any]) -> List[str]:
     modules = ",".join("{}={}".format(module["name"], module["version"]) for module in device["modules"])
+
     def item(key: str, value: str) -> str:
         return "export {}={}".format(key, shlex.quote(value))
-    return [
+
+    # This file is deliberately self-contained.  A run package can be installed
+    # without the common carrier, and it must not overwrite the carrier's ROS
+    # runtime bootstrap with metadata-only environment variables.
+    if device["platform"] == "ORIN":
+        runtime_bootstrap = [
+            "# Load the ROS runtime selected by the installed Orin OS.",
+            "_middleware_os_version=\"\"",
+            "if [ -r /etc/os-release ]; then",
+            "    . /etc/os-release",
+            "    _middleware_os_version=\"${VERSION_ID:-}\"",
+            "fi",
+            "case \"${_middleware_os_version}\" in",
+            "    22.04) export MIDDLEWARE_ROS_DISTRO=\"humble\" ;;",
+            "    24.04) export MIDDLEWARE_ROS_DISTRO=\"jazzy\" ;;",
+            "    *) export MIDDLEWARE_ROS_DISTRO=\"\" ;;",
+            "esac",
+            "if [ -n \"${MIDDLEWARE_ROS_DISTRO}\" ] && [ -r \"/opt/ros/${MIDDLEWARE_ROS_DISTRO}/setup.bash\" ]; then",
+            "    . \"/opt/ros/${MIDDLEWARE_ROS_DISTRO}/setup.bash\"",
+            "fi",
+            "unset _middleware_os_version",
+            "",
+        ]
+    else:
+        runtime_bootstrap = [
+            "# Pico packages use the ROS 2 Humble runtime.",
+            "export MIDDLEWARE_ROS_DISTRO=\"humble\"",
+            "if [ -r \"/opt/ros/${MIDDLEWARE_ROS_DISTRO}/setup.bash\" ]; then",
+            "    . \"/opt/ros/${MIDDLEWARE_ROS_DISTRO}/setup.bash\"",
+            "fi",
+            "",
+        ]
+
+    return runtime_bootstrap + [
         "# Managed by Middleware run package. Source this file before starting modules.",
         item("MIDDLEWARE_PLATFORM", device["platform"]), item("MIDDLEWARE_VERSION", build["version"]),
         item("MIDDLEWARE_BUILD_TIME", device["build_time"]), item("MIDDLEWARE_BRANCH_NAME", device["branch_name"]),
