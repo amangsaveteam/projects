@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "robot_types": {
+    "H1": {"compose_profile": "h1"},
+    "U1": {"compose_profile": "h1"},
+    "U2_WA1": {"compose_profile": "h1"},
+    "U2-S": {"compose_profile": "h1"},
+    "U2-D": {"compose_profile": "h1"},
+    "I2": {"compose_profile": "rx"},
+    "I2-S": {"compose_profile": "rx"},
+    "I2-D": {"compose_profile": "rx"},
+    "I2-E": {"compose_profile": "rx"},
+    "I3-S": {"compose_profile": "i3"},
+    "WA1": {"compose_profile": "wa1"},
+    "WA1_400K": {"compose_profile": "wa1"},
+    "WA1_400L": {"compose_profile": "wa1"},
+    "WA1-S": {"compose_profile": "wa1"},
+    "WA1-D": {"compose_profile": "wa1"},
+    "WA1-E": {"compose_profile": "wa1"},
+    "WA2_LS": {"compose_profile": "wa2"},
+    "WA2-S": {"compose_profile": "wa2"},
+    "WA2-P": {"compose_profile": "wa2"},
+    "WA2-D": {"compose_profile": "wa2"},
+    "ZYD": {"compose_profile": "zyd"},
+    "JK": {"compose_profile": "zyd"}
+  }
+}

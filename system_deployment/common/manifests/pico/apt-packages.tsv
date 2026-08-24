@@ -1,0 +1,8 @@
+# package<TAB>minimum-version<TAB>purpose
+#
+# Device: Pico. Global common contract for Ubuntu 20.04 (Focal), amd64,
+# ROS 2 Humble runtime. This global common package contains only the shared
+# Pico Python utilities. ROS and other module-specific dependencies belong in
+# their owning common_dep manifests.
+python3-yaml	0	Pico YAML configuration
+python3-psutil	0	Pico resource reporting

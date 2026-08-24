@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "source": "files/etc/profile.d/navi-common.sh",
+      "target": "/etc/profile.d/navi-common.sh",
+      "mode": "0644"
+    }
+  ],
+  "systemd": {
+    "enable": [],
+    "restart": []
+  }
+}

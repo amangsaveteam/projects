@@ -1,0 +1,39 @@
+{
+  // JSONC is supported: comments and trailing commas are allowed.
+  "version": "v1.0.0",
+  "build_time": "",
+  "branch_name": "",
+  "commit_id": "",
+  "ORIN": {
+    "sys_env_version": "ubuntu-24.04",
+    "modules": [
+      {
+        "name": "robot-runtime",
+        "version": "1.0.0",
+        "url": "https://packages.example.com/robot-runtime_1.0.0_arm64.deb",
+        "image": "",
+        "dst": "runtime",
+        "dependencies": [],
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      },
+    ],
+    "resource": [],
+    "scripts": {
+      "pre_install": [],
+      "post_install": [],
+      "pre_uninstall": [],
+      "post_uninstall": [],
+    },
+  },
+  "PICO": {
+    "sys_env_version": "ubuntu-20.04",
+    "modules": [],
+    "resource": [],
+    "scripts": {
+      "pre_install": [],
+      "post_install": [],
+      "pre_uninstall": [],
+      "post_uninstall": [],
+    },
+  },
+}

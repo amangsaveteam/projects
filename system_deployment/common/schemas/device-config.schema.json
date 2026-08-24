@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZJ Humanoid device environment",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ZJ_DEVICE": {"enum": ["ORIN", "PICO"]},
+    "ROBOT_TYPE": {"type": "string"},
+    "ROBOT_NAME": {"type": "string"},
+    "ZJ_VERSION": {"type": "string"},
+    "ROS_DOMAIN_ID": {"type": "integer", "minimum": 0, "maximum": 232},
+    "CYCLONEDDS_URI": {"type": "string", "pattern": "^file:///.+"},
+    "COMPOSE_PROFILES": {"type": "string"}
+  },
+  "required": ["ZJ_DEVICE", "ROBOT_TYPE"]
+}

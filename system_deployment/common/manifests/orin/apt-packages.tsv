@@ -1,0 +1,7 @@
+# package<TAB>minimum-version<TAB>purpose
+#
+# Device: Orin. Shared native host contract: Ubuntu 24.04 (Noble), arm64,
+# ROS 2 Jazzy. This package deliberately contains only the dependency that
+# must currently be installed offline. Module-specific dependencies remain in
+# their owning common_dep manifests.
+libyaml-cpp0.8	0.8.0	YAML C++ runtime shared by robot modules
