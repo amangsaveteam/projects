@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import List, Optional
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
 COMMON_DIR = Path(__file__).resolve().parent
+DEPLOYMENT_ROOT = COMMON_DIR.parent
 GLOBAL_CONFIGS = frozenset({"orin-common", "orin-common-humble", "pico-common"})
 
 
@@ -35,7 +35,7 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
-    legacy_builder = PROJECT_ROOT / "scripts/build/build_dependency_deb.py"
+    legacy_builder = DEPLOYMENT_ROOT.parent / "scripts/build/build_dependency_deb.py"
     if legacy_builder.is_file():
         command = [sys.executable, str(legacy_builder), *sys.argv[1:]]
     else:

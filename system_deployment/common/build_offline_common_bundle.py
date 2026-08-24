@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 COMMON_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = COMMON_DIR.parents[2]
+DEPLOYMENT_ROOT = COMMON_DIR.parent
 
 
 def parse_manifest(manifest_path: Path) -> list[tuple[str, str]]:
@@ -69,7 +69,7 @@ def copy_extra_files(staging: Path, config: dict[str, object]) -> None:
     for extra_file in config.get("extra_files", []):
         if not isinstance(extra_file, dict):
             raise ValueError("extra_files entries must be objects")
-        source = PROJECT_ROOT / str(extra_file["source"])
+        source = DEPLOYMENT_ROOT / str(extra_file["source"])
         destination = configured_path(str(extra_file["destination"]), description="extra file destination")
         if not source.is_file():
             raise FileNotFoundError(f"configured extra file is missing: {source}")
@@ -192,9 +192,11 @@ def build(config_path: Path) -> Path:
     target = config["target"]
     if not isinstance(target, dict):
         raise ValueError("target must be an object")
-    manifest_path = PROJECT_ROOT / str(config["manifest"])
+    manifest_path = DEPLOYMENT_ROOT / str(config["manifest"])
     packages = parse_manifest(manifest_path)
-    output_dir = PROJECT_ROOT / str(config["output_dir"])
+    output_dir = (DEPLOYMENT_ROOT / str(config["output_dir"])).resolve()
+    if DEPLOYMENT_ROOT.parent not in output_dir.parents:
+        raise ValueError("output_dir must stay under the deployment workspace")
     artifact = output_dir / str(config["artifact_filename"])
 
     with tempfile.TemporaryDirectory(prefix="navi-common-bundle-") as temporary_directory:

@@ -72,8 +72,8 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build --target p
 输出目录：
 
 ```text
-/tmp/dist/common/orin/base/
-/tmp/dist/common/pico/base/
+/tmp/projects/dist/common/orin/base/
+/tmp/projects/dist/common/pico/base/
 ```
 
 三个产物都是具有独立 Debian 包名的 carrier deb：Orin 为 `navi-common-dep`，Pico
@@ -91,7 +91,7 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build --target p
 将对应 deb 传至离线设备：
 
 ```bash
-scp /tmp/dist/common/orin/base/navi_common_dep-2.0.0-release-jazzy-arm64.deb \
+scp /tmp/projects/dist/common/orin/base/navi_common_dep-2.0.0-release-jazzy-arm64.deb \
   <user>@<offline-device>:/tmp/
 ```
 

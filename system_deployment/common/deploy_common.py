@@ -14,7 +14,6 @@ from typing import Any
 
 
 COMMON_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = COMMON_DIR.parents[2]
 DEFAULT_DEVICE_CONFIG = Path("/etc/zj_humanoid/device.env")
 ALLOWED_KEYS = (
     "ZJ_DEVICE",

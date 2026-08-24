@@ -43,7 +43,7 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 产物：
 
 ```text
-/tmp/dist/common/orin/base/navi_common_dep-2.0.0-release-jazzy-arm64.deb
+/tmp/projects/dist/common/orin/base/navi_common_dep-2.0.0-release-jazzy-arm64.deb
 ```
 
 当前 payload 包含 `libyaml-cpp0.8` 与 `spdlog (>= 1.9.2)` 的开发/运行时依赖，carrier
@@ -52,7 +52,7 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 ### 传输到离线 Orin
 
 ```bash
-scp /tmp/dist/common/orin/base/navi_common_dep-2.0.0-release-jazzy-arm64.deb \
+scp /tmp/projects/dist/common/orin/base/navi_common_dep-2.0.0-release-jazzy-arm64.deb \
   naviai@<offline-orin>:/tmp/
 ```
 
@@ -101,7 +101,7 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 产物：
 
 ```text
-/tmp/dist/common/orin/base/navi_common_dep-2.0.0-release-humble-arm64.deb
+/tmp/projects/dist/common/orin/base/navi_common_dep-2.0.0-release-humble-arm64.deb
 ```
 
 此 target 是精简的 Humble carrier：包含构建工具、Python 构建工具、CycloneDDS、
@@ -111,7 +111,7 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 ### 传输到离线 Orin
 
 ```bash
-scp /tmp/dist/common/orin/base/navi_common_dep-2.0.0-release-humble-arm64.deb \
+scp /tmp/projects/dist/common/orin/base/navi_common_dep-2.0.0-release-humble-arm64.deb \
   naviai@<offline-orin>:/tmp/
 ```
 
@@ -156,7 +156,7 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 产物：
 
 ```text
-/tmp/dist/common/pico/base/navi_pico_common_dep-2.0.0-release-humble-amd64.deb
+/tmp/projects/dist/common/pico/base/navi_pico_common_dep-2.0.0-release-humble-amd64.deb
 ```
 
 当前 Pico payload 仅为 `python3-yaml` 与 `python3-psutil`；ROS 和功能模块的其他依赖
@@ -165,7 +165,7 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 ### 传输到离线 Pico
 
 ```bash
-scp /tmp/dist/common/pico/base/navi_pico_common_dep-2.0.0-release-humble-amd64.deb \
+scp /tmp/projects/dist/common/pico/base/navi_pico_common_dep-2.0.0-release-humble-amd64.deb \
   nav01@<offline-pico>:/tmp/
 ```
 

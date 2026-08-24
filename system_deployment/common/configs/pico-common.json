@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "pico-common",
   "package_name": "navi-pico-common-dep",
-  "release_version": "2.0.0~humble+9",
+  "release_version": "2.0.0~humble+10",
   "device_config_target": "pico-humble",
   "description": "Native Pico base common dependency bootstrap",
   "target": {
@@ -13,8 +13,8 @@
     "required_files": [],
     "require_non_root": true
   },
-  "manifest": "projects/system_deployment/common/manifests/pico/apt-packages.tsv",
-  "output_dir": "dist/common/pico/base",
+  "manifest": "common/manifests/pico/apt-packages.tsv",
+  "output_dir": "../dist/common/pico/base",
   "artifact_filename": "navi_pico_common_dep-2.0.0-release-humble-amd64.deb",
   "deb_depends": ["bash (>= 5.0)", "coreutils (>= 8.30)", "dpkg (>= 1.19)", "apt (>= 2.0)"],
   "parent_packages": [],
@@ -23,39 +23,45 @@
   "vendor_debs": [],
   "extra_files": [
     {
-      "source": "projects/system_deployment/common/files/etc/profile.d/zj_humanoid.sh",
+      "source": "common/files/etc/profile.d/zj_humanoid.sh",
       "destination": "etc/profile.d/zj_humanoid.sh",
       "mode": "0644"
     },
     {
-      "source": "projects/system_deployment/common/templates/device.env.example",
+      "source": "common/templates/Middleware.pico.env",
+      "destination": "etc/nav01/Middleware.env",
+      "mode": "0644",
+      "conffile": true
+    },
+    {
+      "source": "common/templates/device.env.example",
       "destination": "etc/zj_humanoid/device.env",
       "mode": "0644",
       "conffile": true
     },
     {
-      "source": "projects/system_deployment/common/files/etc/zj_humanoid/cyclonedds.xml",
+      "source": "common/files/etc/zj_humanoid/cyclonedds.xml",
       "destination": "etc/zj_humanoid/cyclonedds.xml",
       "mode": "0644",
       "conffile": true
     },
     {
-      "source": "projects/system_deployment/common/deploy_common.py",
+      "source": "common/deploy_common.py",
       "destination": "usr/lib/navi-pico-common-dep/deploy_common.py",
       "mode": "0755"
     },
     {
-      "source": "projects/system_deployment/common/configs/targets.json",
+      "source": "common/configs/targets.json",
       "destination": "usr/lib/navi-pico-common-dep/configs/targets.json",
       "mode": "0644"
     },
     {
-      "source": "projects/system_deployment/common/configs/robot-types.json",
+      "source": "common/configs/robot-types.json",
       "destination": "usr/lib/navi-pico-common-dep/configs/robot-types.json",
       "mode": "0644"
     },
     {
-      "source": "projects/system_deployment/COMMON_DEB_USAGE.md",
+      "source": "COMMON_DEB_USAGE.md",
       "destination": "usr/share/doc/navi-pico-common-dep/USAGE.md",
       "mode": "0644"
     }
