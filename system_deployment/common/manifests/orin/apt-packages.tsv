@@ -15,6 +15,8 @@ ros-jazzy-cyclonedds	0	CycloneDDS runtime required by Jazzy RMW implementation
 ros-jazzy-iceoryx-binding-c	0	Iceoryx binding required by Jazzy CycloneDDS RMW implementation
 ros-jazzy-iceoryx-hoofs	0	Iceoryx utility runtime required by Jazzy CycloneDDS
 ros-jazzy-iceoryx-posh	0	Iceoryx publish-subscribe runtime required by Jazzy CycloneDDS
+libattr1-dev	2.5.2	Filesystem extended-attribute development runtime required by libacl1-dev
+libacl1-dev	2.3.2	POSIX ACL development runtime required by ros-jazzy-iceoryx-hoofs
 python3.12-venv	3.12.3	Python 3.12 virtual-environment support for Orin modules
 python3-pip-whl	22.2	Offline pip wheel required by python3.12-venv
 python3-setuptools-whl	68.1.2	Offline setuptools wheel required by python3.12-venv

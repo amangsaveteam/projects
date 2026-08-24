@@ -49,7 +49,8 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 当前 payload 包含 `libyaml-cpp0.8`、`spdlog (>= 1.9.2)` 的开发/运行时依赖、
 `ros-jazzy-rmw-cyclonedds-cpp` 及其 `ros-jazzy-cyclonedds`、
 `ros-jazzy-iceoryx-binding-c`、`ros-jazzy-iceoryx-hoofs`、
-`ros-jazzy-iceoryx-posh` 运行时依赖，以及
+`ros-jazzy-iceoryx-posh` 与经 APT 验证的 `libacl1-dev`、`libattr1-dev`
+运行时依赖，以及
 `python3.12-venv` 与其离线 pip/setuptools wheel，carrier
 内部包名为 `navi-common-dep`。
 
