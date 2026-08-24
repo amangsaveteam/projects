@@ -12,7 +12,7 @@
 
 在对应的原生目标机构建。当前 `orin-common` 面向 Ubuntu 24.04 arm64
 （Orin）/ ROS 2 Jazzy，产物为 `navi_common_dep-2.0.0-release-jazzy-arm64.deb`。
-该离线包包含 `libyaml-cpp0.8 (>= 0.8.0)` 和 `spdlog (>= 1.9.2)` 的开发/运行时
+该离线包包含 `libyaml-cpp0.8 (>= 0.8.0)` 和 Jazzy `spdlog 1.12.0` 的开发/运行时
 离线依赖；模块自己的其他依赖仍应由各自的 `common_dep` 包交付。
 
 ```bash

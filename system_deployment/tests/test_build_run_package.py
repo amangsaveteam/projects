@@ -78,6 +78,8 @@ class BuildRunPackageTest(unittest.TestCase):
             self.assertLess(orin_script.index("dpkg -r robot-runtime"), orin_script.index("dpkg -r base-runtime"))
             self.assertIn("/etc/naviai/Middleware.env", orin_script)
             self.assertIn("/etc/nav01/Middleware.env", pico_script)
+            self.assertIn("/etc/profile.d/zj_humanoid.sh", orin_script)
+            self.assertIn("ZJ_PROFILE_ENV_ONLY=1", orin_script)
             self.assertIn("MIDDLEWARE_ROS_DISTRO", orin_script)
             self.assertIn('/opt/ros/${MIDDLEWARE_ROS_DISTRO}/setup.bash', orin_script)
             self.assertIn('export MIDDLEWARE_ROS_DISTRO="humble"', pico_script)

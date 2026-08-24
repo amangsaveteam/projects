@@ -46,7 +46,7 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 /tmp/projects/dist/common/orin/base/navi_common_dep-2.0.0-release-jazzy-arm64.deb
 ```
 
-当前 payload 包含 `libyaml-cpp0.8`、`spdlog (>= 1.9.2)` 的开发/运行时依赖、
+当前 payload 包含 `libyaml-cpp0.8`、`spdlog 1.12.0` 的开发/运行时依赖、
 `ros-jazzy-rmw-cyclonedds-cpp` 及其 `ros-jazzy-cyclonedds`、
 `ros-jazzy-iceoryx-binding-c`、`ros-jazzy-iceoryx-hoofs`、
 `ros-jazzy-iceoryx-posh` 与经 APT 验证的 `libacl1-dev`、`libattr1-dev`

@@ -351,9 +351,26 @@ def environment_lines(build: Dict[str, str], device: Dict[str, Any]) -> List[str
     def item(key: str, value: str) -> str:
         return "export {}={}".format(key, shlex.quote(value))
 
-    # This file is deliberately self-contained.  A run package can be installed
-    # without the common carrier, and it must not overwrite the carrier's ROS
-    # runtime bootstrap with metadata-only environment variables.
+    # A run package must not overwrite the carrier's shared device identity or
+    # ROS runtime bootstrap with metadata-only environment variables.
+    device_profile = [
+        "# Load validated device identity and shared DDS settings when available.",
+        "if [ -r /etc/profile.d/zj_humanoid.sh ]; then",
+        "    _middleware_env_only_previous=\"${ZJ_PROFILE_ENV_ONLY-__MIDDLEWARE_UNSET__}\"",
+        "    export ZJ_PROFILE_ENV_ONLY=1",
+        "    if ! . /etc/profile.d/zj_humanoid.sh; then",
+        "        echo \"Middleware environment: device profile is not configured.\" >&2",
+        "    fi",
+        "    if [ \"${_middleware_env_only_previous}\" = \"__MIDDLEWARE_UNSET__\" ]; then",
+        "        unset ZJ_PROFILE_ENV_ONLY",
+        "    else",
+        "        export ZJ_PROFILE_ENV_ONLY=\"${_middleware_env_only_previous}\"",
+        "    fi",
+        "    unset _middleware_env_only_previous",
+        "fi",
+        "",
+    ]
+
     if device["platform"] == "ORIN":
         runtime_bootstrap = [
             "# Load the ROS runtime selected by the installed Orin OS.",
@@ -383,7 +400,7 @@ def environment_lines(build: Dict[str, str], device: Dict[str, Any]) -> List[str
             "",
         ]
 
-    return runtime_bootstrap + [
+    return device_profile + runtime_bootstrap + [
         "# Managed by Middleware run package. Source this file before starting modules.",
         item("MIDDLEWARE_PLATFORM", device["platform"]), item("MIDDLEWARE_VERSION", build["version"]),
         item("MIDDLEWARE_BUILD_TIME", device["build_time"]), item("MIDDLEWARE_BRANCH_NAME", device["branch_name"]),
