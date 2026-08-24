@@ -1,7 +1,12 @@
 # package<TAB>minimum-version<TAB>purpose
 #
 # Device: Orin. Shared native host contract: Ubuntu 24.04 (Noble), arm64,
-# ROS 2 Jazzy. This package deliberately contains only the dependency that
-# must currently be installed offline. Module-specific dependencies remain in
-# their owning common_dep manifests.
+# ROS 2 Jazzy. It carries the common YAML and spdlog C++ contracts required by
+# robot modules; module-specific dependencies remain in their owning
+# common_dep manifests.
 libyaml-cpp0.8	0.8.0	YAML C++ runtime shared by robot modules
+libspdlog-dev	1.9.2	spdlog headers and CMake package for offline module builds
+libspdlog1.12	1.12.0	spdlog runtime required by libspdlog-dev on Noble
+libfmt-dev	9.0.0	fmt headers and CMake package required by spdlog
+libfmt9	9.0.0	fmt runtime required by libfmt-dev on Noble
+catch2	3.0.0	Catch2 dependency required by libspdlog-dev on Noble

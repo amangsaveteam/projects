@@ -370,16 +370,20 @@ def render_device_script(build: Dict[str, str], device: Dict[str, Any]) -> str:
     platform = device["platform"]
     env_path = ENVIRONMENT_PATHS[platform]
     expected = "export MIDDLEWARE_PACKAGE_ID={}".format(shlex.quote("{}:{}:{}".format(build["version"], platform, device["commit_id"])))
+    environment_write = ["    env_dir={}".format(shlex.quote(str(PurePosixPath(env_path).parent))), "    mkdir -p \"$env_dir\"", "    env_tmp=$(mktemp \"$env_dir/.Middleware.env.XXXXXX\")", "    {"]
+    for line in environment_lines(build, device):
+        environment_write.append("        printf '%s\\n' {}".format(shlex.quote(line)))
+    environment_write.extend(["    } > \"$env_tmp\"", "    chmod 0644 \"$env_tmp\"", "    mv \"$env_tmp\" {}".format(shlex.quote(env_path))])
+
     lines = ["#!/bin/sh", "set -eu", 'action="${1:-install}"', 'if [ "$#" -gt 0 ]; then shift; fi', 'if [ "$#" -ne 0 ]; then echo "ERROR: unexpected arguments" >&2; exit 2; fi', 'if [ "$(id -u)" -ne 0 ]; then echo "ERROR: run with sudo" >&2; exit 1; fi', 'package_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)', 'case "$action" in install|uninstall) ;; *) echo "ERROR: action must be install or uninstall" >&2; exit 2;; esac', "", 'if [ "$action" = install ]; then']
+    # Some module postinst scripts source this file, so it must exist before
+    # the first hook or dpkg transaction begins.
+    lines.extend(environment_write)
     lines.extend("    " + line for line in render_hook_lines(device, "pre_install"))
     for module in device["modules"]:
         lines.append('    dpkg -i "$package_root/{}"'.format(module["destination"])) if module["kind"] == "deb" else lines.append("    docker pull {}".format(shlex.quote(module["image"])))
     for resource in device["resources"]:
         lines.append('    install -D -m 0644 "$package_root/{}" {}'.format(resource["destination"], shlex.quote(resource["device_path"])))
-    lines.extend(["    env_dir={}".format(shlex.quote(str(PurePosixPath(env_path).parent))), "    mkdir -p \"$env_dir\"", "    env_tmp=$(mktemp \"$env_dir/.Middleware.env.XXXXXX\")", "    {"])
-    for line in environment_lines(build, device):
-        lines.append("        printf '%s\\n' {}".format(shlex.quote(line)))
-    lines.extend(["    } > \"$env_tmp\"", "    chmod 0644 \"$env_tmp\"", "    mv \"$env_tmp\" {}".format(shlex.quote(env_path))])
     lines.extend("    " + line for line in render_hook_lines(device, "post_install"))
     lines.extend(["    exit 0", "fi", ""])
     lines.extend(render_hook_lines(device, "pre_uninstall"))

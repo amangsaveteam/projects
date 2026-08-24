@@ -79,6 +79,7 @@ class BuildRunPackageTest(unittest.TestCase):
             self.assertIn("/etc/naviai/Middleware.env", orin_script)
             self.assertIn("/etc/nav01/Middleware.env", pico_script)
             self.assertIn("export MIDDLEWARE_VERSION=v1.2.3", orin_script)
+            self.assertLess(orin_script.index("mv \"$env_tmp\" /etc/naviai/Middleware.env"), orin_script.index("dpkg -i \"$package_root/ORIN/.dists/base/000-base-runtime.deb\""))
             self.assertIn('"$package_root/ORIN/.dists/base/000-base-runtime.deb"', orin_script)
             self.assertIn("--device ORIN|PICO", launcher)
 

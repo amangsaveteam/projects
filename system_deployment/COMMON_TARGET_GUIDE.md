@@ -46,7 +46,8 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 /tmp/dist/common/orin/base/navi_common_dep-2.0.0-release-jazzy-arm64.deb
 ```
 
-当前 payload 为 `libyaml-cpp0.8`，carrier 内部包名为 `navi-common-dep`。
+当前 payload 包含 `libyaml-cpp0.8` 与 `spdlog (>= 1.9.2)` 的开发/运行时依赖，carrier
+内部包名为 `navi-common-dep`。
 
 ### 传输到离线 Orin
 
@@ -104,7 +105,7 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 ```
 
 此 target 是精简的 Humble carrier：包含构建工具、Python 构建工具、CycloneDDS、
-`libyaml-cpp0.7` 等 manifest payload；ROS 直接清单仅保留
+`libyaml-cpp0.7`、`spdlog (>= 1.9.2)` 等 manifest payload；ROS 直接清单仅保留
 `ros-humble-rmw-cyclonedds-cpp`。
 
 ### 传输到离线 Orin

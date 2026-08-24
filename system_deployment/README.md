@@ -12,8 +12,8 @@
 
 在对应的原生目标机构建。当前 `orin-common` 面向 Ubuntu 24.04 arm64
 （Orin）/ ROS 2 Jazzy，产物为 `navi_common_dep-2.0.0-release-jazzy-arm64.deb`。
-该离线包目前仅包含 `libyaml-cpp0.8 (>= 0.8.0)`；模块自己的依赖仍应由各自的
-`common_dep` 包交付。
+该离线包包含 `libyaml-cpp0.8 (>= 0.8.0)` 和 `spdlog (>= 1.9.2)` 的开发/运行时
+离线依赖；模块自己的其他依赖仍应由各自的 `common_dep` 包交付。
 
 ```bash
 python3 projects/system_deployment/common/build_common.py --config orin-common
@@ -138,7 +138,7 @@ my-release/
 每个平台都可定义 `pre_install`、`post_install`、`pre_uninstall` 和 `post_uninstall` 钩子；
 每一个钩子可配置一条 `cmd` 或一个相对于清单的 `path` 脚本。
 
-安装会原子刷新统一环境文件，供后续所有模块 source：
+安装会在任何安装钩子和第一个 `dpkg -i` 之前原子刷新统一环境文件，供后续所有模块 source：
 
 - ORIN：`/etc/naviai/Middleware.env`
 - PICO：`/etc/nav01/Middleware.env`
