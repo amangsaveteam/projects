@@ -80,7 +80,7 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build --target p
 为 `navi-pico-common-dep`。它们内嵌原始 apt payload，构建会写入
 `manifest.lock.json` 和 `payloads.sha256`，供离线安装前验证。
 
-当前 Jazzy 的 Debian 修订版本为 `2.0.0~jazzy+14`；对外文件名保持
+当前 Jazzy 的 Debian 修订版本为 `2.0.0~jazzy+15`；对外文件名保持
 `navi_common_dep-2.0.0-release-jazzy-arm64.deb`，因此交付路径不变。
 
 `/etc/profile.d/zj_humanoid.sh` 是 common 包统一维护的运行脚本，升级时会自动更新；
