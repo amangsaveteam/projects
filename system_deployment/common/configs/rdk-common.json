@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "rdk-common",
   "package_name": "navi-rdk-common-dep",
-  "release_version": "2.0.0~jazzy+1",
+  "release_version": "2.0.0~jazzy+3",
   "device_config_target": "rdk-jazzy",
   "description": "RDK OS V5.1.0 Jazzy offline DEB build dependency bootstrap",
   "target": {

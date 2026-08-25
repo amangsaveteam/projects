@@ -1,7 +1,9 @@
 # package<TAB>minimum-version<TAB>purpose
 #
 # Target: RDK OS V5.1.0, arm64/aarch64, ROS 2 Jazzy.  This is deliberately
-# limited to the RDK DEB-build toolchain and shared DDS runtime.  Sensor
+# limited to the RDK DEB-build toolchain.  RDK OS supplies the Jazzy
+# CycloneDDS runtime itself; keeping it out of this carrier avoids replacing
+# RDK-owned ROS and base-system packages.  Sensor
 # runtime packages (RealSense, DepthAI, GStreamer, supervisor, etc.) remain
 # owned by their Sensor-specific dependency bundle.
 makeself	2.4	Self-extracting run package builder
@@ -17,13 +19,6 @@ python3-plumbum	1.7	gen_deb.py runtime
 python3-fire	0.4	gen_deb.py runtime
 python3-dataclasses-json	0.5	gen_deb.py runtime
 python3-loguru	0.6	gen_deb.py runtime
-ros-jazzy-rmw-cyclonedds-cpp	0	ROS 2 Jazzy CycloneDDS implementation
-ros-jazzy-cyclonedds	0	CycloneDDS runtime required by the Jazzy RMW implementation
-ros-jazzy-iceoryx-binding-c	0	Iceoryx binding required by Jazzy CycloneDDS
-ros-jazzy-iceoryx-hoofs	0	Iceoryx utility runtime required by Jazzy CycloneDDS
-ros-jazzy-iceoryx-posh	0	Iceoryx publish-subscribe runtime required by Jazzy CycloneDDS
-libattr1-dev	0	Filesystem extended-attribute dependency of libacl1-dev
-libacl1-dev	0	POSIX ACL dependency of ros-jazzy-iceoryx-hoofs
 python3-venv	3.10	Python virtual-environment support
 pkg-config	0.29	CMake pkg-config discovery tool
 python3-pip	22	Python package installer used by RDK build tooling

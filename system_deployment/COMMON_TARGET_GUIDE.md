@@ -217,8 +217,10 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build \
 /tmp/projects/dist/common/rdk/base/navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb
 ```
 
-该 carrier 仅包含 RDK SDK 生成 DEB 所需的构建工具、Python/ROS 的 bloom、rosdep、
-colcon 工具链和 `ros-jazzy-rmw-cyclonedds-cpp`。RealSense、DepthAI、GStreamer、
+该 carrier 仅包含 RDK SDK 生成 DEB 所需的构建工具、Python/ROS 的 bloom、rosdep 和
+colcon 工具链。RDK OS 自带 Jazzy CycloneDDS 运行链路，因此该 carrier 不重复打入
+`ros-jazzy-rmw-cyclonedds-cpp`、CycloneDDS 或 Iceoryx，避免覆盖 RDK 的系统包版本。
+RealSense、DepthAI、GStreamer、
 supervisor 等 Sensor 功能依赖不属于本包。
 
 ### 安装、配置和验证

@@ -143,6 +143,8 @@ class BuildRunPackageTest(unittest.TestCase):
             self.assertIn("/etc/naviai/Middleware.env", rdk_script)
             self.assertIn("ROSDEP_OS_OVERRIDE", rdk_script)
             self.assertIn("ROS_OS_OVERRIDE", rdk_script)
+            self.assertIn("_middleware_restore_nounset=1; set +u", rdk_script)
+            self.assertIn("set -u", rdk_script)
             self.assertIn("--device ORIN|PICO|RDK", launcher)
 
 

@@ -357,6 +357,22 @@ def environment_lines(build: Dict[str, str], device: Dict[str, Any]) -> List[str
 
     # A run package must not overwrite the carrier's shared device identity or
     # ROS runtime bootstrap with metadata-only environment variables.
+    nounset_prologue = [
+        "# ROS setup scripts read optional variables directly.",
+        "_middleware_restore_nounset=0",
+        "case \"$-\" in",
+        "    *u*) _middleware_restore_nounset=1; set +u ;;",
+        "esac",
+        "",
+    ]
+    nounset_epilogue = [
+        "if [ \"${_middleware_restore_nounset}\" -eq 1 ]; then",
+        "    set -u",
+        "fi",
+        "unset _middleware_restore_nounset",
+        "",
+    ]
+
     device_profile = [
         "# Load validated device identity and shared DDS settings when available.",
         "if [ -r /etc/profile.d/zj_humanoid.sh ]; then",
@@ -418,7 +434,7 @@ def environment_lines(build: Dict[str, str], device: Dict[str, Any]) -> List[str
             "",
         ]
 
-    return device_profile + runtime_bootstrap + [
+    return nounset_prologue + device_profile + runtime_bootstrap + nounset_epilogue + [
         "# Managed by Middleware run package. Source this file before starting modules.",
         item("MIDDLEWARE_PLATFORM", device["platform"]), item("MIDDLEWARE_VERSION", build["version"]),
         item("MIDDLEWARE_BUILD_TIME", device["build_time"]), item("MIDDLEWARE_BRANCH_NAME", device["branch_name"]),
