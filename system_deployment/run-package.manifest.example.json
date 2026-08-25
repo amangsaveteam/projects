@@ -36,4 +36,15 @@
       "post_uninstall": [],
     },
   },
+  "RDK": {
+    "sys_env_version": "RDK-OS-V5.1.0",
+    "modules": [],
+    "resource": [],
+    "scripts": {
+      "pre_install": [],
+      "post_install": [],
+      "pre_uninstall": [],
+      "post_uninstall": [],
+    },
+  },
 }

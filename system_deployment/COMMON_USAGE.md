@@ -1,6 +1,6 @@
 # Common 离线包：构建、部署与参数配置
 
-本文档是 `system_deployment/common` 的操作入口，覆盖三个受支持 target：
+本文档是 `system_deployment/common` 的操作入口，覆盖四个受支持 target：
 
 按 target 可直接执行的完整命令见
 [COMMON_TARGET_GUIDE.md](COMMON_TARGET_GUIDE.md)。
@@ -10,6 +10,7 @@
 | `orin-jazzy` | Orin, Ubuntu 24.04 arm64 | Jazzy | `navi_common_dep-2.0.0-release-jazzy-arm64.deb` |
 | `orin-humble` | Orin, Ubuntu 22.04 arm64 | Humble | `navi_common_dep-2.0.0-release-humble-arm64.deb` |
 | `pico-humble` | Pico, Ubuntu 20.04 amd64 | Humble | `navi_pico_common_dep-2.0.0-release-humble-amd64.deb` |
+| `rdk-jazzy` | RDK OS V5.1.0 arm64 | Jazzy | `navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb` |
 
 ## 设计与文件职责
 
@@ -56,7 +57,7 @@ amd64 PC 构建 arm64 Orin 包。
 python3 /tmp/projects/system_deployment/common/deploy_common.py show-targets
 ```
 
-## 2. 构建三种 common deb
+## 2. 构建四种 common deb
 
 ```bash
 # Orin Ubuntu 24.04 / Jazzy
@@ -67,6 +68,9 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build --target o
 
 # Pico Ubuntu 20.04 / Humble
 python3 /tmp/projects/system_deployment/common/deploy_common.py build --target pico-humble
+
+# RDK OS V5.1.0 / Jazzy
+python3 /tmp/projects/system_deployment/common/deploy_common.py build --target rdk-jazzy
 ```
 
 输出目录：
@@ -74,13 +78,14 @@ python3 /tmp/projects/system_deployment/common/deploy_common.py build --target p
 ```text
 /tmp/projects/dist/common/orin/base/
 /tmp/projects/dist/common/pico/base/
+/tmp/projects/dist/common/rdk/base/
 ```
 
-三个产物都是具有独立 Debian 包名的 carrier deb：Orin 为 `navi-common-dep`，Pico
-为 `navi-pico-common-dep`。它们内嵌原始 apt payload，构建会写入
+四个产物都是具有独立 Debian 包名的 carrier deb：Orin 为 `navi-common-dep`，Pico
+为 `navi-pico-common-dep`，RDK 为 `navi-rdk-common-dep`。它们内嵌原始 apt payload，构建会写入
 `manifest.lock.json` 和 `payloads.sha256`，供离线安装前验证。
 
-当前 Jazzy 的 Debian 修订版本为 `2.0.0~jazzy+19`；对外文件名保持
+当前 Jazzy 的 Debian 修订版本为 `2.0.0~jazzy+20`；对外文件名保持
 `navi_common_dep-2.0.0-release-jazzy-arm64.deb`，因此交付路径不变。
 
 `/etc/profile.d/zj_humanoid.sh` 是 common 包统一维护的运行脚本，升级时会自动更新；
@@ -112,6 +117,12 @@ sudo dpkg -i /tmp/navi_pico_common_dep-2.0.0-release-humble-amd64.deb
 sudo python3 /usr/lib/navi-pico-common-dep/deploy_common.py configure \
   --target pico-humble --robot-type U2-D --robot-name pico-001
 sudo /usr/sbin/install_pico_common_deps.sh
+
+# RDK OS V5.1.0 / Jazzy
+sudo dpkg -i /tmp/navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb
+sudo python3 /usr/lib/navi-rdk-common-dep/deploy_common.py configure \
+  --target rdk-jazzy --robot-type I2-S --robot-name rdk-001
+sudo /usr/sbin/install_rdk_common_deps.sh
 ```
 
 安装命令会校验 deb 架构。所有 bundle 在安装 payload 前会执行
@@ -143,6 +154,12 @@ sudo python3 /usr/lib/navi-pico-common-dep/deploy_common.py configure \
   --target pico-humble \
   --robot-type U2-D \
   --robot-name pico-001
+
+# RDK Jazzy 的 WA2-P
+sudo python3 /usr/lib/navi-rdk-common-dep/deploy_common.py configure \
+  --target rdk-jazzy \
+  --robot-type WA2-P \
+  --robot-name rdk-001
 ```
 
 配置写入：
@@ -151,7 +168,7 @@ sudo python3 /usr/lib/navi-pico-common-dep/deploy_common.py configure \
 /etc/zj_humanoid/device.env
 ```
 
-允许的机型由包内 `robot-types.json` 定义。Orin 默认从机型推导 Compose profile，例如
+允许的机型由包内 `robot-types.json` 定义。Orin 与 RDK 默认从机型推导 Compose profile，例如
 `I2-D → rx`、`WA2-P → wa2`、`U2-S → h1`。如需覆盖，可传入：
 
 ```bash
@@ -186,7 +203,9 @@ cat /usr/lib/navi-pico-common-dep/manifest.lock.json
 ```
 
 `zj_humanoid.sh` 只加载 ROS 2：Pico 使用 Humble，Orin 22.04 使用 Humble，Orin
-24.04 使用 Jazzy。它不设置 ROS 1 Master、`ROS_IP` 或 `ROS_HOSTNAME`。
+24.04 与 RDK OS V5.1.0 使用 Jazzy。它不设置 ROS 1 Master、`ROS_IP` 或
+`ROS_HOSTNAME`。RDK 的 `Middleware.env` 还会设置 Noble rosdep 兼容变量，供 RDK 的
+DEB 构建脚本使用。
 
 ## 6. 给其他团队交付
 

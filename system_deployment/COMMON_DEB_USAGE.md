@@ -9,8 +9,9 @@
 | Orin Ubuntu 24.04 / ROS 2 Jazzy / arm64 | `navi_common_dep-2.0.0-release-jazzy-arm64.deb` | `navi-common-dep` | `/usr/sbin/install_common_deps.sh` |
 | Orin Ubuntu 22.04 / ROS 2 Humble / arm64 | `navi_common_dep-2.0.0-release-humble-arm64.deb` | `navi-common-dep` | `/usr/sbin/install_common_deps.sh` |
 | Pico Ubuntu 20.04 / ROS 2 Humble / amd64 | `navi_pico_common_dep-2.0.0-release-humble-amd64.deb` | `navi-pico-common-dep` | `/usr/sbin/install_pico_common_deps.sh` |
+| RDK OS V5.1.0 / ROS 2 Jazzy / arm64 | `navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb` | `navi-rdk-common-dep` | `/usr/sbin/install_rdk_common_deps.sh` |
 
-只能在表中对应的设备、Ubuntu 版本和 CPU 架构上安装。安装前可检查 deb 信息：
+只能在表中对应的设备、系统版本和 CPU 架构上安装。安装前可检查 deb 信息：
 
 ```bash
 dpkg-deb -f /tmp/<common-deb>.deb Package Version Architecture
@@ -73,7 +74,28 @@ sudo /usr/sbin/install_pico_common_deps.sh
 Pico 已有有效机型配置时同样可跳过 `configure`。首次配置只要求 `--robot-type`；
 `ROBOT_NAME` 和 `ZJ_VERSION` 可选。
 
-## 4. 机器人型号
+## 4. 安装 RDK Jazzy 包
+
+```bash
+sudo dpkg -i /tmp/navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb
+
+sudo python3 /usr/lib/navi-rdk-common-dep/deploy_common.py configure \
+  --target rdk-jazzy \
+  --robot-type WA2-P
+
+sudo /usr/sbin/install_rdk_common_deps.sh
+```
+
+RDK 使用 `/etc/naviai/Middleware.env`。构建 RDK SDK 的 DEB 前加载它：
+
+```bash
+source /etc/naviai/Middleware.env
+```
+
+该文件会加载 Jazzy，并导出 `ROSDEP_OS_OVERRIDE=ubuntu:noble` 与
+`ROS_OS_OVERRIDE=ubuntu:noble:noble`。RDK Sensor 功能依赖不在该基础 carrier 中。
+
+## 5. 机器人型号
 
 支持的 `ROBOT_TYPE`：
 
@@ -86,13 +108,13 @@ U2-S  U2-D
 ZYD  JK
 ```
 
-Orin 会根据机型自动设置 `COMPOSE_PROFILES`，例如 `I3-S → i3`、`I2-D → rx`、
-`WA2-P → wa2`、`U2-D → h1`。Pico 不设置 Orin Compose profile。
+Orin 与 RDK 会根据机型自动设置 `COMPOSE_PROFILES`，例如 `I3-S → i3`、`I2-D → rx`、
+`WA2-P → wa2`、`U2-D → h1`。Pico 不设置 Compose profile。
 
 配置保存在 `/etc/zj_humanoid/device.env`。修改机型时再次执行对应的 `configure` 命令即可；
 不需要重新安装 deb。
 
-## 5. 环境自动加载与验证
+## 6. 环境自动加载与验证
 
 安装后，新开启的交互式 Bash 会自动加载环境。当前已经打开的终端不能被安装程序直接修改，
 请执行：
@@ -111,10 +133,10 @@ printf 'device=%s distro=%s type=%s version=%s compose=%s\n' \
 ros2 topic list
 ```
 
-预期：Orin 24.04 为 `ZJ_ROS_DISTRO=jazzy`；Orin 22.04 与 Pico 20.04 为
-`ZJ_ROS_DISTRO=humble`。
+预期：Orin 24.04 与 RDK OS V5.1.0 为 `ZJ_ROS_DISTRO=jazzy`；Orin 22.04 与 Pico
+20.04 为 `ZJ_ROS_DISTRO=humble`。
 
-## 6. CycloneDDS 网络配置
+## 7. CycloneDDS 网络配置
 
 包会安装 `/etc/zj_humanoid/cyclonedds.xml`，默认使用 `192.168.217.0/24` 网段并允许
 SPDP 组播。环境变量自动设置为：
@@ -140,7 +162,7 @@ CYCLONEDDS_URI=file:///path/to/site-cyclonedds.xml
 
 指定的文件必须存在；否则 profile 会告警并回退到包内默认 XML。
 
-## 7. 常见问题
+## 8. 常见问题
 
 | 现象 | 处理 |
 | --- | --- |
@@ -149,7 +171,7 @@ CYCLONEDDS_URI=file:///path/to/site-cyclonedds.xml
 | `ros2 topic list` 找不到接口 | 检查机器人网卡是否已连接并拥有 `192.168.217.x/24` 地址。 |
 | 机型需变更 | 再次执行 `configure` 命令；无需重新安装 deb。 |
 
-## 8. 已安装文件与完整性信息
+## 9. 已安装文件与完整性信息
 
 Orin：
 
@@ -163,6 +185,13 @@ Pico：
 ```bash
 dpkg-query -W navi-pico-common-dep
 cat /usr/lib/navi-pico-common-dep/manifest.lock.json
+```
+
+RDK：
+
+```bash
+dpkg-query -W navi-rdk-common-dep
+cat /usr/lib/navi-rdk-common-dep/manifest.lock.json
 ```
 
 payload 安装器在执行安装前会自动校验包内 `payloads.sha256`。

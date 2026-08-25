@@ -112,6 +112,39 @@ class BuildRunPackageTest(unittest.TestCase):
             with self.assertRaises(build_run_package.PackageBuildError):
                 build_run_package.build(manifest, directory / "out", dry_run=True)
 
+    def test_builds_rdk_payload_and_runtime_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / "inputs").mkdir()
+            (directory / "config").mkdir()
+            (directory / "inputs/rdk.deb").write_bytes(b"rdk")
+            (directory / "config/rdk.yaml").write_text("rdk: true\n", encoding="utf-8")
+            manifest = directory / "package.json"
+            manifest.write_text(
+                '''{
+                  "version": "v1",
+                  "build_time": "2026-08-25",
+                  "RDK": {
+                    "sys_env_version": "RDK-OS-V5.1.0",
+                    "modules": [{"name": "rdk-runtime", "version": "1", "url": "local://inputs/rdk.deb", "image": "", "dependencies": []}],
+                    "resource": [{"local_path": "config/rdk.yaml", "path": "/etc/naviai/rdk.yaml"}],
+                    "scripts": {"pre_install": [], "post_install": [], "pre_uninstall": [], "post_uninstall": []}
+                  }
+                }''',
+                encoding="utf-8",
+            )
+            output = build_run_package.build(manifest, directory / "out")
+            with self.read_payload(output) as payload:
+                names = payload.getnames()
+                rdk_script = payload.extractfile("RDK/run.sh").read().decode("utf-8")
+                launcher = payload.extractfile("launcher.sh").read().decode("utf-8")
+            self.assertIn("RDK/.dists/000-rdk-runtime.deb", names)
+            self.assertIn("RDK/resources/000-rdk.yaml", names)
+            self.assertIn("/etc/naviai/Middleware.env", rdk_script)
+            self.assertIn("ROSDEP_OS_OVERRIDE", rdk_script)
+            self.assertIn("ROS_OS_OVERRIDE", rdk_script)
+            self.assertIn("--device ORIN|PICO|RDK", launcher)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -24,6 +24,14 @@
       "ros_distro": "humble",
       "architecture": "amd64",
       "artifact": "navi_pico_common_dep-2.0.0-release-humble-amd64.deb"
+    },
+    "rdk-jazzy": {
+      "build_config": "rdk-common",
+      "device": "RDK",
+      "os_version": "V5.1.0",
+      "ros_distro": "jazzy",
+      "architecture": "arm64",
+      "artifact": "navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb"
     }
   }
 }

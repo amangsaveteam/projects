@@ -1,24 +1,24 @@
 {
   "schema_version": 1,
-  "id": "orin-common-humble",
-  "package_name": "navi-common-dep",
-  "release_version": "2.0.0~humble+14",
-  "device_config_target": "orin-humble",
-  "description": "Native Orin Humble offline common dependency bootstrap",
+  "id": "rdk-common",
+  "package_name": "navi-rdk-common-dep",
+  "release_version": "2.0.0~jazzy+1",
+  "device_config_target": "rdk-jazzy",
+  "description": "RDK OS V5.1.0 Jazzy offline DEB build dependency bootstrap",
   "target": {
-    "os_id": "ubuntu",
-    "os_version": "22.04",
+    "os_id": "rdk os",
+    "os_version": "V5.1.0",
     "architecture": "arm64",
     "machine": "aarch64",
-    "required_files": ["/etc/nv_tegra_release"],
+    "required_files": ["/etc/os-release"],
     "require_non_root": true
   },
-  "manifest": "common/manifests/orin-humble/apt-packages.tsv",
-  "output_dir": "../dist/common/orin/base",
-  "artifact_filename": "navi_common_dep-2.0.0-release-humble-arm64.deb",
-  "deb_depends": ["bash (>= 5.1)", "coreutils (>= 8.32)", "dpkg (>= 1.21.1ubuntu2)", "apt (>= 2.4.5)"],
+  "manifest": "common/manifests/rdk/apt-packages.tsv",
+  "output_dir": "../dist/common/rdk/base",
+  "artifact_filename": "navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb",
+  "deb_depends": ["bash (>= 5.2)", "coreutils (>= 9.1)", "dpkg (>= 1.22)", "apt (>= 2.7)"],
   "parent_packages": [],
-  "installer_aliases": ["install_common_deps.sh"],
+  "installer_aliases": ["install_rdk_common_deps.sh"],
   "exact_packages": [],
   "vendor_debs": [],
   "extra_files": [
@@ -28,7 +28,7 @@
       "mode": "0644"
     },
     {
-      "source": "common/templates/Middleware.orin.env",
+      "source": "common/templates/Middleware.rdk.env",
       "destination": "etc/naviai/Middleware.env",
       "mode": "0644",
       "conffile": true
@@ -47,27 +47,27 @@
     },
     {
       "source": "common/deploy_common.py",
-      "destination": "usr/lib/navi-common-dep/deploy_common.py",
+      "destination": "usr/lib/navi-rdk-common-dep/deploy_common.py",
       "mode": "0755"
     },
     {
       "source": "common/configs/targets.json",
-      "destination": "usr/lib/navi-common-dep/configs/targets.json",
+      "destination": "usr/lib/navi-rdk-common-dep/configs/targets.json",
       "mode": "0644"
     },
     {
       "source": "common/configs/robot-types.json",
-      "destination": "usr/lib/navi-common-dep/configs/robot-types.json",
+      "destination": "usr/lib/navi-rdk-common-dep/configs/robot-types.json",
       "mode": "0644"
     },
     {
       "source": "COMMON_DEB_USAGE.md",
-      "destination": "usr/share/doc/navi-common-dep/USAGE.md",
+      "destination": "usr/share/doc/navi-rdk-common-dep/USAGE.md",
       "mode": "0644"
     }
   ],
   "publish": {
-    "directory": "/ros2_modules/common/orin/develop/",
-    "remote_name": "navi_common_dep-2.0.0-release-humble-arm64.deb"
+    "directory": "/ros2_modules/common/rdk/jazzy/develop/",
+    "remote_name": "navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb"
   }
 }

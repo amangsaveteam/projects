@@ -1,6 +1,6 @@
 # Common 离线包：按目标构建与部署手册
 
-本手册分别给出三个 common deb 的完整操作流程。在线构建机必须是对应目标的原生
+本手册分别给出四个 common deb 的完整操作流程。在线构建机必须是对应目标的原生
 Ubuntu 版本和 CPU 架构，并能从 APT 下载清单中的包；离线设备只接收构建出的一个 deb，
 不需要 `projects` 源码。
 
@@ -9,6 +9,7 @@ Ubuntu 版本和 CPU 架构，并能从 APT 下载清单中的包；离线设备
 | `orin-jazzy` | Orin arm64, Ubuntu 24.04 | Jazzy | `navi_common_dep-2.0.0-release-jazzy-arm64.deb` |
 | `orin-humble` | Orin arm64, Ubuntu 22.04 | Humble | `navi_common_dep-2.0.0-release-humble-arm64.deb` |
 | `pico-humble` | Pico amd64, Ubuntu 20.04 | Humble | `navi_pico_common_dep-2.0.0-release-humble-amd64.deb` |
+| `rdk-jazzy` | RDK OS V5.1.0 arm64 | Jazzy | `navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb` |
 
 ## 0. 向在线构建机传输源码
 
@@ -201,7 +202,45 @@ ros2 topic list
 预期 `ZJ_DEVICE=PICO`、`ZJ_ROS_DISTRO=humble`。Pico 不设置 Orin 的
 `COMPOSE_PROFILES`。
 
-## 4. 共同说明
+## 4. RDK OS V5.1.0 / ROS 2 Jazzy
+
+### 在线构建
+
+```bash
+python3 /tmp/projects/system_deployment/common/deploy_common.py build \
+  --target rdk-jazzy
+```
+
+产物：
+
+```text
+/tmp/projects/dist/common/rdk/base/navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb
+```
+
+该 carrier 仅包含 RDK SDK 生成 DEB 所需的构建工具、Python/ROS 的 bloom、rosdep、
+colcon 工具链和 `ros-jazzy-rmw-cyclonedds-cpp`。RealSense、DepthAI、GStreamer、
+supervisor 等 Sensor 功能依赖不属于本包。
+
+### 安装、配置和验证
+
+```bash
+sudo dpkg -i /tmp/navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb
+
+sudo python3 /usr/lib/navi-rdk-common-dep/deploy_common.py configure \
+  --target rdk-jazzy --robot-type WA2-P
+
+sudo /usr/sbin/install_rdk_common_deps.sh
+
+source /etc/naviai/Middleware.env
+printf 'device=%s distro=%s type=%s rosdep=%s\n' \
+  "$ZJ_DEVICE" "$ROS_DISTRO" "$ROBOT_TYPE" "$ROSDEP_OS_OVERRIDE"
+```
+
+预期为 `ZJ_DEVICE=RDK`、`ROS_DISTRO=jazzy`、`ROSDEP_OS_OVERRIDE=ubuntu:noble`。
+构建 RDK SDK DEB 前直接 source 该 `Middleware.env`，即可复用 SDK 要求的 ROS、
+rosdep 与 rosdistro 环境变量。
+
+## 5. 共同说明
 
 包内的 `/etc/profile.d/zj_humanoid.sh` 只加载 ROS 2，不设置 ROS 1 Master、`ROS_IP`
 或 `ROS_HOSTNAME`。机器人参数保存在 `/etc/zj_humanoid/device.env`；配置不会因为
@@ -216,4 +255,7 @@ cat /usr/lib/navi-common-dep/manifest.lock.json
 
 # Pico
 cat /usr/lib/navi-pico-common-dep/manifest.lock.json
+
+# RDK
+cat /usr/lib/navi-rdk-common-dep/manifest.lock.json
 ```

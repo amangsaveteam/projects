@@ -168,20 +168,53 @@ fi
 
 
 def download_payloads(packages: list[tuple[str, str]], architecture: str, download_directory: Path) -> list[Path]:
-    payloads: list[Path] = []
-    for package, minimum_version in packages:
-        subprocess.run(["apt-get", "download", package], cwd=download_directory, check=True)
-        matching = [deb for deb in download_directory.glob("*.deb") if deb_field(deb, "Package") == package]
+    """Download the complete offline APT closure for a manifest.
+
+    ``apt-get download`` retrieves only a requested top-level package.  That
+    leaves a carrier unable to configure a package when one of its transitive
+    dependencies is absent on the offline device.  Resolve against an empty
+    APT status database instead, matching the RDK SDK dependency-bundle
+    builder: this downloads every dependency without changing the build host.
+    """
+    download_directory.mkdir(parents=True, exist_ok=True)
+    (download_directory / "partial").mkdir(exist_ok=True)
+    status_file = download_directory / "apt-status"
+    status_file.write_text("", encoding="utf-8")
+    requested = {package: minimum_version for package, minimum_version in packages}
+    subprocess.run(
+        [
+            "apt-get",
+            "-y",
+            "--download-only",
+            "--no-install-recommends",
+            "-o",
+            "Dir::State::status={}".format(status_file),
+            "-o",
+            "Dir::Cache::archives={}".format(download_directory),
+            "-o",
+            "APT::Get::List-Cleanup=0",
+            "install",
+            *requested,
+        ],
+        check=True,
+    )
+    payloads = sorted(download_directory.glob("*.deb"))
+    if not payloads:
+        raise RuntimeError("APT did not download any offline dependency payloads")
+    for payload in payloads:
+        payload_architecture = deb_field(payload, "Architecture")
+        if payload_architecture not in {architecture, "all"}:
+            raise RuntimeError(f"downloaded {payload.name} has architecture {payload_architecture}; expected {architecture} or all")
+
+    for package, minimum_version in requested.items():
+        matching = [deb for deb in payloads if deb_field(deb, "Package") == package]
         if len(matching) != 1:
             raise RuntimeError(f"expected one downloaded {package} archive, found: {matching}")
         payload = matching[0]
         payload_architecture = deb_field(payload, "Architecture")
         version = deb_field(payload, "Version")
-        if payload_architecture not in {architecture, "all"}:
-            raise RuntimeError(f"downloaded {package} has architecture {payload_architecture}; expected {architecture} or all")
         if not version_at_least(version, minimum_version):
             raise RuntimeError(f"downloaded {package} version {version} is below {minimum_version}")
-        payloads.append(payload)
         print(f"Payload: {package} {version} ({payload_architecture})")
     return payloads
 
@@ -264,7 +297,7 @@ def build(config_path: Path) -> Path:
         temporary_artifact.replace(artifact)
 
     print(f"Built {artifact}")
-    print(f"Offline payload count: {len(packages)}")
+    print(f"Offline payload count: {len(payloads)}")
     print(f"Install carrier with: sudo dpkg -i {artifact.name}")
     print(f"Install payloads with: sudo {aliases[0]}")
     return artifact

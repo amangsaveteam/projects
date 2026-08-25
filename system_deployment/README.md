@@ -2,7 +2,7 @@
 
 该目录是系统级交付的独立项目，负责两类不属于单一功能模块的内容：
 
-- 全局 `common` 离线依赖包：Orin 的 `orin-common` 与 Pico 的 `pico-common`；
+- 全局 `common` 离线依赖包：Orin、Pico 与 RDK 的基础构建/运行环境；
 - 通过声明式清单部署共享系统文件，并在需要时重新加载/启用 systemd 服务。
 
 模块自己的 `common_dep` 不迁入此项目。当前 `orin-sensor-common` 仍由
@@ -19,6 +19,7 @@
 python3 projects/system_deployment/common/build_common.py --config orin-common
 python3 projects/system_deployment/common/build_common.py --config orin-common-humble
 python3 projects/system_deployment/common/build_common.py --config pico-common
+python3 projects/system_deployment/common/build_common.py --config rdk-common
 ```
 
 构建机需要能从已配置的 Ubuntu 软件源取得 target 清单中的 payload。生成的 deb 可复制
@@ -49,7 +50,7 @@ carrier，再由安装器校验 SHA256 后安装内嵌 payload。
 设置 ROS 2 Domain、CycloneDDS、设备参数和 Docker Compose 参数，并从设备的
 `/etc/zj_humanoid/device.env` 读取经过白名单校验的 `ROBOT_TYPE`、`ROBOT_NAME` 与
 `ZJ_VERSION`。它根据设备与系统版本加载 ROS：Pico 使用 Humble、Orin Ubuntu 22.04
-使用 Humble、Orin Ubuntu 24.04 使用 Jazzy；`libyaml-cpp0.8` 安装在系统库路径，
+使用 Humble、Orin Ubuntu 24.04 使用 Jazzy、RDK OS V5.1.0 使用 Jazzy；`libyaml-cpp0.8` 安装在系统库路径，
 不需要 `LD_LIBRARY_PATH`。
 
 `ROBOT_TYPE` 是部署选择的必填项。profile 仅在它是受支持机型时才设置 ROS 网络与
@@ -88,15 +89,17 @@ sudo python3 /usr/lib/navi-pico-common-dep/deploy_common.py configure \
 sudo /usr/sbin/install_pico_common_deps.sh
 ```
 
-Pico 包同样会安装唯一的 `/etc/profile.d/zj_humanoid.sh`。该脚本按 Pico/Orin
+Pico 与 RDK 包同样会安装唯一的 `/etc/profile.d/zj_humanoid.sh`。该脚本按 Pico/Orin/RDK
 设备和 Ubuntu 版本动态选择 ROS 2 发行版；不加载 ROS 1、ros1_bridge，也不设置
 `ROS_MASTER_URI`、`ROS_IP` 或 `ROS_HOSTNAME`。
 
-三个 common carrier 会在安装 carrier 的第一步写入统一模块环境文件：Orin 为
+四个 common carrier 会在安装 carrier 的第一步写入统一模块环境文件：Orin 与 RDK 为
 `/etc/naviai/Middleware.env`，Pico 为 `/etc/nav01/Middleware.env`。它们是 Debian
 conffile，因此模块 deb 的 `postinst` 可在 payload 安装前安全 source；现场修改不会在
 common 升级时被静默覆盖。该文件会加载当前平台的 ROS 2 setup（Orin 22.04 为 Humble、
-Orin 24.04 为 Jazzy、Pico 为 Humble），从而提供 ROS 的运行时库路径。
+Orin 24.04 与 RDK 为 Jazzy、Pico 为 Humble）。RDK 同时导出
+`ROSDEP_OS_OVERRIDE=ubuntu:noble` 和 `ROS_OS_OVERRIDE=ubuntu:noble:noble`，供 SDK 的
+rosdep/bloom DEB 构建流程使用。
 
 原有 `scripts/build/build_common_deb.sh` 与 `build_pico_common_deb.sh` 是兼容入口，
 会转发到这个项目。`scripts/build/build_dependency_deb.py --config orin-common`
@@ -118,7 +121,7 @@ sudo python3 deploy_system_files.py --manifest my-system-files.json
 ## 生成可配置的 run 包
 
 `build_run_package.py` 使用与 `one-stop-upgrade` 的 `version.json` 对齐的 JSONC 清单格式，
-一个 run 包可同时包含 ORIN 与 PICO 的不同模块、资源和脚本。支持 `//` 注释与尾逗号；模板见
+一个 run 包可同时包含 ORIN、PICO 与 RDK 的不同模块、资源和脚本。支持 `//` 注释与尾逗号；模板见
 [run-package.manifest.example.json](run-package.manifest.example.json)。
 
 从 [run-package.manifest.example.json](run-package.manifest.example.json) 复制清单，并将
@@ -133,12 +136,12 @@ my-release/
 
 示例中的 SHA256 只是格式占位值；实际交付前必须替换为对应 module 的真实 SHA256。
 
-`ORIN.modules` 与 `PICO.modules` 按数组顺序安装 deb；卸载时会以相反顺序执行
+`ORIN.modules`、`PICO.modules` 与 `RDK.modules` 按数组顺序安装 deb；卸载时会以相反顺序执行
 `dpkg -r <name>`。模块的 `name` 因此是 Debian 包名，不能省略。`url` 支持 `http://`、
 `https://` 与相对清单目录的 `local://`；`image` 可替代 `url`，安装时会执行 `docker pull`。
 
-`resource` 是 deb 外的配置或文件：ORIN 使用 `url` 与目标 `path`，PICO 使用 `url` 或
-`local_path` 与目标 `device_path`。安装时会复制到对应设备绝对路径；资源不会在卸载时自动删除，
+`resource` 是 deb 外的配置或文件：ORIN/RDK 使用 `url` 或 `local_path` 与目标 `path`，PICO 使用
+`url` 或 `local_path` 与目标 `device_path`。安装时会复制到对应设备绝对路径；资源不会在卸载时自动删除，
 以保护现场修改过的配置。
 
 每个平台都可定义 `pre_install`、`post_install`、`pre_uninstall` 和 `post_uninstall` 钩子；
@@ -148,6 +151,7 @@ my-release/
 
 - ORIN：`/etc/naviai/Middleware.env`
 - PICO：`/etc/nav01/Middleware.env`
+- RDK：`/etc/naviai/Middleware.env`
 
 其中包含 `MIDDLEWARE_PLATFORM`、`MIDDLEWARE_VERSION`、`MIDDLEWARE_BUILD_TIME`、
 `MIDDLEWARE_BRANCH_NAME`、`MIDDLEWARE_COMMIT_ID`、`MIDDLEWARE_SYS_ENV_VERSION` 和
@@ -169,6 +173,7 @@ python3 build_run_package.py --manifest my-release/version.json
 # 自动检测设备；无法检测或同时检测到两种设备时，显式指定平台
 sudo ./dist/Middleware_*.run install --device ORIN
 sudo ./dist/Middleware_*.run install --device PICO
+sudo ./dist/Middleware_*.run install --device RDK
 
 # 卸载该 run 包声明的 deb（逆序）并执行卸载钩子
 sudo ./dist/Middleware_*.run uninstall --device PICO

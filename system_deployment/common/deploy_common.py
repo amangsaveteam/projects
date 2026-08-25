@@ -59,8 +59,8 @@ def read_device_config(path: Path) -> dict[str, str]:
 
 
 def validate_device_config(values: dict[str, str]) -> None:
-    if values.get("ZJ_DEVICE") not in {"ORIN", "PICO"}:
-        raise ValueError("ZJ_DEVICE must be ORIN or PICO")
+    if values.get("ZJ_DEVICE") not in {"ORIN", "PICO", "RDK"}:
+        raise ValueError("ZJ_DEVICE must be ORIN, PICO, or RDK")
     robot_type = values.get("ROBOT_TYPE", "")
     if robot_type not in robot_types():
         raise ValueError(f"unsupported ROBOT_TYPE {robot_type!r}")
@@ -112,7 +112,7 @@ def command_configure(arguments: argparse.Namespace) -> int:
         supplied = getattr(arguments, argument_name)
         if supplied is not None:
             values[key] = str(supplied)
-    if values["ZJ_DEVICE"] == "ORIN" and not values.get("COMPOSE_PROFILES"):
+    if values["ZJ_DEVICE"] in {"ORIN", "RDK"} and not values.get("COMPOSE_PROFILES"):
         values["COMPOSE_PROFILES"] = robot_types()[arguments.robot_type]["compose_profile"]
     write_device_config(path, values)
     print(f"Wrote {path}")
@@ -134,7 +134,8 @@ def command_validate_config(arguments: argparse.Namespace) -> int:
 
 def command_show_targets(_: argparse.Namespace) -> int:
     for name, target in sorted(targets().items()):
-        print(f"{name}: {target['device']} Ubuntu {target['os_version']} {target['architecture']} ROS 2 {target['ros_distro']}")
+        system = "RDK OS" if target["device"] == "RDK" else "Ubuntu"
+        print(f"{name}: {target['device']} {system} {target['os_version']} {target['architecture']} ROS 2 {target['ros_distro']}")
     return 0
 
 
@@ -151,7 +152,7 @@ def parser() -> argparse.ArgumentParser:
     configure.add_argument("--target", required=True, choices=target_names)
     configure.add_argument("--robot-type", required=True, choices=sorted(robot_types()))
     configure.add_argument("--config", default=str(DEFAULT_DEVICE_CONFIG))
-    configure.add_argument("--device", choices=("ORIN", "PICO"))
+    configure.add_argument("--device", choices=("ORIN", "PICO", "RDK"))
     configure.add_argument("--robot-name")
     configure.add_argument("--version")
     configure.add_argument("--ros-domain-id", type=int)

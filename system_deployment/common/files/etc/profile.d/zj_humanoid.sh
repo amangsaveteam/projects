@@ -30,6 +30,8 @@ export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 if id "nav01" &>/dev/null; then
     _ZJ_DETECTED_DEVICE="PICO"
+elif [[ -r /etc/os-release ]] && grep -Eq '^ID="?rdk os"?$' /etc/os-release; then
+    _ZJ_DETECTED_DEVICE="RDK"
 else
     _ZJ_DETECTED_DEVICE="ORIN"
 fi
@@ -47,7 +49,7 @@ load_device_config() {
         value="${line#*=}"
         case "${key}" in
             ZJ_DEVICE)
-                [[ "${value}" == "ORIN" || "${value}" == "PICO" ]] && export ZJ_DEVICE="${value}"
+                [[ "${value}" == "ORIN" || "${value}" == "PICO" || "${value}" == "RDK" ]] && export ZJ_DEVICE="${value}"
                 ;;
             ROBOT_TYPE)
                 [[ "${value}" =~ ^[A-Za-z0-9_-]+$ ]] && export ROBOT_TYPE="${value}"
@@ -116,6 +118,14 @@ if [[ "${ZJ_DEVICE}" == "PICO" ]]; then
     [[ -f /opt/ros/humble/setup.bash ]] && source /opt/ros/humble/setup.bash
     export PATH="/home/nav01/.local/bin:$PATH"
     add_path "/home/nav01/.zj_humanoid/bin"
+elif [[ "${ZJ_DEVICE}" == "RDK" ]]; then
+    export ZJ_ROS_DISTRO="jazzy"
+    export SENSOR_IMAGE_TAG="NOCUDA"
+    # RDK OS is APT compatible but not recognized by rosdep.  Its Jazzy
+    # packages use the Noble resolver contract.
+    export ROSDEP_OS_OVERRIDE="${ROSDEP_OS_OVERRIDE:-ubuntu:noble}"
+    export ROS_OS_OVERRIDE="${ROS_OS_OVERRIDE:-${ROSDEP_OS_OVERRIDE}:noble}"
+    [[ -f /opt/ros/jazzy/setup.bash ]] && source /opt/ros/jazzy/setup.bash
 else
     _ZJ_OS_VERSION=""
     if [[ -f /etc/os-release ]]; then
@@ -141,7 +151,7 @@ else
     add_path "/home/naviai/.zj_humanoid/bin"
 fi
 
-if [[ "${ZJ_DEVICE}" == "ORIN" ]]; then
+if [[ "${ZJ_DEVICE}" == "ORIN" || "${ZJ_DEVICE}" == "RDK" ]]; then
     export COMPOSE_PROJECT_NAME="navi_project"
     if [[ -z "${COMPOSE_PROFILES:-}" ]]; then
         case "${ROBOT_TYPE}" in

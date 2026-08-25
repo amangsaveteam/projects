@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build an ORIN/PICO self-extracting Middleware ``.run`` package."""
+"""Build an ORIN/PICO/RDK self-extracting Middleware ``.run`` package."""
 
 import argparse
 import hashlib
@@ -23,8 +23,12 @@ SCHEMA_VERSION = 1
 CHUNK_SIZE = 1024 * 1024
 TOKEN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+:-]*$")
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
-PLATFORMS = ("ORIN", "PICO")
-ENVIRONMENT_PATHS = {"ORIN": "/etc/naviai/Middleware.env", "PICO": "/etc/nav01/Middleware.env"}
+PLATFORMS = ("ORIN", "PICO", "RDK")
+ENVIRONMENT_PATHS = {
+    "ORIN": "/etc/naviai/Middleware.env",
+    "PICO": "/etc/nav01/Middleware.env",
+    "RDK": "/etc/naviai/Middleware.env",
+}
 
 
 class PackageBuildError(RuntimeError):
@@ -220,7 +224,7 @@ def resource_specs(platform: str, device: Dict[str, Any], manifest_dir: Path) ->
         local_path = require_string(item.get("local_path", ""), field + ".local_path", allow_empty=True)
         if bool(url) == bool(local_path):
             raise PackageBuildError("{} must configure exactly one of url or local_path".format(field))
-        target_key = "path" if platform == "ORIN" else "device_path"
+        target_key = "path" if platform in {"ORIN", "RDK"} else "device_path"
         device_path = ensure_absolute_path(item.get(target_key), field + "." + target_key)
         if url:
             validate_url(url, field + ".url")
@@ -287,7 +291,7 @@ def device_spec(platform: str, raw: Any, manifest_dir: Path, build: Dict[str, st
 
 def load_manifest(path: Path) -> Dict[str, Any]:
     data = load_jsonc(path)
-    allowed = {"schema_version", "version", "build_time", "branch_name", "commit_id", "ORIN", "PICO", "output_name"}
+    allowed = {"schema_version", "version", "build_time", "branch_name", "commit_id", "ORIN", "PICO", "RDK", "output_name"}
     unknown = set(data) - allowed
     if unknown:
         raise PackageBuildError("manifest has unsupported keys: {}".format(", ".join(sorted(unknown))))
@@ -298,7 +302,7 @@ def load_manifest(path: Path) -> Dict[str, Any]:
     devices = [device_spec(platform, data.get(platform), manifest_dir, build) for platform in PLATFORMS]
     devices = [device for device in devices if device is not None]
     if not devices:
-        raise PackageBuildError("manifest must contain ORIN and/or PICO")
+        raise PackageBuildError("manifest must contain ORIN, PICO, and/or RDK")
     output_name = data.get("output_name")
     if output_name is not None:
         safe_token(output_name, "manifest.output_name")
@@ -390,10 +394,24 @@ def environment_lines(build: Dict[str, str], device: Dict[str, Any]) -> List[str
             "unset _middleware_os_version",
             "",
         ]
-    else:
+    elif device["platform"] == "PICO":
         runtime_bootstrap = [
             "# Pico packages use the ROS 2 Humble runtime.",
             "export MIDDLEWARE_ROS_DISTRO=\"humble\"",
+            "if [ -r \"/opt/ros/${MIDDLEWARE_ROS_DISTRO}/setup.bash\" ]; then",
+            "    . \"/opt/ros/${MIDDLEWARE_ROS_DISTRO}/setup.bash\"",
+            "fi",
+            "",
+        ]
+    else:
+        runtime_bootstrap = [
+            "# RDK OS V5.1.0 uses the ROS 2 Jazzy/Noble resolver contract.",
+            "export MIDDLEWARE_ROS_DISTRO=\"jazzy\"",
+            "export ROSDEP_OS_OVERRIDE=\"${ROSDEP_OS_OVERRIDE:-ubuntu:noble}\"",
+            "export ROS_OS_OVERRIDE=\"${ROS_OS_OVERRIDE:-${ROSDEP_OS_OVERRIDE}:noble}\"",
+            "if [ -z \"${ROSDISTRO_INDEX_URL:-}\" ] && [ -r /opt/rosdistro/index-v4.yaml ]; then",
+            "    export ROSDISTRO_INDEX_URL=\"file:///opt/rosdistro/index-v4.yaml\"",
+            "fi",
             "if [ -r \"/opt/ros/${MIDDLEWARE_ROS_DISTRO}/setup.bash\" ]; then",
             "    . \"/opt/ros/${MIDDLEWARE_ROS_DISTRO}/setup.bash\"",
             "fi",
@@ -448,13 +466,15 @@ def render_device_script(build: Dict[str, str], device: Dict[str, Any]) -> str:
 
 def render_launcher(devices: Sequence[Dict[str, Any]]) -> str:
     available = {device["platform"] for device in devices}
-    lines = ["#!/bin/sh", "set -eu", 'action="install"', 'device=""', 'while [ "$#" -gt 0 ]; do', '    case "$1" in', '        install|uninstall) action="$1" ;;', '        --device) shift; [ "$#" -gt 0 ] || { echo "ERROR: --device needs ORIN or PICO" >&2; exit 2; }; device="$1" ;;', '        --device=*) device="${1#--device=}" ;;', '        -h|--help) echo "Usage: $0 [install|uninstall] [--device ORIN|PICO]"; exit 0 ;;', '        *) echo "ERROR: unknown argument: $1" >&2; exit 2 ;;', '    esac', '    shift', 'done', 'if [ -z "$device" ]; then']
+    lines = ["#!/bin/sh", "set -eu", 'action="install"', 'device=""', 'while [ "$#" -gt 0 ]; do', '    case "$1" in', '        install|uninstall) action="$1" ;;', '        --device) shift; [ "$#" -gt 0 ] || { echo "ERROR: --device needs ORIN, PICO, or RDK" >&2; exit 2; }; device="$1" ;;', '        --device=*) device="${1#--device=}" ;;', '        -h|--help) echo "Usage: $0 [install|uninstall] [--device ORIN|PICO|RDK]"; exit 0 ;;', '        *) echo "ERROR: unknown argument: $1" >&2; exit 2 ;;', '    esac', '    shift', 'done', 'if [ -z "$device" ]; then']
     if available == {"ORIN"}:
         lines.append('    device="ORIN"')
     elif available == {"PICO"}:
         lines.append('    device="PICO"')
+    elif available == {"RDK"}:
+        lines.append('    device="RDK"')
     else:
-        lines.extend(['    if [ -d /etc/naviai ] || id naviai >/dev/null 2>&1; then device="ORIN"; fi', '    if [ -d /etc/nav01 ] || id nav01 >/dev/null 2>&1; then', '        if [ -n "$device" ]; then echo "ERROR: both ORIN and PICO were detected; use --device" >&2; exit 2; fi', '        device="PICO"', '    fi', '    [ -n "$device" ] || { echo "ERROR: cannot detect device; use --device ORIN|PICO" >&2; exit 2; }'])
+        lines.extend(['    if [ -r /etc/os-release ] && grep -Eq \'^ID="?rdk os"?$\' /etc/os-release; then device="RDK"; fi', '    if [ -z "$device" ] && { [ -d /etc/naviai ] || id naviai >/dev/null 2>&1; }; then device="ORIN"; fi', '    if [ -d /etc/nav01 ] || id nav01 >/dev/null 2>&1; then', '        if [ -n "$device" ]; then echo "ERROR: multiple platforms were detected; use --device" >&2; exit 2; fi', '        device="PICO"', '    fi', '    [ -n "$device" ] || { echo "ERROR: cannot detect device; use --device ORIN|PICO|RDK" >&2; exit 2; }'])
     lines.append('case "$device" in')
     for platform in PLATFORMS:
         if platform in available:

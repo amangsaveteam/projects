@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "pico-common",
   "package_name": "navi-pico-common-dep",
-  "release_version": "2.0.0~humble+12",
+  "release_version": "2.0.0~humble+13",
   "device_config_target": "pico-humble",
   "description": "Native Pico base common dependency bootstrap",
   "target": {
