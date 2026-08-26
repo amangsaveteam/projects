@@ -112,7 +112,12 @@ if [[ -f {payload_directory}/payloads.sha256 ]]; then
     (cd {payload_directory} && sha256sum -c payloads.sha256)
 fi
 
-dpkg -i "${{payloads[@]}}"
+# Hand every bundled .deb to APT as an offline candidate set.  A plain
+# ``dpkg -i`` follows glob order and can fail on Pre-Depends (for example
+# libpam-modules is encountered before libpam0g).  APT calculates the unpack
+# and configure order while --no-download guarantees that it never uses the
+# network or packages outside this carrier.
+apt-get -y --no-download --no-install-recommends install "${{payloads[@]}}"
 '''
     for alias in aliases:
         alias_path = configured_path(alias, description="installer alias").name
@@ -187,6 +192,8 @@ def download_payloads(packages: list[tuple[str, str]], architecture: str, downlo
             "-y",
             "--download-only",
             "--no-install-recommends",
+            "-o",
+            "APT::Architecture={}".format(architecture),
             "-o",
             "Dir::State::status={}".format(status_file),
             "-o",

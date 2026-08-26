@@ -17,6 +17,21 @@ SPEC.loader.exec_module(bundle)
 
 
 class OfflineClosureDownloadTest(unittest.TestCase):
+    def test_installer_uses_apt_to_order_offline_predepends(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            staging = Path(temporary)
+            bundle.write_installer(
+                staging,
+                "navi-common-dep",
+                ["install_common_deps.sh"],
+                "orin-humble",
+            )
+
+            script = (staging / "usr/sbin/install_common_deps.sh").read_text(encoding="utf-8")
+
+        self.assertIn("apt-get -y --no-download --no-install-recommends install", script)
+        self.assertNotIn('dpkg -i "${payloads[@]}"', script)
+
     def test_uses_empty_apt_status_and_keeps_transitive_payloads(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
@@ -41,6 +56,7 @@ class OfflineClosureDownloadTest(unittest.TestCase):
             command = calls[0]
             self.assertIn("--download-only", command)
             self.assertIn("--no-install-recommends", command)
+            self.assertIn("APT::Architecture=arm64", command)
             self.assertIn("Dir::State::status={}".format(directory / "apt-status"), command)
             self.assertIn("requested", command)
 
