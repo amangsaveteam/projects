@@ -1,29 +1,13 @@
 # package<TAB>minimum-version<TAB>purpose
 #
 # Device: Orin. Shared native host contract: Ubuntu 22.04 (Jammy), arm64,
-# ROS 2 Humble. Install this unified Sensor/Robot manifest before every
-# module-specific manifest. The ROS dependency set intentionally keeps only
-# CycloneDDS; other ROS dependencies are delivered by owning modules.
-build-essential	12.9ubuntu3	C++ build toolchain
-cmake	3.22.1	CMake generator
-git	1:2.34.1	Source metadata used by Debian builders
-sudo	1.9.9	Debian generator command wrapper
-makeself	2.4.5	Self-extracting run package builder
-unzip	6.0	Local rosdistro cache extraction
-ca-certificates	20211016	APT TLS certificates
-gnupg	2.2.27	APT repository key management
-debhelper	13.6	Debian helper
-dh-python	5.20220403	Python Debian helper
-fakeroot	1.28	Unprivileged Debian package build
-python3-colcon-common-extensions	0.3.0	ROS 2 colcon build frontend
-python3-bloom	0.14.3	ROS Debian generator; pulls rosdep, rosdistro and catkin-pkg
-python3-vcstool	0.3.0	ROS source workspace utility
-python3-plumbum	1.7.2	gen_deb.py runtime
-python3-fire	0.4.0	gen_deb.py runtime
-python3-dataclasses-json	0.5.6	gen_deb.py runtime
-python3-loguru	0.6.0	gen_deb.py runtime
+# ROS 2 Humble. This is a target-device runtime/build-library manifest, not
+# a system-image or Debian-builder manifest. Ubuntu supplies libc, PAM,
+# systemd, GCC, curl, APT and networking; never carry those packages here.
+# Debian/ROS package-generator tools belong on the dedicated build machine.
+# Other ROS feature dependencies are delivered by their owning module.
 ros-humble-rmw-cyclonedds-cpp	1.3.4	DDS implementation
-python3-venv	3.10.4-0ubuntu2	Audio/Vision/Manipulation venv creation
+python3-venv	3.10.4-0ubuntu2	Module venv creation
 pkg-config	0.29.2-1ubuntu3	CMake PkgConfig module finder
 libyaml-cpp0.7	0.7.0	YAML C++ runtime shared by robot modules
 libspdlog-dev	1.9.2	spdlog headers and CMake package for offline module builds
@@ -31,27 +15,5 @@ libspdlog1	1.9.2	spdlog runtime required by libspdlog-dev on Jammy
 libfmt-dev	8.0.1	fmt headers and CMake package required by spdlog
 libfmt8	8.0.1	fmt runtime required by libfmt-dev on Jammy
 catch2	2.13.8	Catch2 dependency required by libspdlog-dev on Jammy
-network-manager	1.36.6	Host WiFi management runtime
+network-manager	1.36.6	Host Wi-Fi management runtime
 python3-pip	22.0.2	Offline robot Python wheel installer
-
-# Keep an already-deployed Jammy robot coherent when this carrier updates a
-# base runtime library.  These are the reverse dependencies reported by APT
-# on the field-image baseline.  Listing them makes APT fetch their current
-# matching versions too, rather than leaving an older package pinned to a
-# previous libcurl/GCC/PAM/system-library version.
-cpp-12	12.3.0-1ubuntu1~22.04.3	Match current gcc-12-base runtime
-curl	7.81.0-1ubuntu1.27	Match current libcurl4 runtime
-gcc-12	12.3.0-1ubuntu1~22.04.3	Match current gcc-12-base runtime
-gfortran-11	11.4.0-1ubuntu1~22.04.3	Match current GCC 11 runtime
-gir1.2-polkit-1.0	0.105-33ubuntu0.1	Match current PolicyKit runtime
-ldap-utils	2.5.20+dfsg-0ubuntu0.22.04.1	Match current OpenLDAP runtime
-libasan8	12.3.0-1ubuntu1~22.04.3	Match current gcc-12-base runtime
-libc6-dbg	2.35-0ubuntu3.14	Match current glibc runtime
-libcurl4-openssl-dev	7.81.0-1ubuntu1.27	Match current libcurl4 runtime
-libgcc-12-dev	12.3.0-1ubuntu1~22.04.3	Match current gcc-12-base runtime
-libgfortran-11-dev	11.4.0-1ubuntu1~22.04.3	Match current GCC 11 runtime
-libpam-modules	1.4.0-11ubuntu2.7	Match current PAM module runtime
-libsqlite3-dev	3.37.2-2ubuntu0.7	Match current SQLite runtime
-libssl-dev	3.0.2-0ubuntu1.29	Match current OpenSSL runtime
-libtsan2	12.3.0-1ubuntu1~22.04.3	Match current gcc-12-base runtime
-libxml2-dev	2.9.13+dfsg-1ubuntu0.12	Match current libxml2 runtime

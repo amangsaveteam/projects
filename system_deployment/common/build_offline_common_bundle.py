@@ -16,6 +16,7 @@ from pathlib import Path
 
 COMMON_DIR = Path(__file__).resolve().parent
 DEPLOYMENT_ROOT = COMMON_DIR.parent
+UBUNTU_BASELINE_PRIORITIES = {"required", "important", "standard"}
 
 
 def parse_manifest(manifest_path: Path) -> list[tuple[str, str]]:
@@ -47,6 +48,20 @@ def version_at_least(version: str, minimum_version: str) -> bool:
     return minimum_version == "0" or subprocess.run(
         ["dpkg", "--compare-versions", version, "ge", minimum_version], check=False
     ).returncode == 0
+
+
+def is_ubuntu_baseline_package(payload: Path) -> bool:
+    """Whether this archive belongs to the preinstalled Ubuntu base image.
+
+    The resolver intentionally uses an empty APT status database to calculate
+    an application dependency closure.  Without filtering, that also pulls in
+    packages already supplied by Ubuntu itself, such as libc, PAM and systemd.
+    A middleware carrier must not install those base-image packages.
+    """
+    return (
+        deb_field(payload, "Essential").lower() == "yes"
+        or deb_field(payload, "Priority").lower() in UBUNTU_BASELINE_PRIORITIES
+    )
 
 
 def sha256(path: Path) -> str:
@@ -220,6 +235,10 @@ def download_payloads(packages: list[tuple[str, str]], architecture: str, downlo
         payload_architecture = deb_field(payload, "Architecture")
         if payload_architecture not in {architecture, "all"}:
             raise RuntimeError(f"downloaded {payload.name} has architecture {payload_architecture}; expected {architecture} or all")
+
+    payloads = [payload for payload in payloads if not is_ubuntu_baseline_package(payload)]
+    if not payloads:
+        raise RuntimeError("all resolved packages belong to the Ubuntu baseline")
 
     for package, minimum_version in requested.items():
         matching = [deb for deb in payloads if deb_field(deb, "Package") == package]

@@ -44,8 +44,12 @@ class OfflineClosureDownloadTest(unittest.TestCase):
                 return subprocess.CompletedProcess(command, 0)
 
             fields = {
-                "requested.deb": {"Package": "requested", "Version": "1.2", "Architecture": "arm64"},
-                "transitive.deb": {"Package": "transitive", "Version": "2.0", "Architecture": "all"},
+                "requested.deb": {
+                    "Package": "requested", "Version": "1.2", "Architecture": "arm64", "Essential": "no", "Priority": "optional"
+                },
+                "transitive.deb": {
+                    "Package": "transitive", "Version": "2.0", "Architecture": "all", "Essential": "no", "Priority": "optional"
+                },
             }
             with patch.object(bundle.subprocess, "run", side_effect=fake_run), patch.object(
                 bundle, "deb_field", side_effect=lambda path, field: fields[path.name][field]

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "orin-common-humble",
   "package_name": "navi-common-dep",
-  "release_version": "2.0.0~humble+18",
+  "release_version": "2.0.0~humble+20",
   "device_config_target": "orin-humble",
   "description": "Native Orin Humble offline common dependency bootstrap",
   "target": {
