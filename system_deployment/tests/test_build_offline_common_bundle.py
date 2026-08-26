@@ -57,6 +57,7 @@ class OfflineClosureDownloadTest(unittest.TestCase):
             self.assertIn("--download-only", command)
             self.assertIn("--no-install-recommends", command)
             self.assertIn("APT::Architecture=arm64", command)
+            self.assertIn("Acquire::ForceIPv4=true", command)
             self.assertIn("Dir::State::status={}".format(directory / "apt-status"), command)
             self.assertIn("requested", command)
 

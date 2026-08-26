@@ -195,6 +195,11 @@ def download_payloads(packages: list[tuple[str, str]], architecture: str, downlo
             "-o",
             "APT::Architecture={}".format(architecture),
             "-o",
+            # Some ARM build hosts receive an IPv6 DNS record but have no
+            # usable IPv6 default route.  Keep dependency collection
+            # deterministic by using the reachable IPv4 mirror endpoint.
+            "Acquire::ForceIPv4=true",
+            "-o",
             "Dir::State::status={}".format(status_file),
             "-o",
             "Dir::Cache::archives={}".format(download_directory),
