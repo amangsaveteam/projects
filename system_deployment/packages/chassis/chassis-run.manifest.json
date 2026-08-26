@@ -1,0 +1,46 @@
+{
+  // ORIN Ubuntu 22.04 / ROS 2 Humble chassis deployment.
+  "version": "2.0.0",
+  "branch_name": "external-chassis",
+  "commit_id": "0jammy",
+  "output_name": "navi_chassis_orin_installer-2.0.0-release-humble-arm64",
+  "ORIN": {
+    "sys_env_version": "ubuntu-22.04",
+    // Optional endpoint overrides.  Leave commented to use the launch-file
+    // defaults: chassis_type=COMPOSE_PROFILES (or wa2), host=192.168.217.1,
+    // port=8849.  These are written into the sole shared Middleware.env.
+    // "environment": {
+    //   "CHASSIS_TYPE": "wa2",
+    //   "CHASSIS_HOST": "192.168.217.1",
+    //   "CHASSIS_PORT": "8849"
+    // },
+    "modules": [
+      {
+        "name": "zj-humanoid-ros-humble-chassis-msgs",
+        "version": "2.0.0-0jammy",
+        "url": "local://input/zj-humanoid-ros-humble-chassis-msgs_2.0.0-0jammy_arm64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "4bac710b59288832f72114ab2670d0156919ff5fae3da985d7336a74a6fa3e6b"
+      },
+      {
+        "name": "zj-humanoid-ros-humble-chassis",
+        "version": "2.0.0-0jammy",
+        "url": "local://input/zj-humanoid-ros-humble-chassis_2.0.0-0jammy_arm64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": ["zj-humanoid-ros-humble-chassis-msgs"],
+        "sha256": "3c2715610ad69cf23f1c689e7c03be4c780d2e1f6e245d2f0dd0310ee7428979"
+      }
+    ],
+    "startup": {
+      "name": "navi-orin-chassis",
+      "description": "Navi Orin ROS 2 chassis node",
+      "command": "ros2 launch chassis chassis.launch.py",
+      "script_directory": "/etc/naviai/chassis",
+      "restart": "on-failure",
+      "start_on_install": true
+    }
+  }
+}

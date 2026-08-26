@@ -6,6 +6,22 @@
   "commit_id": "",
   "ORIN": {
     "sys_env_version": "ubuntu-24.04",
+    // Optional module settings are written to the shared Middleware.env.
+    // "environment": {
+    //   "CHASSIS_TYPE": "wa2",
+    //   "CHASSIS_HOST": "192.168.217.1",
+    //   "CHASSIS_PORT": "8849",
+    // },
+    // Optional systemd service.  The generated startup script sources the
+    // shared Middleware.env; no module-specific .env file is created.
+    // "startup": {
+    //   "name": "navi-orin-example",
+    //   "description": "Navi Orin example module",
+    //   "command": "ros2 launch example_package example.launch.py",
+    //   "script_directory": "/etc/naviai/example",
+    //   "restart": "on-failure",
+    //   "start_on_install": true,
+    // },
     "modules": [
       {
         "name": "robot-runtime",

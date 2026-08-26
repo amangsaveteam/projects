@@ -126,8 +126,14 @@ class BuildRunPackageTest(unittest.TestCase):
                   "build_time": "2026-08-25",
                   "RDK": {
                     "sys_env_version": "RDK-OS-V5.1.0",
+                    "environment": {"CHASSIS_TYPE": "wa2"},
                     "modules": [{"name": "rdk-runtime", "version": "1", "url": "local://inputs/rdk.deb", "image": "", "dependencies": []}],
                     "resource": [{"local_path": "config/rdk.yaml", "path": "/etc/naviai/rdk.yaml"}],
+                    "startup": {
+                      "name": "navi-rdk-runtime",
+                      "command": "ros2 launch rdk_runtime start.launch.py",
+                      "script_directory": "/etc/naviai/rdk-runtime"
+                    },
                     "scripts": {"pre_install": [], "post_install": [], "pre_uninstall": [], "post_uninstall": []}
                   }
                 }''',
@@ -140,9 +146,14 @@ class BuildRunPackageTest(unittest.TestCase):
                 launcher = payload.extractfile("launcher.sh").read().decode("utf-8")
             self.assertIn("RDK/.dists/000-rdk-runtime.deb", names)
             self.assertIn("RDK/resources/000-rdk.yaml", names)
+            self.assertIn("RDK/startup/navi-rdk-runtime-start.sh", names)
+            self.assertIn("RDK/startup/navi-rdk-runtime.service", names)
             self.assertIn("/etc/naviai/Middleware.env", rdk_script)
             self.assertIn("ROSDEP_OS_OVERRIDE", rdk_script)
             self.assertIn("ROS_OS_OVERRIDE", rdk_script)
+            self.assertIn("export CHASSIS_TYPE=wa2", rdk_script)
+            self.assertIn("/etc/naviai/rdk-runtime/navi-rdk-runtime-start.sh", rdk_script)
+            self.assertIn("systemctl enable --now navi-rdk-runtime.service", rdk_script)
             self.assertIn("_middleware_restore_nounset=1; set +u", rdk_script)
             self.assertIn("set -u", rdk_script)
             self.assertIn("--device ORIN|PICO|RDK", launcher)

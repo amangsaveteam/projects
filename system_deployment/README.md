@@ -147,6 +147,15 @@ my-release/
 每个平台都可定义 `pre_install`、`post_install`、`pre_uninstall` 和 `post_uninstall` 钩子；
 每一个钩子可配置一条 `cmd` 或一个相对于清单的 `path` 脚本。
 
+需要开机自启的模块使用可选 `startup` 对象，而不需要手写 systemd unit、启动脚本或
+`systemctl` 钩子。填写 `name`（不含 `.service`）、`command`、`script_directory`，并可选设置
+`description`、`restart`（默认 `on-failure`）和 `start_on_install`（默认 `true`）。打包器会在
+`script_directory` 生成启动脚本、在 `/etc/systemd/system/<name>.service` 生成服务；脚本只会
+source 当前平台的统一 `Middleware.env`。卸载时会停止/禁用并删除该自动生成的服务与启动脚本。
+
+`environment` 是可选的字符串键值对象，用于将模块变量写入同一个 `Middleware.env`，例如
+`CHASSIS_HOST`。它不能覆盖 `MIDDLEWARE_*` 元数据。
+
 安装会在任何安装钩子和第一个 `dpkg -i` 之前原子刷新统一环境文件，供后续所有模块 source：
 
 - ORIN：`/etc/naviai/Middleware.env`
@@ -181,3 +190,32 @@ sudo ./dist/Middleware_*.run uninstall --device PICO
 
 运行包会把最终清单写入包内 `package-manifest.json`。包内 deb 的 conffile 会随着 `dpkg -i`
 自动安装和升级，无需重复定义配置文件；运行包也会校验已配置的 SHA256。
+
+### Delivery 交付接口
+
+每个生成的 run 都会包含平台目录下的 `delivery.yaml`（`apiVersion: robot-studio/v1`、
+`kind: Delivery`）、`packages.tsv`、`install.sh` 与根目录的 `payloads.sha256`。交付清单自动记录
+版本、目标架构/OS/ROS、common carrier 要求、统一环境路径、内置 DEB、启动服务与 DDS 默认值。
+
+```bash
+# 以下交付查询命令建议使用 -- 分隔，避免与 makeself/兼容参数冲突
+./dist/<delivery>.run -- --version
+./dist/<delivery>.run -- --delivery
+./dist/<delivery>.run -- --packages
+./dist/<delivery>.run -- --info
+./dist/<delivery>.run -- --verify
+
+# 安装；--robot-type 会校验并写入 /etc/zj_humanoid/device.env
+sudo ./dist/<delivery>.run -- --robot-type I3-S
+
+# 已安装设备的检查：status 展示回执、DEB、环境与服务；verify-only 会在不安装时严格校验它们
+./dist/<delivery>.run -- --status
+./dist/<delivery>.run -- --verify-only
+
+# 卸载先校验安装回执和内置 DEB 的精确版本；回执丢失时才允许 --force
+sudo ./dist/<delivery>.run -- --uninstall
+sudo ./dist/<delivery>.run -- --uninstall --force
+```
+
+`--help` 会显示当前支持的机器人型号。带 `startup` 的交付包会在成功安装后写入
+`/var/lib/naviai/deliveries/` 安装回执；卸载会停止/禁用服务、校验模块版本后再移除模块。
