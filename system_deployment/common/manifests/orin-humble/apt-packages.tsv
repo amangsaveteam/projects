@@ -33,3 +33,25 @@ libfmt8	8.0.1	fmt runtime required by libfmt-dev on Jammy
 catch2	2.13.8	Catch2 dependency required by libspdlog-dev on Jammy
 network-manager	1.36.6	Host WiFi management runtime
 python3-pip	22.0.2	Offline robot Python wheel installer
+
+# Keep an already-deployed Jammy robot coherent when this carrier updates a
+# base runtime library.  These are the reverse dependencies reported by APT
+# on the field-image baseline.  Listing them makes APT fetch their current
+# matching versions too, rather than leaving an older package pinned to a
+# previous libcurl/GCC/PAM/system-library version.
+cpp-12	12.3.0-1ubuntu1~22.04.3	Match current gcc-12-base runtime
+curl	7.81.0-1ubuntu1.27	Match current libcurl4 runtime
+gcc-12	12.3.0-1ubuntu1~22.04.3	Match current gcc-12-base runtime
+gfortran-11	11.4.0-1ubuntu1~22.04.3	Match current GCC 11 runtime
+gir1.2-polkit-1.0	0.105-33ubuntu0.1	Match current PolicyKit runtime
+ldap-utils	2.5.20+dfsg-0ubuntu0.22.04.1	Match current OpenLDAP runtime
+libasan8	12.3.0-1ubuntu1~22.04.3	Match current gcc-12-base runtime
+libc6-dbg	2.35-0ubuntu3.14	Match current glibc runtime
+libcurl4-openssl-dev	7.81.0-1ubuntu1.27	Match current libcurl4 runtime
+libgcc-12-dev	12.3.0-1ubuntu1~22.04.3	Match current gcc-12-base runtime
+libgfortran-11-dev	11.4.0-1ubuntu1~22.04.3	Match current GCC 11 runtime
+libpam-modules	1.4.0-11ubuntu2.7	Match current PAM module runtime
+libsqlite3-dev	3.37.2-2ubuntu0.7	Match current SQLite runtime
+libssl-dev	3.0.2-0ubuntu1.29	Match current OpenSSL runtime
+libtsan2	12.3.0-1ubuntu1~22.04.3	Match current gcc-12-base runtime
+libxml2-dev	2.9.13+dfsg-1ubuntu0.12	Match current libxml2 runtime
