@@ -16,6 +16,24 @@
     // },
     "modules": [
       {
+        "name": "zj-humanoid-log-l1",
+        "version": "1.0.0-0jammy",
+        "url": "local://input/zj-humanoid-log-l1_1.0.0-0jammy_arm64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "73184dcaf58047fd9ffc3827fea61a3edabf9779735f8c21b1685d7f657e3116"
+      },
+      {
+        "name": "zj-humanoid-naviai-log-compat",
+        "version": "2204+latest-0jammy.compat2",
+        "url": "local://input/zj-humanoid-naviai-log-compat_2204+latest-0jammy.compat2_arm64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": ["zj-humanoid-log-l1"],
+        "sha256": "691bc2ffd104cb1dd3a519edaca293885aa05abca62c3e0b3967121edb2830ec"
+      },
+      {
         "name": "zj-humanoid-ros-humble-chassis-msgs",
         "version": "2.0.0-0jammy",
         "url": "local://input/zj-humanoid-ros-humble-chassis-msgs_2.0.0-0jammy_arm64.deb",
