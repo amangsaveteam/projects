@@ -14,6 +14,22 @@
     //   "CHASSIS_HOST": "192.168.217.1",
     //   "CHASSIS_PORT": "8849"
     // },
+    "scripts": {
+      // The legacy package owns liblog_agent.so, which is now supplied by
+      // zj-humanoid-log-l1.  Remove it before installing the replacement;
+      // --force-depends is safe for this short transaction because the next
+      // module immediately restores the zj-humanoid-naviai-log virtual
+      // dependency through the compatibility package below.
+      "pre_install": [
+        {
+          "name": "replace-legacy-naviai-log",
+          "cmd": "if dpkg-query -W -f='${db:Status-Status}' zj-humanoid-naviai-log 2>/dev/null | grep -qx installed; then dpkg --remove --force-depends zj-humanoid-naviai-log; fi"
+        }
+      ],
+      "post_install": [],
+      "pre_uninstall": [],
+      "post_uninstall": []
+    },
     "modules": [
       {
         "name": "zj-humanoid-log-l1",

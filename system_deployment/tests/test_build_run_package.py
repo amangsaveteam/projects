@@ -158,6 +158,17 @@ class BuildRunPackageTest(unittest.TestCase):
             self.assertIn("set -u", rdk_script)
             self.assertIn("--device ORIN|PICO|RDK", launcher)
 
+    def test_chassis_delivery_removes_legacy_log_before_replacement(self) -> None:
+        manifest = ROOT / "packages/chassis/chassis-run.manifest.json"
+        with tempfile.TemporaryDirectory() as temporary:
+            output = build_run_package.build(manifest, Path(temporary))
+            with self.read_payload(output) as payload:
+                orin_script = payload.extractfile("ORIN/run.sh").read().decode("utf-8")
+            legacy_removal = "dpkg --remove --force-depends zj-humanoid-naviai-log"
+            replacement_install = "000-zj-humanoid-log-l1.deb"
+            self.assertIn(legacy_removal, orin_script)
+            self.assertLess(orin_script.index(legacy_removal), orin_script.index(replacement_install))
+
 
 if __name__ == "__main__":
     unittest.main()
