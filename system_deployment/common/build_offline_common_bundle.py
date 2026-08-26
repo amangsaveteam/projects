@@ -131,11 +131,11 @@ fi
 # ``dpkg -i`` follows glob order and can fail on Pre-Depends (for example
 # libpam-modules is encountered before libpam0g).  APT calculates the unpack
 # and configure order while --no-download guarantees that it never uses the
-# network or packages outside this carrier.  ``--fix-broken`` is essential
-# for upgrades from an earlier carrier: APT otherwise rejects an already
-# inconsistent package database before it considers the newer local payloads
-# that repair those versioned dependencies.
-apt-get -y --fix-broken --no-download --no-install-recommends install "${{payloads[@]}}"
+# network or packages outside this carrier.  Do not use ``--fix-broken`` here:
+# repairing Ubuntu base packages is intentionally outside the scope of this
+# middleware carrier and must never be triggered as a side effect of a common
+# dependency install.
+apt-get -y --no-download --no-install-recommends install "${{payloads[@]}}"
 '''
     for alias in aliases:
         alias_path = configured_path(alias, description="installer alias").name

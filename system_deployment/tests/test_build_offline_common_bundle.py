@@ -29,7 +29,8 @@ class OfflineClosureDownloadTest(unittest.TestCase):
 
             script = (staging / "usr/sbin/install_common_deps.sh").read_text(encoding="utf-8")
 
-        self.assertIn("apt-get -y --fix-broken --no-download --no-install-recommends install", script)
+        self.assertIn("apt-get -y --no-download --no-install-recommends install", script)
+        self.assertNotIn("apt-get -y --fix-broken", script)
         self.assertNotIn('dpkg -i "${payloads[@]}"', script)
 
     def test_uses_empty_apt_status_and_keeps_transitive_payloads(self) -> None:
