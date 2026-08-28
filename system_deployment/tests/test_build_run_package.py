@@ -47,6 +47,11 @@ class BuildRunPackageTest(unittest.TestCase):
         data = package.read_bytes()
         return tarfile.open(fileobj=io.BytesIO(data[len(build_run_package.run_header()):]), mode="r:gz")
 
+    def test_ubuntu_delivery_target(self) -> None:
+        target = build_run_package.platform_delivery_target("ORIN", "ubuntu-22.04")
+        self.assertEqual(target["os"], "ubuntu")
+        self.assertEqual(target["os_version"], "22.04")
+
     def test_builds_platform_specific_payload_and_scripts(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
@@ -153,7 +158,8 @@ class BuildRunPackageTest(unittest.TestCase):
             self.assertIn("ROS_OS_OVERRIDE", rdk_script)
             self.assertIn("export CHASSIS_TYPE=wa2", rdk_script)
             self.assertIn("/etc/naviai/rdk-runtime/navi-rdk-runtime-start.sh", rdk_script)
-            self.assertIn("systemctl enable --now navi-rdk-runtime.service", rdk_script)
+            self.assertIn("systemctl enable navi-rdk-runtime.service", rdk_script)
+            self.assertIn("systemctl restart navi-rdk-runtime.service", rdk_script)
             self.assertIn("_middleware_restore_nounset=1; set +u", rdk_script)
             self.assertIn("set -u", rdk_script)
             self.assertIn("--device ORIN|PICO|RDK", launcher)
@@ -164,10 +170,15 @@ class BuildRunPackageTest(unittest.TestCase):
             output = build_run_package.build(manifest, Path(temporary))
             with self.read_payload(output) as payload:
                 orin_script = payload.extractfile("ORIN/run.sh").read().decode("utf-8")
+                startup_script = payload.extractfile("ORIN/startup/navi-orin-chassis-start.sh").read().decode("utf-8")
             legacy_removal = "dpkg --remove --force-depends zj-humanoid-naviai-log"
+            chassis_removal = "dpkg --remove --force-depends ros-humble-chassis"
             replacement_install = "000-zj-humanoid-log-l1.deb"
             self.assertIn(legacy_removal, orin_script)
+            self.assertIn(chassis_removal, orin_script)
             self.assertLess(orin_script.index(legacy_removal), orin_script.index(replacement_install))
+            self.assertLess(orin_script.index(chassis_removal), orin_script.index(replacement_install))
+            self.assertIn("ros2 launch chassis chassis.launch.py namespace:=zj_humanoid", startup_script)
 
 
 if __name__ == "__main__":

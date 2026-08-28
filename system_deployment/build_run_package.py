@@ -388,7 +388,9 @@ def platform_delivery_target(platform: str, sys_env_version: str) -> Dict[str, s
         return {"arch": "amd64", "os": "ubuntu", "os_version": "20.04", "ros_distro": ros_distro}
     if platform == "RDK":
         return {"arch": "arm64", "os": "rdk", "os_version": "V5.1.0", "ros_distro": "jazzy"}
-    return {"arch": "arm64", "os": "ubuntu", "os_version": sys_env_version.removeprefix("ubuntu-") or "unknown", "ros_distro": ros_distro}
+    ubuntu_prefix = "ubuntu-"
+    os_version = sys_env_version[len(ubuntu_prefix):] if sys_env_version.startswith(ubuntu_prefix) else sys_env_version
+    return {"arch": "arm64", "os": "ubuntu", "os_version": os_version or "unknown", "ros_distro": ros_distro}
 
 
 def yaml_quote(value: str) -> str:
@@ -702,7 +704,13 @@ def render_device_script(build: Dict[str, str], device: Dict[str, Any]) -> str:
             "    systemctl daemon-reload",
         ])
         if startup["start_on_install"]:
-            lines.append("    systemctl enable --now {}.service".format(shlex.quote(startup["name"])))
+            # ``enable --now`` leaves an already-active unit untouched.  The
+            # run package may just have replaced its start script, so restart
+            # it to ensure the deployed command takes effect on upgrades too.
+            lines.extend([
+                "    systemctl enable {}.service".format(shlex.quote(startup["name"])),
+                "    systemctl restart {}.service".format(shlex.quote(startup["name"])),
+            ])
     lines.extend([
         '    mkdir -p "$(dirname \"$receipt_path\")"',
         '    receipt_tmp=$(mktemp "$(dirname \"$receipt_path\")/.receipt.XXXXXX")',
