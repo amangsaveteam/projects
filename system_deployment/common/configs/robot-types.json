@@ -18,10 +18,15 @@
     "WA1-D": {"compose_profile": "wa1"},
     "WA1-E": {"compose_profile": "wa1"},
     "WA2_LS": {"compose_profile": "wa2"},
+    "WA2_TY20": {"compose_profile": "wa2"},
+    "WA2": {"compose_profile": "wa2"},
+    "WA2_L": {"compose_profile": "wa2"},
     "WA2-S": {"compose_profile": "wa2"},
     "WA2-P": {"compose_profile": "wa2"},
     "WA2-D": {"compose_profile": "wa2"},
     "ZYD": {"compose_profile": "zyd"},
-    "JK": {"compose_profile": "zyd"}
+    "ZYD_V1": {"compose_profile": "zyd"},
+    "JK": {"compose_profile": "zyd"},
+    "JK2_V1": {"compose_profile": "zyd"}
   }
 }

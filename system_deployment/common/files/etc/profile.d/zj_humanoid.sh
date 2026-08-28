@@ -97,7 +97,7 @@ export ROBOT_NAME="${ROBOT_NAME:-}"
 export ZJ_VERSION="${ZJ_VERSION:-}"
 
 case "${ROBOT_TYPE}" in
-    H1|U1|U2_WA1|I2|WA1|WA1_400L|WA1_400K|WA2_LS|I2-S|I2-D|I2-E|I3-S|WA1-S|WA1-D|WA1-E|WA2-S|WA2-P|WA2-D|U2-S|U2-D|ZYD|JK)
+    H1|U1|U2_WA1|I2|WA1|WA1_400L|WA1_400K|WA2_LS|WA2_TY20|WA2|WA2_L|I2-S|I2-D|I2-E|I3-S|WA1-S|WA1-D|WA1-E|WA2-S|WA2-P|WA2-D|U2-S|U2-D|ZYD|ZYD_V1|JK|JK2_V1)
         export ZJ_ROBOT_TYPE_CONFIGURED=1
         ;;
     *)
@@ -156,8 +156,8 @@ if [[ "${ZJ_DEVICE}" == "ORIN" || "${ZJ_DEVICE}" == "RDK" ]]; then
     if [[ -z "${COMPOSE_PROFILES:-}" ]]; then
         case "${ROBOT_TYPE}" in
             WA1|WA1_400K|WA1_400L|WA1-S|WA1-D|WA1-E) export COMPOSE_PROFILES="wa1" ;;
-            WA2_LS|WA2-S|WA2-P|WA2-D) export COMPOSE_PROFILES="wa2" ;;
-            ZYD|JK) export COMPOSE_PROFILES="zyd" ;;
+            WA2_LS|WA2_TY20|WA2|WA2_L|WA2-S|WA2-P|WA2-D) export COMPOSE_PROFILES="wa2" ;;
+            ZYD|ZYD_V1|JK|JK2_V1) export COMPOSE_PROFILES="zyd" ;;
             H1|U1|U2_WA1|U2-S|U2-D) export COMPOSE_PROFILES="h1" ;;
             I2|I2-S|I2-D|I2-E) export COMPOSE_PROFILES="rx" ;;
             I3-S) export COMPOSE_PROFILES="i3" ;;

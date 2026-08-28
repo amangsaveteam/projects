@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "id": "pico-upperlimb-common",
+  "package_name": "navi-pico-upperlimb-common-dep",
+  "release_version": "2.0.0~humble+1",
+  "device_config_target": "pico-humble",
+  "description": "Pico upperlimb offline runtime dependency bootstrap",
+  "target": {
+    "os_id": "ubuntu",
+    "os_version": "20.04",
+    "architecture": "amd64",
+    "machine": "x86_64",
+    "required_files": [],
+    "require_non_root": true
+  },
+  "manifest": "packages/upperlimb/common/apt-packages.tsv",
+  "output_dir": "../dist/common/pico/upperlimb",
+  "artifact_filename": "navi_pico_upperlimb_common_dep-2.0.0-release-humble-amd64.deb",
+  "deb_depends": [
+    "navi-pico-common-dep (>= 2.0.0)",
+    "bash (>= 5.0)",
+    "coreutils (>= 8.30)",
+    "dpkg (>= 1.19)",
+    "apt (>= 2.0)"
+  ],
+  "parent_packages": ["navi-pico-common-dep"],
+  "installer_aliases": ["install_pico_upperlimb_common_deps.sh"],
+  "exact_packages": [],
+  "vendor_debs": [],
+  "extra_files": [
+    {
+      "source": "common/deploy_common.py",
+      "destination": "usr/lib/navi-pico-upperlimb-common-dep/deploy_common.py",
+      "mode": "0755"
+    },
+    {
+      "source": "common/configs/targets.json",
+      "destination": "usr/lib/navi-pico-upperlimb-common-dep/configs/targets.json",
+      "mode": "0644"
+    },
+    {
+      "source": "common/configs/robot-types.json",
+      "destination": "usr/lib/navi-pico-upperlimb-common-dep/configs/robot-types.json",
+      "mode": "0644"
+    },
+    {
+      "source": "packages/upperlimb/common/README.md",
+      "destination": "usr/share/doc/navi-pico-upperlimb-common-dep/USAGE.md",
+      "mode": "0644"
+    }
+  ]
+}

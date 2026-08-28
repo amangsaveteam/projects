@@ -1,0 +1,87 @@
+{
+  // Pico Ubuntu 20.04 / ROS 2 Humble upperlimb deployment.
+  "version": "2.0.0",
+  "branch_name": "upperlimb-pico",
+  "commit_id": "df1a4f0f",
+  "output_name": "navi_pico_upperlimb_installer-2.0.0-release-humble-amd64",
+  "PICO": {
+    "sys_env_version": "ubuntu-20.04",
+    "modules": [
+      {
+        "name": "zj-humanoid-logging",
+        "version": "0.1.0focal",
+        "url": "local://input/zj-humanoid-logging_0.1.0focal_amd64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "7dec1c2795e4d2c784896a9cdab3a712a4163817bc4b511facf9ba33b942b3c7"
+      },
+      {
+        "name": "zj-humanoid-rtipc-runtime",
+        "version": "1.4.2focal",
+        "url": "local://input/zj-humanoid-rtipc-runtime_1.4.2focal_amd64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "ff6653f8725bcb38a3e569bf7daedd4e67da4981ce66f10ff6b979cdef5b2135"
+      },
+      {
+        "name": "zj-humanoid-uplimb-runtime",
+        "version": "1.4.0focal",
+        "url": "local://input/zj-humanoid-uplimb-runtime_1.4.0focal_amd64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "e68575ab2928eb3f2fceed8ec29a950f83179dd0f8f9419347a75ce860cb034a"
+      },
+      {
+        "name": "zj-humanoid-ros-humble-upperlimb-msgs",
+        "version": "2.0.0-devv2.0.1+502-df1a4f0focal",
+        "url": "local://input/zj-humanoid-ros-humble-upperlimb-msgs_2.0.0-devv2.0.1+502-df1a4f0focal_amd64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "bb007ef8e6a00d5d26f1e9e58b58454c6ccca52e9454037c989dfc1025f3e2de"
+      },
+      {
+        "name": "zj-humanoid-ros-humble-uplimb-interface",
+        "version": "2.0.1-devv2.0.1+502-df1a4f0focal",
+        "url": "local://input/zj-humanoid-ros-humble-uplimb-interface_2.0.1-devv2.0.1+502-df1a4f0focal_amd64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [
+          "zj-humanoid-logging",
+          "zj-humanoid-rtipc-runtime",
+          "zj-humanoid-uplimb-runtime",
+          "zj-humanoid-ros-humble-upperlimb-msgs"
+        ],
+        "sha256": "8853f014c618a64af86319e3269204fdf48203caa6d7f75c162cb850a70fb2fa"
+      }
+    ],
+    "resource": [
+      {
+        "local_path": "resources/upperlimb-launch.sh",
+        "device_path": "/etc/nav01/upperlimb/upperlimb-launch.sh"
+      }
+    ],
+    "scripts": {
+      "pre_install": [
+        {
+          "name": "require-upperlimb-common-dependencies",
+          "cmd": "for package in navi-pico-upperlimb-common-dep libzmq5 libhdf5-cpp-103 libhdf5-103; do dpkg-query -W -f='${db:Status-Status}' \"$package\" 2>/dev/null | grep -qx installed || { echo \"ERROR: install Pico upperlimb common dependencies first: $package\" >&2; exit 1; }; done"
+        }
+      ],
+      "post_install": [],
+      "pre_uninstall": [],
+      "post_uninstall": []
+    },
+    "startup": {
+      "name": "navi-pico-upperlimb",
+      "description": "Navi Pico ROS 2 upperlimb node",
+      "command": "/bin/bash /etc/nav01/upperlimb/upperlimb-launch.sh",
+      "script_directory": "/etc/nav01/upperlimb",
+      "restart": "on-failure",
+      "start_on_install": true
+    }
+  }
+}

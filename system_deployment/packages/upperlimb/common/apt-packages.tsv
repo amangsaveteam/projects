@@ -1,0 +1,9 @@
+# package<TAB>minimum-version<TAB>purpose
+#
+# Device: Pico, Ubuntu 20.04 (Focal), amd64, ROS 2 Humble.
+# The carrier builder resolves and embeds the complete APT dependency closure
+# from an empty status database, so indirect dependencies are also available
+# to the offline installer.
+libzmq5	0	ZeroMQ runtime required by uplimb_interface
+libhdf5-cpp-103	0	HDF5 C++ runtime required by libuplimb_app.so
+libhdf5-103	0	HDF5 serial runtime required by libuplimb_app.so
