@@ -25,6 +25,14 @@
       "architecture": "amd64",
       "artifact": "navi_pico_common_dep-2.0.0-release-humble-amd64.deb"
     },
+    "pico-jazzy": {
+      "build_config": "pico-jazzy-common",
+      "device": "PICO",
+      "os_version": "24.04",
+      "ros_distro": "jazzy",
+      "architecture": "amd64",
+      "artifact": "navi_pico_common_dep-2.0.0-release-jazzy-amd64.deb"
+    },
     "rdk-jazzy": {
       "build_config": "rdk-common",
       "device": "RDK",

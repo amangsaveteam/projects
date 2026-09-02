@@ -1,0 +1,68 @@
+{
+  // Orin Ubuntu 24.04 / ROS 2 Jazzy chassis deployment.
+  "version": "2.0.0",
+  "branch_name": "external-chassis",
+  "commit_id": "0noble",
+  "output_name": "navi_chassis_orin_installer-2.0.0-release-jazzy-arm64",
+  "ORIN": {
+    "sys_env_version": "ubuntu-24.04",
+    "scripts": {
+      // A Jazzy delivery supersedes a previously installed Humble chassis
+      // node.  The messages package can coexist under /opt/ros/humble, but
+      // the old node must not remain available after this installation.
+      "pre_install": [
+        {
+          "name": "remove-legacy-ros-humble-chassis",
+          "cmd": "if dpkg-query -W -f='${db:Status-Status}' ros-humble-chassis 2>/dev/null | grep -qx installed; then dpkg --remove --force-depends ros-humble-chassis; fi"
+        },
+        {
+          "name": "remove-legacy-zj-humanoid-ros-humble-chassis",
+          "cmd": "if dpkg-query -W -f='${db:Status-Status}' zj-humanoid-ros-humble-chassis 2>/dev/null | grep -qx installed; then dpkg --remove --force-depends zj-humanoid-ros-humble-chassis; fi"
+        }
+      ],
+      "post_install": [],
+      "pre_uninstall": [],
+      "post_uninstall": []
+    },
+    "modules": [
+      {
+        "name": "zj-humanoid-naviai-log",
+        "version": "2404+latest-0noble",
+        "url": "local://zj_humanoid-naviai-log_2404+latest-0noble_arm64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "d3e125d39e861bbd182e07900033bc6db9cd56ca95241ba929dc49be4eb2b762"
+      },
+      {
+        "name": "zj-humanoid-ros-jazzy-chassis-msgs",
+        "version": "2.0.0-0noble",
+        "url": "local://zj-humanoid-ros-jazzy-chassis-msgs_2.0.0-0noble_arm64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "1305275a0c909916510489c94916b1c4f44f7285ccbcaf0ecf788eed2609c2b9"
+      },
+      {
+        "name": "zj-humanoid-ros-jazzy-chassis",
+        "version": "2.0.0-0noble",
+        "url": "local://zj-humanoid-ros-jazzy-chassis_2.0.0-0noble_arm64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [
+          "zj-humanoid-naviai-log",
+          "zj-humanoid-ros-jazzy-chassis-msgs"
+        ],
+        "sha256": "6e4a7c6f038afd5b8a97c91774b1339457ccecffc5aadb203659298fb4fbbd62"
+      }
+    ],
+    "startup": {
+      "name": "navi-orin-chassis",
+      "description": "Navi Orin ROS 2 Jazzy chassis node",
+      "command": "ros2 launch chassis chassis.launch.py namespace:=zj_humanoid",
+      "script_directory": "/etc/naviai/chassis",
+      "restart": "on-failure",
+      "start_on_install": true
+    }
+  }
+}

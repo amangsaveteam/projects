@@ -52,6 +52,23 @@ class BuildRunPackageTest(unittest.TestCase):
         self.assertEqual(target["os"], "ubuntu")
         self.assertEqual(target["os_version"], "22.04")
 
+    def test_pico_jazzy_delivery_target_and_environment(self) -> None:
+        target = build_run_package.platform_delivery_target("PICO", "ubuntu-24.04")
+        self.assertEqual(target, {"arch": "amd64", "os": "ubuntu", "os_version": "24.04", "ros_distro": "jazzy"})
+        lines = build_run_package.environment_lines(
+            {"version": "v1", "build_time": "2026-08-31", "branch_name": "test", "commit_id": "abcdef"},
+            {
+                "platform": "PICO",
+                "sys_env_version": "ubuntu-24.04",
+                "modules": [],
+                "environment": {},
+                "build_time": "2026-08-31",
+                "branch_name": "test",
+                "commit_id": "abcdef",
+            },
+        )
+        self.assertIn('export MIDDLEWARE_ROS_DISTRO="jazzy"', lines)
+
     def test_builds_platform_specific_payload_and_scripts(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)

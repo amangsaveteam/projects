@@ -13,7 +13,7 @@ from typing import List, Optional
 
 COMMON_DIR = Path(__file__).resolve().parent
 DEPLOYMENT_ROOT = COMMON_DIR.parent
-GLOBAL_CONFIGS = frozenset({"orin-common", "orin-common-humble", "pico-common", "rdk-common"})
+GLOBAL_CONFIGS = frozenset({"orin-common", "orin-common-humble", "pico-common", "pico-jazzy-common", "rdk-common"})
 
 
 def selected_config(arguments: List[str]) -> Optional[str]:

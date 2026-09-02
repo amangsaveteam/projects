@@ -1,0 +1,86 @@
+{
+  // Pico Ubuntu 24.04 / ROS 2 Jazzy upperlimb deployment.
+  "version": "2.0.0",
+  "branch_name": "upperlimb-pico",
+  "commit_id": "6eb063f",
+  "output_name": "navi_pico_upperlimb_installer-2.0.0-release-jazzy-amd64",
+  "PICO": {
+    "sys_env_version": "ubuntu-24.04",
+    "resource": [
+      {
+        "local_path": "upperlimb-launch.sh",
+        "device_path": "/etc/nav01/upperlimb/upperlimb-launch.sh"
+      },
+      {
+        "local_path": "cyclonedds.xml",
+        "device_path": "/etc/nav01/upperlimb/cyclonedds.xml"
+      }
+    ],
+    "modules": [
+      {
+        "name": "zj-humanoid-logging",
+        "version": "0.1.0focal",
+        "url": "local://zj-humanoid-logging_0.1.0focal_amd64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "7dec1c2795e4d2c784896a9cdab3a712a4163817bc4b511facf9ba33b942b3c7"
+      },
+      {
+        "name": "zj-humanoid-rtipc-runtime",
+        "version": "1.4.2focal",
+        "url": "local://zj-humanoid-rtipc-runtime_1.4.2focal_amd64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "ff6653f8725bcb38a3e569bf7daedd4e67da4981ce66f10ff6b979cdef5b2135"
+      },
+      {
+        "name": "zj-humanoid-uplimb-runtime",
+        "version": "1.4.0focal",
+        "url": "local://zj-humanoid-uplimb-runtime_1.4.0focal_amd64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "e68575ab2928eb3f2fceed8ec29a950f83179dd0f8f9419347a75ce860cb034a"
+      },
+      {
+        "name": "zj-humanoid-ros-jazzy-upperlimb-msgs",
+        "version": "2.0.0-devv2.0.1+504-6eb063fnoble",
+        "url": "local://zj-humanoid-ros-jazzy-upperlimb-msgs_2.0.0-devv2.0.1+504-6eb063fnoble_amd64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [],
+        "sha256": "0707010befe6ab67bccb60b9a9c1630aa75961af7f7eae19d63d3363a7812d23"
+      },
+      {
+        "name": "zj-humanoid-ros-jazzy-uplimb-interface",
+        "version": "2.0.1-devv2.0.1+504-6eb063fnoble",
+        "url": "local://zj-humanoid-ros-jazzy-uplimb-interface_2.0.1-devv2.0.1+504-6eb063fnoble_amd64.deb",
+        "image": "",
+        "dst": "deb",
+        "dependencies": [
+          "zj-humanoid-logging",
+          "zj-humanoid-rtipc-runtime",
+          "zj-humanoid-uplimb-runtime",
+          "zj-humanoid-ros-jazzy-upperlimb-msgs"
+        ],
+        "sha256": "f46dae7920b308ac6e3c8d98fa670e8990c714f0f65e03eb37af00ea1dd4201a"
+      }
+    ],
+    "scripts": {
+      "pre_install": [],
+      "post_install": [],
+      "pre_uninstall": [],
+      "post_uninstall": []
+    },
+    "startup": {
+      "name": "navi-pico-upperlimb",
+      "description": "Navi Pico ROS 2 Jazzy upperlimb node",
+      "command": "/bin/bash /etc/nav01/upperlimb/upperlimb-launch.sh",
+      "script_directory": "/etc/nav01/upperlimb",
+      "restart": "on-failure",
+      "start_on_install": true
+    }
+  }
+}

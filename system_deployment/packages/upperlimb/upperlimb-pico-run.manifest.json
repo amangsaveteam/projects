@@ -62,6 +62,42 @@
       {
         "local_path": "resources/upperlimb-launch.sh",
         "device_path": "/etc/nav01/upperlimb/upperlimb-launch.sh"
+      },
+      {
+        "local_path": "resources/hardware/h1-u1/hardware_body.yaml",
+        "device_path": "/etc/nav01/upperlimb/hardware/h1-u1/hardware_body.yaml"
+      },
+      {
+        "local_path": "resources/hardware/i2/hardware_body.yaml",
+        "device_path": "/etc/nav01/upperlimb/hardware/i2/hardware_body.yaml"
+      },
+      {
+        "local_path": "resources/hardware/i4/hardware_body.yaml",
+        "device_path": "/etc/nav01/upperlimb/hardware/i4/hardware_body.yaml"
+      },
+      {
+        "local_path": "resources/hardware/jccp/hardware_body.yaml",
+        "device_path": "/etc/nav01/upperlimb/hardware/jccp/hardware_body.yaml"
+      },
+      {
+        "local_path": "resources/hardware/wa1/hardware_body.yaml",
+        "device_path": "/etc/nav01/upperlimb/hardware/wa1/hardware_body.yaml"
+      },
+      {
+        "local_path": "resources/hardware/wa2/hardware_body.yaml",
+        "device_path": "/etc/nav01/upperlimb/hardware/wa2/hardware_body.yaml"
+      },
+      {
+        "local_path": "resources/hardware/wa2_ls/hardware_body.yaml",
+        "device_path": "/etc/nav01/upperlimb/hardware/wa2_ls/hardware_body.yaml"
+      },
+      {
+        "local_path": "resources/hardware/wa2_ty20/hardware_body.yaml",
+        "device_path": "/etc/nav01/upperlimb/hardware/wa2_ty20/hardware_body.yaml"
+      },
+      {
+        "local_path": "resources/hardware/zyd/hardware_body.yaml",
+        "device_path": "/etc/nav01/upperlimb/hardware/zyd/hardware_body.yaml"
       }
     ],
     "scripts": {
@@ -71,7 +107,12 @@
           "cmd": "for package in navi-pico-upperlimb-common-dep libzmq5 libhdf5-cpp-103 libhdf5-103; do dpkg-query -W -f='${db:Status-Status}' \"$package\" 2>/dev/null | grep -qx installed || { echo \"ERROR: install Pico upperlimb common dependencies first: $package\" >&2; exit 1; }; done"
         }
       ],
-      "post_install": [],
+      "post_install": [
+        {
+          "name": "configure-upperlimb-hardware-body",
+          "path": "scripts/configure_pico_upperlimb_hardware.sh"
+        }
+      ],
       "pre_uninstall": [],
       "post_uninstall": []
     },

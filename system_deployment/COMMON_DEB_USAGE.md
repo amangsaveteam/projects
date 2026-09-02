@@ -9,6 +9,7 @@
 | Orin Ubuntu 24.04 / ROS 2 Jazzy / arm64 | `navi_common_dep-2.0.0-release-jazzy-arm64.deb` | `navi-common-dep` | `/usr/sbin/install_common_deps.sh` |
 | Orin Ubuntu 22.04 / ROS 2 Humble / arm64 | `navi_common_dep-2.0.0-release-humble-arm64.deb` | `navi-common-dep` | `/usr/sbin/install_common_deps.sh` |
 | Pico Ubuntu 20.04 / ROS 2 Humble / amd64 | `navi_pico_common_dep-2.0.0-release-humble-amd64.deb` | `navi-pico-common-dep` | `/usr/sbin/install_pico_common_deps.sh` |
+| Pico Ubuntu 24.04 / ROS 2 Jazzy / amd64 | `navi_pico_common_dep-2.0.0-release-jazzy-amd64.deb` | `navi-pico-common-dep` | `/usr/sbin/configure_pico_jazzy_environment.sh`（不安装依赖） |
 | RDK OS V5.1.0 / ROS 2 Jazzy / arm64 | `navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb` | `navi-rdk-common-dep` | `/usr/sbin/install_rdk_common_deps.sh` |
 
 只能在表中对应的设备、系统版本和 CPU 架构上安装。安装前可检查 deb 信息：
@@ -74,7 +75,24 @@ sudo /usr/sbin/install_pico_common_deps.sh
 Pico 已有有效机型配置时同样可跳过 `configure`。首次配置只要求 `--robot-type`；
 `ROBOT_NAME` 和 `ZJ_VERSION` 可选。
 
-## 4. 安装 RDK Jazzy 包
+## 4. 安装 Pico Jazzy 环境包
+
+此版本只安装设备配置、`Middleware.env`、profile 和 Cyclone DDS 配置；不包含、下载或安装
+Pinocchio、TinyXML2 等三方依赖。确认 Pico 环境后，再单独确定可用的 Noble/Jazzy 依赖方案。
+
+```bash
+sudo dpkg -i /tmp/navi_pico_common_dep-2.0.0-release-jazzy-amd64.deb
+
+# 仅首次配置、机型变更或修复配置时执行：
+sudo python3 /usr/lib/navi-pico-common-dep/deploy_common.py configure \
+  --target pico-jazzy \
+  --robot-type U2-D
+
+# 仅校验配置并确认环境包；不会安装任何依赖。
+sudo /usr/sbin/configure_pico_jazzy_environment.sh
+```
+
+## 5. 安装 RDK Jazzy 包
 
 ```bash
 sudo dpkg -i /tmp/navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb
@@ -95,7 +113,7 @@ source /etc/naviai/Middleware.env
 该文件会加载 Jazzy，并导出 `ROSDEP_OS_OVERRIDE=ubuntu:noble` 与
 `ROS_OS_OVERRIDE=ubuntu:noble:noble`。RDK Sensor 功能依赖不在该基础 carrier 中。
 
-## 5. 机器人型号
+## 6. 机器人型号
 
 支持的 `ROBOT_TYPE`：
 
@@ -114,7 +132,7 @@ Orin 与 RDK 会根据机型自动设置 `COMPOSE_PROFILES`，例如 `I3-S → i
 配置保存在 `/etc/zj_humanoid/device.env`。修改机型时再次执行对应的 `configure` 命令即可；
 不需要重新安装 deb。
 
-## 6. 环境自动加载与验证
+## 7. 环境自动加载与验证
 
 安装后，新开启的交互式 Bash 会自动加载环境。当前已经打开的终端不能被安装程序直接修改，
 请执行：
@@ -133,10 +151,10 @@ printf 'device=%s distro=%s type=%s version=%s compose=%s\n' \
 ros2 topic list
 ```
 
-预期：Orin 24.04 与 RDK OS V5.1.0 为 `ZJ_ROS_DISTRO=jazzy`；Orin 22.04 与 Pico
-20.04 为 `ZJ_ROS_DISTRO=humble`。
+预期：Orin 24.04、Pico 24.04 与 RDK OS V5.1.0 为 `ZJ_ROS_DISTRO=jazzy`；Orin 22.04
+与 Pico 20.04 为 `ZJ_ROS_DISTRO=humble`。
 
-## 7. CycloneDDS 网络配置
+## 8. CycloneDDS 网络配置
 
 包会安装 `/etc/zj_humanoid/cyclonedds.xml`，默认使用 `192.168.217.0/24` 网段并允许
 SPDP 组播。环境变量自动设置为：
@@ -162,7 +180,7 @@ CYCLONEDDS_URI=file:///path/to/site-cyclonedds.xml
 
 指定的文件必须存在；否则 profile 会告警并回退到包内默认 XML。
 
-## 8. 常见问题
+## 9. 常见问题
 
 | 现象 | 处理 |
 | --- | --- |
@@ -171,7 +189,7 @@ CYCLONEDDS_URI=file:///path/to/site-cyclonedds.xml
 | `ros2 topic list` 找不到接口 | 检查机器人网卡是否已连接并拥有 `192.168.217.x/24` 地址。 |
 | 机型需变更 | 再次执行 `configure` 命令；无需重新安装 deb。 |
 
-## 9. 已安装文件与完整性信息
+## 10. 已安装文件与完整性信息
 
 Orin：
 

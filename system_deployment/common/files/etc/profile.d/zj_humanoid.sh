@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Shared ZJ humanoid host environment for Pico and Orin.
-export ZJ_PROFILE_VERSION="V0.0.5"
+export ZJ_PROFILE_VERSION="V0.0.6"
 
 # Values explicitly supplied by the invoking shell have highest priority.
 _MANUAL_ZJ_DEVICE="${ZJ_DEVICE:-}"
@@ -9,9 +9,10 @@ _MANUAL_ROBOT_TYPE="${ROBOT_TYPE:-}"
 _MANUAL_ROBOT_NAME="${ROBOT_NAME:-}"
 _MANUAL_ZJ_VERSION="${ZJ_VERSION:-}"
 _MANUAL_ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-}"
+_ZJ_LEGACY_PICO_CYCLONEDDS_URI="file:///etc/ros/cyclonedds/pico-cyclonedds.xml"
 # A URI written by an earlier profile run is not a user override. This avoids
 # treating an old automatic default as an explicit value when the file vanished.
-if [[ "${ZJ_PROFILE_MANAGED_CYCLONEDDS_URI:-0}" == "1" ]]; then
+if [[ "${ZJ_PROFILE_MANAGED_CYCLONEDDS_URI:-0}" == "1" || "${CYCLONEDDS_URI:-}" == "${_ZJ_LEGACY_PICO_CYCLONEDDS_URI}" ]]; then
     _MANUAL_CYCLONEDDS_URI=""
 else
     _MANUAL_CYCLONEDDS_URI="${CYCLONEDDS_URI:-}"
@@ -71,6 +72,12 @@ load_device_config() {
 }
 
 load_device_config
+# Older Pico images exported this path from their login profile.  Do not
+# preserve it as a manual override: Pico common now owns the shared DDS file
+# at /etc/zj_humanoid/cyclonedds.xml.
+if [[ "${CYCLONEDDS_URI:-}" == "${_ZJ_LEGACY_PICO_CYCLONEDDS_URI}" ]]; then
+    unset CYCLONEDDS_URI
+fi
 export ZJ_DEVICE="${ZJ_DEVICE:-${_ZJ_DETECTED_DEVICE}}"
 [[ -n "${_MANUAL_ZJ_DEVICE}" ]] && export ZJ_DEVICE="${_MANUAL_ZJ_DEVICE}"
 [[ -n "${_MANUAL_ROBOT_TYPE}" ]] && export ROBOT_TYPE="${_MANUAL_ROBOT_TYPE}"
@@ -114,8 +121,29 @@ if [[ "${ZJ_PROFILE_ENV_ONLY:-0}" == "1" ]]; then
 fi
 
 if [[ "${ZJ_DEVICE}" == "PICO" ]]; then
-    export ZJ_ROS_DISTRO="humble"
-    [[ -f /opt/ros/humble/setup.bash ]] && source /opt/ros/humble/setup.bash
+    _ZJ_PICO_OS_VERSION=""
+    if [[ -r /etc/os-release ]]; then
+        source /etc/os-release
+        _ZJ_PICO_OS_VERSION="${VERSION_ID:-}"
+    fi
+    case "${_ZJ_PICO_OS_VERSION}" in
+        20.04) export ZJ_ROS_DISTRO="humble" ;;
+        24.04) export ZJ_ROS_DISTRO="jazzy" ;;
+        *)
+            export ZJ_ROS_DISTRO=""
+            echo "Navi environment: unsupported Pico Ubuntu version ${_ZJ_PICO_OS_VERSION:-unknown}; ROS setup was not loaded." >&2
+            ;;
+    esac
+    # Load the common carrier environment for every Pico login shell.  That
+    # provides the same ROS/DDS setup used by installed module services.
+    # Middleware.env sources this profile only with ZJ_PROFILE_ENV_ONLY=1,
+    # so this does not recurse.
+    if [[ -r /etc/nav01/Middleware.env ]]; then
+        source /etc/nav01/Middleware.env
+    elif [[ -n "${ZJ_ROS_DISTRO}" && -f "/opt/ros/${ZJ_ROS_DISTRO}/setup.bash" ]]; then
+        source "/opt/ros/${ZJ_ROS_DISTRO}/setup.bash"
+    fi
+    unset _ZJ_PICO_OS_VERSION
     export PATH="/home/nav01/.local/bin:$PATH"
     add_path "/home/nav01/.zj_humanoid/bin"
 elif [[ "${ZJ_DEVICE}" == "RDK" ]]; then

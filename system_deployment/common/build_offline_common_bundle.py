@@ -19,7 +19,7 @@ DEPLOYMENT_ROOT = COMMON_DIR.parent
 UBUNTU_BASELINE_PRIORITIES = {"required", "important", "standard"}
 
 
-def parse_manifest(manifest_path: Path) -> list[tuple[str, str]]:
+def parse_manifest(manifest_path: Path, *, allow_empty: bool = False) -> list[tuple[str, str]]:
     packages: list[tuple[str, str]] = []
     for line_number, line in enumerate(manifest_path.read_text(encoding="utf-8").splitlines(), 1):
         if not line or line.startswith("#"):
@@ -28,7 +28,7 @@ def parse_manifest(manifest_path: Path) -> list[tuple[str, str]]:
         if len(fields) != 3:
             raise ValueError(f"{manifest_path}:{line_number}: expected three TAB-separated fields")
         packages.append((fields[0], fields[1]))
-    if not packages:
+    if not packages and not allow_empty:
         raise ValueError(f"{manifest_path}: contains no packages")
     return packages
 
@@ -99,7 +99,7 @@ def copy_extra_files(staging: Path, config: dict[str, object]) -> None:
         (staging / "DEBIAN/conffiles").write_text("".join(f"{entry}\n" for entry in conffiles), encoding="utf-8")
 
 
-def write_installer(staging: Path, package_name: str, aliases: list[str], device_config_target: str) -> None:
+def write_installer(staging: Path, package_name: str, aliases: list[str], device_config_target: str, *, environment_only: bool = False) -> None:
     payload_directory = f"/usr/lib/{package_name}/payload"
     config_tool = f"/usr/lib/{package_name}/deploy_common.py"
     script = f'''#!/bin/bash
@@ -111,11 +111,17 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 if ! python3 {config_tool} validate-config --target {device_config_target}; then
-    echo "ROBOT_TYPE must be configured before installing common payloads." >&2
+    echo "ROBOT_TYPE must be configured before using this common carrier." >&2
     echo "Run: sudo python3 {config_tool} configure --target {device_config_target} --robot-type <model>" >&2
     exit 2
 fi
-
+'''
+    if environment_only:
+        script += '''echo "Environment-only carrier: device configuration and ROS environment are ready; no dependency payloads were installed."
+    exit 0
+'''
+    else:
+        script += f'''
 shopt -s nullglob
 payloads=({payload_directory}/*.deb)
 if (( ${{#payloads[@]}} == 0 )); then
@@ -127,6 +133,29 @@ if [[ -f {payload_directory}/payloads.sha256 ]]; then
     (cd {payload_directory} && sha256sum -c payloads.sha256)
 fi
 
+declare -a required_payloads=()
+for payload in "${{payloads[@]}}"; do
+    package_name="$(dpkg-deb -f "$payload" Package)"
+    payload_version="$(dpkg-deb -f "$payload" Version)"
+    installed_status="$(dpkg-query -W -f='${{db:Status-Status}}' "$package_name" 2>/dev/null || true)"
+    installed_version="$(dpkg-query -W -f='${{Version}}' "$package_name" 2>/dev/null || true)"
+
+    # A carrier must never downgrade a dependency already provided by the
+    # robot image.  Only pass an archive to APT when its package is absent or
+    # its installed version is older than the archive being carried.
+    if [[ "$installed_status" == "installed" ]] && dpkg --compare-versions "$installed_version" ge "$payload_version"; then
+        echo "Keeping $package_name $installed_version (carrier provides $payload_version)"
+    else
+        echo "Installing $package_name $payload_version"
+        required_payloads+=("$payload")
+    fi
+done
+
+if (( ${{#required_payloads[@]}} == 0 )); then
+    echo "All common dependency payloads are already installed at the required version or newer."
+    exit 0
+fi
+
 # Hand every bundled .deb to APT as an offline candidate set.  A plain
 # ``dpkg -i`` follows glob order and can fail on Pre-Depends (for example
 # libpam-modules is encountered before libpam0g).  APT calculates the unpack
@@ -135,7 +164,7 @@ fi
 # repairing Ubuntu base packages is intentionally outside the scope of this
 # middleware carrier and must never be triggered as a side effect of a common
 # dependency install.
-apt-get -y --no-download --no-install-recommends install "${{payloads[@]}}"
+apt-get -y --no-download --no-install-recommends install "${{required_payloads[@]}}"
 '''
     for alias in aliases:
         alias_path = configured_path(alias, description="installer alias").name
@@ -260,7 +289,8 @@ def build(config_path: Path) -> Path:
     if not isinstance(target, dict):
         raise ValueError("target must be an object")
     manifest_path = DEPLOYMENT_ROOT / str(config["manifest"])
-    packages = parse_manifest(manifest_path)
+    environment_only = bool(config.get("environment_only", False))
+    packages = parse_manifest(manifest_path, allow_empty=environment_only)
     output_dir = (DEPLOYMENT_ROOT / str(config["output_dir"])).resolve()
     if DEPLOYMENT_ROOT.parent not in output_dir.parents:
         raise ValueError("output_dir must stay under the deployment workspace")
@@ -268,13 +298,14 @@ def build(config_path: Path) -> Path:
 
     with tempfile.TemporaryDirectory(prefix="navi-common-bundle-") as temporary_directory:
         temporary_path = Path(temporary_directory)
-        payloads = download_payloads(packages, str(target["architecture"]), temporary_path)
+        payloads = download_payloads(packages, str(target["architecture"]), temporary_path) if packages else []
         staging = temporary_path / "staging"
         (staging / "DEBIAN").mkdir(parents=True)
         payload_directory = staging / "usr/lib" / package_name / "payload"
-        payload_directory.mkdir(parents=True)
-        for payload in payloads:
-            shutil.copy2(payload, payload_directory / payload.name)
+        if not environment_only:
+            payload_directory.mkdir(parents=True)
+            for payload in payloads:
+                shutil.copy2(payload, payload_directory / payload.name)
 
         lock_payloads = [
             {
@@ -286,11 +317,13 @@ def build(config_path: Path) -> Path:
             }
             for payload in payloads
         ]
-        (payload_directory / "payloads.sha256").write_text(
-            "".join(f"{item['sha256']}  {item['filename']}\n" for item in lock_payloads),
-            encoding="utf-8",
-        )
+        if not environment_only:
+            (payload_directory / "payloads.sha256").write_text(
+                "".join(f"{item['sha256']}  {item['filename']}\n" for item in lock_payloads),
+                encoding="utf-8",
+            )
         lock_path = staging / "usr/lib" / package_name / "manifest.lock.json"
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
         lock_path.write_text(
             json.dumps(
                 {
@@ -306,6 +339,11 @@ def build(config_path: Path) -> Path:
         )
 
         dependencies = ", ".join(str(item) for item in config.get("deb_depends", []))
+        carrier_description = (
+            " Environment configuration only; this package does not contain dependency payloads.\n"
+            if environment_only
+            else " Offline payload carrier. Install the carrier, then run its installer alias.\n"
+        )
         control = (
             f"Package: {package_name}\n"
             f"Version: {config['release_version']}\n"
@@ -314,14 +352,14 @@ def build(config_path: Path) -> Path:
             "Maintainer: Navi <navi@localhost>\n"
             f"Depends: {dependencies}\n"
             f"Description: {config['description']}\n"
-            " Offline payload carrier. Install the carrier, then run its installer alias.\n"
+            f"{carrier_description}"
         )
         (staging / "DEBIAN/control").write_text(control, encoding="utf-8")
         aliases = [str(alias) for alias in config.get("installer_aliases", [])]
         if not aliases:
             raise ValueError("at least one installer_alias is required")
         device_config_target = str(config["device_config_target"])
-        write_installer(staging, package_name, aliases, device_config_target)
+        write_installer(staging, package_name, aliases, device_config_target, environment_only=environment_only)
         write_bash_startup_hook(staging)
         copy_extra_files(staging, config)
 
@@ -333,7 +371,10 @@ def build(config_path: Path) -> Path:
     print(f"Built {artifact}")
     print(f"Offline payload count: {len(payloads)}")
     print(f"Install carrier with: sudo dpkg -i {artifact.name}")
-    print(f"Install payloads with: sudo {aliases[0]}")
+    if environment_only:
+        print(f"Validate configured environment with: sudo {aliases[0]}")
+    else:
+        print(f"Install payloads with: sudo {aliases[0]}")
     return artifact
 
 

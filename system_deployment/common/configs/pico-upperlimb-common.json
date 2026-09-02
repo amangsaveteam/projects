@@ -17,7 +17,7 @@
   "output_dir": "../dist/common/pico/upperlimb",
   "artifact_filename": "navi_pico_upperlimb_common_dep-2.0.0-release-humble-amd64.deb",
   "deb_depends": [
-    "navi-pico-common-dep (>= 2.0.0)",
+    "navi-pico-common-dep (>= 2.0.0~humble)",
     "bash (>= 5.0)",
     "coreutils (>= 8.30)",
     "dpkg (>= 1.19)",

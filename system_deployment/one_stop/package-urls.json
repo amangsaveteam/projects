@@ -1,0 +1,175 @@
+{
+  // Fill url (and preferably sha256) for every target to be included.
+  // A target is included automatically when common.url is non-empty.
+  // extra_debs and runs are installed in the listed order.
+  "schema_version": 1,
+  "targets": {
+    "orin-humble": {
+      "device": "ORIN",
+      "os_id": "ubuntu",
+      "os_version": "22.04",
+      "architecture": "arm64",
+      "common": {
+        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/navi_common_dep-2.0.0-release-humble-arm64.deb",
+        "sha256": "",
+        "configure_target": "orin-humble",
+        "configure_tool": "/usr/lib/navi-common-dep/deploy_common.py",
+        "installer": "/usr/sbin/install_common_deps.sh"
+      },
+      "extra_debs": [
+        {
+          "name": "sensor",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/sensor/navi_sensor_dep-2.0.0-release-humble-arm64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        },
+        {
+          "name": "audio",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/audio/navi_audio_dep-2.0.0-release-humble-arm64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        },
+        {
+          "name": "robot",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/develop/navi_robot_dep-2.0.0-release-humble-arm64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        },
+        {
+          "name": "audio-module",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/develop/navi_audio_dep-2.0.0-release-humble-arm64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        },
+        {
+          "name": "vision",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/vision/develop/navi_vision_dep-2.0.0-release-humble-arm64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        }
+      ],
+      "runs": [
+        { "name": "chassis", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/chassis/develop/navi_chassis_orin_installer-2.0.0-release-humble-arm64.run", "sha256": "" },
+        { "name": "sensor", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/sensor/develop/navi_sensor_installer-2.0.0-release-humble-arm64.run", "sha256": "" },
+        { "name": "robot", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/develop/navi_robot_installer-2.0.0-release-humble-arm64.run", "sha256": "" },
+        { "name": "audio", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/develop/navi_audio_installer-2.0.0-release-humble-arm64.run", "sha256": "" },
+        { "name": "vision", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/vision/develop/navi_vision_installer-2.0.0-release-humble-arm64.run", "sha256": "" }
+      ]
+    },
+    "orin-jazzy": {
+      "device": "ORIN",
+      "os_id": "ubuntu",
+      "os_version": "24.04",
+      "architecture": "arm64",
+      "common": {
+        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/jazzy/navi_common_dep-2.0.0-release-jazzy-arm64.deb",
+        "sha256": "",
+        "configure_target": "orin-jazzy",
+        "configure_tool": "/usr/lib/navi-common-dep/deploy_common.py",
+        "installer": "/usr/sbin/install_common_deps.sh"
+      },
+      "extra_debs": [
+        {
+          "name": "sensor",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/sensor/jazzy/navi_sensor_dep-2.0.0-release-jazzy-arm64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        },
+        {
+          "name": "robot",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/jazzy/navi_robot_dep-2.0.0-release-jazzy-arm64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        },
+        {
+          "name": "audio",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/jazzy/jenkins-audio_jazzy-54/navi_audio_dep-2.0.0-release-jazzy-arm64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        }
+      ],
+      "runs": [
+        { "name": "chassis", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/chassis/jazzy/navi_chassis_orin_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" },
+        { "name": "sensor", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/sensor/jazzy/navi_sensor_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" },
+        { "name": "robot", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/jazzy/navi_robot_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" },
+        { "name": "audio", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/jazzy/jenkins-audio_jazzy-54/navi_audio_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" }
+      ]
+    },
+    "pico-humble": {
+      "device": "PICO",
+      "os_id": "ubuntu",
+      "os_version": "20.04",
+      "architecture": "amd64",
+      "common": {
+        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/pico/develop/navi_pico_common_dep-2.0.0-release-humble-amd64.deb",
+        "sha256": "",
+        "configure_target": "pico-humble",
+        "configure_tool": "/usr/lib/navi-pico-common-dep/deploy_common.py",
+        "installer": "/usr/sbin/install_pico_common_deps.sh"
+      },
+      "extra_debs": [
+        {
+          "name": "upperlimb-common",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/upperlimb/develop/navi_pico_upperlimb_common_dep-2.0.0-release-humble-amd64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        },
+        {
+          "name": "robot",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/robot/develop/navi_pico_robot_dep-2.0.0-release-humble-amd64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        }
+      ],
+      "runs": [
+        { "name": "robot", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/robot/develop/navi_pico_robot_installer-2.0.0-release-humble-amd64.run", "sha256": "" },
+        { "name": "upperlimb", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/upperlimb/develop/navi_pico_upperlimb_installer-2.0.0-release-humble-amd64.run", "sha256": "" }
+      ]
+    },
+    "pico-jazzy": {
+      "device": "PICO",
+      "os_id": "ubuntu",
+      "os_version": "24.04",
+      "architecture": "amd64",
+      "common": {
+        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/pico/jazzy/navi_pico_common_dep-2.0.0-release-jazzy-amd64.deb",
+        "sha256": "",
+        "configure_target": "pico-jazzy",
+        "configure_tool": "/usr/lib/navi-pico-common-dep/deploy_common.py",
+        "installer": "/usr/sbin/configure_pico_jazzy_environment.sh"
+      },
+      "extra_debs": [],
+      "runs": [
+        { "name": "upperlimb", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/upperlimb/jazzy/navi_pico_upperlimb_installer-2.0.0-release-jazzy-amd64.run", "sha256": "" }
+      ]
+    },
+    "rdk-jazzy": {
+      "device": "RDK",
+      "os_id": "rdk os",
+      "os_version": "V5.1.0",
+      "architecture": "arm64",
+      "common": {
+        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/rdk/common/navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb",
+        "sha256": "",
+        "configure_target": "rdk-jazzy",
+        "configure_tool": "/usr/lib/navi-rdk-common-dep/deploy_common.py",
+        "installer": "/usr/sbin/install_rdk_common_deps.sh"
+      },
+      "extra_debs": [
+        {
+          "name": "sensor",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/rdk/sensor/navi_rdk_sensor_dep-2.0.0-release-jazzy-arm64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        },
+        {
+          "name": "realsense2-description",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/sensor/rdk/ros-jazzy-realsense2-description-2.0.0-release-20260813%5B937c915a%5D-arm64.deb",
+          "sha256": "",
+          "installers": []
+        }
+      ],
+      "runs": []
+    }
+  }
+}

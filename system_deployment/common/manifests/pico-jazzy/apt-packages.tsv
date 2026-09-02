@@ -1,0 +1,4 @@
+# Pico Ubuntu 24.04 / ROS 2 Jazzy environment-only carrier.
+#
+# Keep this manifest empty until the missing Pinocchio 3.4 and TinyXML2 ABI 6
+# runtime libraries are available as Noble-compatible offline payloads.

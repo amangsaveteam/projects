@@ -385,7 +385,12 @@ def output_filename(manifest: Dict[str, Any]) -> str:
 def platform_delivery_target(platform: str, sys_env_version: str) -> Dict[str, str]:
     ros_distro = "humble" if "20.04" in sys_env_version or "22.04" in sys_env_version else "jazzy"
     if platform == "PICO":
-        return {"arch": "amd64", "os": "ubuntu", "os_version": "20.04", "ros_distro": ros_distro}
+        # Pico installations historically use Focal/Humble.  Newer amd64
+        # deliveries may target Noble/Jazzy, so retain the old target as the
+        # default while honouring the explicit Ubuntu version in the manifest.
+        pico_os_version = "24.04" if "24.04" in sys_env_version else "20.04"
+        pico_ros_distro = "jazzy" if pico_os_version == "24.04" else "humble"
+        return {"arch": "amd64", "os": "ubuntu", "os_version": pico_os_version, "ros_distro": pico_ros_distro}
     if platform == "RDK":
         return {"arch": "arm64", "os": "rdk", "os_version": "V5.1.0", "ros_distro": "jazzy"}
     ubuntu_prefix = "ubuntu-"
@@ -550,9 +555,10 @@ def environment_lines(build: Dict[str, str], device: Dict[str, Any]) -> List[str
             "",
         ]
     elif device["platform"] == "PICO":
+        pico_ros_distro = "jazzy" if "24.04" in device["sys_env_version"] else "humble"
         runtime_bootstrap = [
-            "# Pico packages use the ROS 2 Humble runtime.",
-            "export MIDDLEWARE_ROS_DISTRO=\"humble\"",
+            "# Pico uses Humble on Ubuntu 20.04 and Jazzy on Ubuntu 24.04.",
+            "export MIDDLEWARE_ROS_DISTRO=\"{}\"".format(pico_ros_distro),
             "if [ -r \"/opt/ros/${MIDDLEWARE_ROS_DISTRO}/setup.bash\" ]; then",
             "    . \"/opt/ros/${MIDDLEWARE_ROS_DISTRO}/setup.bash\"",
             "fi",

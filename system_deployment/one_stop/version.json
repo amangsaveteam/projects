@@ -1,0 +1,8 @@
+{
+  // Only change release identity here.
+  "schema_version": 1,
+  "version": "2.0.0",
+  "branch_name": "release",
+  "commit_id": "manual",
+  "output_name": "navi_one_stop_installer-2.0.0"
+}

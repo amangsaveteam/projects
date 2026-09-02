@@ -1,0 +1,324 @@
+model: WA2_LS
+alias: [WA2_LS, WA2-S, WA2-D]
+version: 'V1.0'
+
+scripts:
+    - name: neckPitchLimitByYaw
+      content: |
+        function neckPitchLimitByYaw(neckYaw)
+            if neckYaw < -42.0000 or neckYaw > 42.0000 then
+                return { min = -9.7000, max = 19.0000 }
+            end
+
+            local absYaw = math.abs(neckYaw)
+            if absYaw <= 10.0000 then
+                return { min = -9.7000, max = 34.7000 }
+            end
+
+            if absYaw < 15.0000 then
+                local maxPitch = 34.7000 - (absYaw - 10.0000) * 10.7000 / 5.0000
+                return { min = -9.7000, max = maxPitch }
+            end
+
+            local maxPitch = 24.0000 - (absYaw - 15.0000) / 5.4000
+            return { min = -9.7000, max = maxPitch }
+        end
+    - name: neckYawLimitByPitch
+      content: |
+        function neckYawLimitByPitch(neckPitch)
+            if neckPitch < -9.7000 then
+                return { min = -42.0000, max = 42.0000 }
+            end
+
+            if neckPitch > 34.7000 then
+                return { min = -10.0000, max = 10.0000 }
+            end
+
+            if neckPitch <= 19.0000 then
+                return { min = -42.0000, max = 42.0000 }
+            end
+
+            if neckPitch < 24.0000 then
+                local yawMax = 42.0000 - (neckPitch - 19.0000) * 5.4000
+                return { min = -yawMax, max = yawMax }
+            end
+            
+            local yawMax = 15.0000 - (neckPitch - 24.0000) * 5.0000 / 10.7000
+            return { min = -yawMax, max = yawMax }
+        end
+
+joints:
+    -   name: anklePitch
+        urdfName: Pitch_Y_B
+        limit:
+            hw: {min: -60.0000, max: 60.0000}
+            servo: {min: -59.0000, max: 59.0000}
+            sdk: {min: -58.0000, max: 58.0000}
+            algo: {min: -57.0000, max: 57.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: kneePitch
+        urdfName: Pitch_Y_M
+        limit:
+            hw: {min: -140.0000, max: 140.0000}
+            servo: {min: -139.0000, max: 139.0000}
+            sdk: {min: -138.0000, max: 138.0000}
+            algo: {min: -137.0000, max: 137.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: waistYaw
+        urdfName: Waist_Z
+        limit:
+            hw: {min: -120.0000, max: 180.0000}
+            servo: {min: -119.0000, max: 179.0000}
+            sdk: {min: -118.0000, max: 178.0000}
+            algo: {min: -117.0000, max: 177.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: waistPitch
+        urdfName: Waist_Y
+        limit:
+            hw: {min: -55.0000, max: 55.0000}
+            servo: {min: -54.0000, max: 54.0000}
+            sdk: {min: -53.0000, max: 53.0000}
+            algo: {min: -52.0000, max: 52.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftTorsoYaw
+        urdfName: Chest_Z_L
+        limit:
+            hw: {min: -60.0000, max: 20.0000}
+            servo: {min: -59.0000, max: 19.9000}
+            sdk: {min: -58.0000, max: 19.8000}
+            algo: {min: -57.0000, max: 19.7000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftShoulderPitch
+        urdfName: Shoulder_Y_L
+        limit:
+            hw: {min: -190.0000, max: 70.0000}
+            servo: {min: -189.0000, max: 69.0000}
+            sdk: {min: -188.0000, max: 68.0000}
+            algo: {min: -187.0000, max: 67.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftShoulderRoll
+        urdfName: Shoulder_X_L
+        limit:
+            hw: {min: -20.5000, max: 160.0000}
+            servo: {min: -20.4000, max: 159.0000}
+            sdk: {min: -20.3000, max: 158.0000}
+            algo: {min: -20.2000, max: 157.0000}
+        zero:
+            position: 5.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftShoulderYaw
+        urdfName: Shoulder_Z_L
+        limit:
+            hw: {min: -168.5000, max: 168.5000}
+            servo: {min: -167.5000, max: 167.5000}
+            sdk: {min: -166.5000, max: 166.5000}
+            algo: {min: -165.5000, max: 165.5000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftElbow
+        urdfName: Elbow_L
+        limit:
+            hw: {min: -120.0000, max: 5.0000}
+            servo: {min: -119.0000, max: 4.9000}
+            sdk: {min: -118.0000, max: 4.8000}
+            algo: {min: -117.0000, max: 4.7000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftWristYaw
+        urdfName: Wrist_Z_L
+        limit:
+            hw: {min: -170.0000, max: 170.0000}
+            servo: {min: -169.0000, max: 169.0000}
+            sdk: {min: -168.0000, max: 168.0000}
+            algo: {min: -167.0000, max: 167.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftWristPitch
+        urdfName: Wrist_Y_L
+        limit:
+            hw: {min: -90.0000, max: 75.0000}
+            servo: {min: -89.0000, max: 74.0000}
+            sdk: {min: -88.0000, max: 73.0000}
+            algo: {min: -87.0000, max: 72.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftWristRoll
+        urdfName: Wrist_X_L
+        limit:
+            hw: {min: -90.0000, max: 90.0000}
+            servo: {min: -89.0000, max: 89.0000}
+            sdk: {min: -88.0000, max: 88.0000}
+            algo: {min: -87.0000, max: 87.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightTorsoYaw
+        urdfName: Chest_Z_R
+        limit:
+            hw: {min: -20.0000, max: 60.0000}
+            servo: {min: -19.9000, max: 59.0000}
+            sdk: {min: -19.8000, max: 58.0000}
+            algo: {min: -19.7000, max: 57.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightShoulderPitch
+        urdfName: Shoulder_Y_R
+        limit:
+            hw: {min: -190.0000, max: 70.0000}
+            servo: {min: -189.0000, max: 69.0000}
+            sdk: {min: -188.0000, max: 68.0000}
+            algo: {min: -187.0000, max: 67.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightShoulderRoll
+        urdfName: Shoulder_X_R
+        limit:
+            hw: {min: -160.0000, max: 20.5000}
+            servo: {min: -159.0000, max: 20.4000}
+            sdk: {min: -158.0000, max: 20.3000}
+            algo: {min: -157.0000, max: 20.2000}
+        zero:
+            position: -5.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightShoulderYaw
+        urdfName: Shoulder_Z_R
+        limit:
+            hw: {min: -168.5000, max: 168.5000}
+            servo: {min: -167.5000, max: 167.5000}
+            sdk: {min: -166.5000, max: 166.5000}
+            algo: {min: -165.5000, max: 165.5000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightElbow
+        urdfName: Elbow_R
+        limit:
+            hw: {min: -120.0000, max: 5.0000}
+            servo: {min: -119.0000, max: 4.9000}
+            sdk: {min: -118.0000, max: 4.8000}
+            algo: {min: -117.0000, max: 4.7000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightWristYaw
+        urdfName: Wrist_Z_R
+        limit:
+            hw: {min: -170.0000, max: 170.0000}
+            servo: {min: -169.0000, max: 169.0000}
+            sdk: {min: -168.0000, max: 168.0000}
+            algo: {min: -167.0000, max: 167.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightWristPitch
+        urdfName: Wrist_Y_R
+        limit:
+            hw: {min: -90.0000, max: 75.0000}
+            servo: {min: -89.0000, max: 74.0000}
+            sdk: {min: -88.0000, max: 73.0000}
+            algo: {min: -87.0000, max: 72.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightWristRoll
+        urdfName: Wrist_X_R
+        limit:
+            hw: {min: -90.0000, max: 90.0000}
+            servo: {min: -89.0000, max: 89.0000}
+            sdk: {min: -88.0000, max: 88.0000}
+            algo: {min: -87.0000, max: 87.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: neckYaw
+        urdfName: Neck_Z
+        limit:
+            hw: {min: -45.0000, max: 45.0000}
+            servo: {min: -44.0000, max: 44.0000}
+            sdk: {min: -43.0000, max: 43.0000}
+            algo:
+                envelope: { min: -42.0000, max: 42.0000 }
+                dynamic:
+                    scriptId: "neckYawLimitByPitch"
+                    params:
+                        - "joints.neckPitch"
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: neckPitch
+        urdfName: Neck_Y
+        limit:
+            hw: {min: -10.0000, max: 35.0000}
+            servo: {min: -9.9000, max: 34.9000}
+            sdk: {min: -9.8000, max: 34.8000}
+            algo: 
+                envelope: { min: -9.7000, max: 34.7000 }
+                dynamic:
+                    scriptId: "neckPitchLimitByYaw"
+                    params:
+                        - "joints.neckYaw"
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
