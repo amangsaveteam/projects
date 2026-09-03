@@ -9,13 +9,7 @@
       "os_id": "ubuntu",
       "os_version": "22.04",
       "architecture": "arm64",
-      "common": {
-        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/navi_common_dep-2.0.0-release-humble-arm64.deb",
-        "sha256": "",
-        "configure_target": "orin-humble",
-        "configure_tool": "/usr/lib/navi-common-dep/deploy_common.py",
-        "installer": "/usr/sbin/install_common_deps.sh"
-      },
+      "system_config": { "configure_target": "orin-humble", "base_image_contract": "orin-humble" },
       "extra_debs": [
         {
           "name": "sensor",
@@ -33,7 +27,8 @@
           "name": "robot",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/develop/navi_robot_dep-2.0.0-release-humble-arm64.deb",
           "sha256": "",
-          "installers": ["auto"]
+          "installers": ["auto"],
+          "environment": { "PIP_NO_BUILD_ISOLATION": "1" }
         },
         {
           "name": "audio-module",
@@ -61,13 +56,7 @@
       "os_id": "ubuntu",
       "os_version": "24.04",
       "architecture": "arm64",
-      "common": {
-        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/jazzy/navi_common_dep-2.0.0-release-jazzy-arm64.deb",
-        "sha256": "",
-        "configure_target": "orin-jazzy",
-        "configure_tool": "/usr/lib/navi-common-dep/deploy_common.py",
-        "installer": "/usr/sbin/install_common_deps.sh"
-      },
+      "system_config": { "configure_target": "orin-jazzy", "base_image_contract": "orin-jazzy" },
       "extra_debs": [
         {
           "name": "sensor",
@@ -79,7 +68,8 @@
           "name": "robot",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/jazzy/navi_robot_dep-2.0.0-release-jazzy-arm64.deb",
           "sha256": "",
-          "installers": ["auto"]
+          "installers": ["auto"],
+          "environment": { "PIP_NO_BUILD_ISOLATION": "1" }
         },
         {
           "name": "audio",
@@ -100,13 +90,7 @@
       "os_id": "ubuntu",
       "os_version": "20.04",
       "architecture": "amd64",
-      "common": {
-        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/pico/develop/navi_pico_common_dep-2.0.0-release-humble-amd64.deb",
-        "sha256": "",
-        "configure_target": "pico-humble",
-        "configure_tool": "/usr/lib/navi-pico-common-dep/deploy_common.py",
-        "installer": "/usr/sbin/install_pico_common_deps.sh"
-      },
+      "system_config": { "configure_target": "pico-humble", "base_image_contract": "pico-humble" },
       "extra_debs": [
         {
           "name": "upperlimb-common",
@@ -131,13 +115,7 @@
       "os_id": "ubuntu",
       "os_version": "24.04",
       "architecture": "amd64",
-      "common": {
-        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/pico/jazzy/navi_pico_common_dep-2.0.0-release-jazzy-amd64.deb",
-        "sha256": "",
-        "configure_target": "pico-jazzy",
-        "configure_tool": "/usr/lib/navi-pico-common-dep/deploy_common.py",
-        "installer": "/usr/sbin/configure_pico_jazzy_environment.sh"
-      },
+      "system_config": { "configure_target": "pico-jazzy", "base_image_contract": "pico-jazzy" },
       "extra_debs": [],
       "runs": [
         { "name": "upperlimb", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/upperlimb/jazzy/navi_pico_upperlimb_installer-2.0.0-release-jazzy-amd64.run", "sha256": "" }
@@ -148,13 +126,7 @@
       "os_id": "rdk os",
       "os_version": "V5.1.0",
       "architecture": "arm64",
-      "common": {
-        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/rdk/common/navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb",
-        "sha256": "",
-        "configure_target": "rdk-jazzy",
-        "configure_tool": "/usr/lib/navi-rdk-common-dep/deploy_common.py",
-        "installer": "/usr/sbin/install_rdk_common_deps.sh"
-      },
+      "system_config": { "configure_target": "rdk-jazzy", "base_image_contract": "rdk-jazzy" },
       "extra_debs": [
         {
           "name": "sensor",

@@ -86,6 +86,7 @@ class BuildRunPackageTest(unittest.TestCase):
             self.assertEqual(output.name, "Middleware_v1.2.3_release_test_abcdef12_20260824.run")
             help_output = subprocess.run([str(output), "--help"], check=True, text=True, capture_output=True)
             self.assertIn("install|uninstall", help_output.stdout)
+            pretest = subprocess.run([str(output), "--pretest", "--device", "ORIN"], check=True, text=True, capture_output=True)
             with self.read_payload(output) as payload:
                 names = payload.getnames()
                 self.assertIn("ORIN/.dists/base/000-base-runtime.deb", names)
@@ -109,6 +110,8 @@ class BuildRunPackageTest(unittest.TestCase):
             self.assertLess(orin_script.index("mv \"$env_tmp\" /etc/naviai/Middleware.env"), orin_script.index("dpkg -i \"$package_root/ORIN/.dists/base/000-base-runtime.deb\""))
             self.assertIn('"$package_root/ORIN/.dists/base/000-base-runtime.deb"', orin_script)
             self.assertIn("--device ORIN|PICO", launcher)
+            self.assertIn("base-runtime=1", pretest.stdout)
+            self.assertIn("robot-runtime=2", pretest.stdout)
 
     def test_rejects_checksum_mismatch_without_output(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -177,6 +180,11 @@ class BuildRunPackageTest(unittest.TestCase):
             self.assertIn("/etc/naviai/rdk-runtime/navi-rdk-runtime-start.sh", rdk_script)
             self.assertIn("systemctl enable navi-rdk-runtime.service", rdk_script)
             self.assertIn("systemctl restart navi-rdk-runtime.service", rdk_script)
+            self.assertIn("receipt_path=/var/lib/naviai/deliveries/rdk-navi-rdk-runtime.receipt", rdk_script)
+            self.assertIn("if [ -f /etc/systemd/system/navi-rdk-runtime.service ]; then", rdk_script)
+            self.assertIn("systemctl stop navi-rdk-runtime.service", rdk_script)
+            self.assertLess(rdk_script.index("systemctl stop navi-rdk-runtime.service"), rdk_script.index("dpkg -i"))
+            self.assertLess(rdk_script.index("systemctl restart navi-rdk-runtime.service"), rdk_script.index("receipt_tmp="))
             self.assertIn("_middleware_restore_nounset=1; set +u", rdk_script)
             self.assertIn("set -u", rdk_script)
             self.assertIn("--device ORIN|PICO|RDK", launcher)

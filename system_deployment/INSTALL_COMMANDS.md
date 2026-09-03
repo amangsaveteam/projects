@@ -1,5 +1,9 @@
 # 安装命令
 
+> Orin Humble 若使用母盘交付，不执行下方的 Common DEB 安装。请先按
+> [golden_image/orin-humble/README.md](golden_image/orin-humble/README.md) 制作并验收母盘；
+> 模块 DEB 必须已移除对旧 `orin-common-deb` 的硬依赖，或改为验证母盘契约。
+
 ## Common DEB：Orin Ubuntu 22.04 / Humble / arm64
 
 ```bash

@@ -67,14 +67,22 @@ append_library_path() {
     esac
 }
 
+append_optional_library_path() {
+    local directory=$1
+    if [[ ! -d "$directory" ]]; then
+        printf 'WARNING: optional upperlimb library directory is unavailable: %s\n' "$directory" >&2
+        return 0
+    fi
+    append_library_path "$directory"
+}
+
 append_library_path /opt/zj_humanoid/lib/logging
 append_library_path /opt/zj_humanoid/lib/rtipc_runtime
 append_library_path /opt/zj_humanoid/lib/uplimb_runtime
-# The Pico V1 runtime is linked against Pinocchio 3.4 and TinyXML2 ABI 6.
-# This validated runtime bundle is present on deployed Pico images but is not
-# part of the environment-only common DEB.  Allow deployments to override the
-# location without editing this launcher.
-append_library_path "${UPLIMB_PINOCCHIO_LIBRARY_DIR:-/home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio}"
+# The Pico V1 runtime may use the Pinocchio 3.4 / TinyXML2 ABI 6 bundle from
+# this location.  Absence only emits a warning, preventing a missing optional
+# search path from terminating the service under `set -e`.
+append_optional_library_path "${UPLIMB_PINOCCHIO_LIBRARY_DIR:-/home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio}"
 
 # This service runs as root; sudo would cause an interactive failure here.
 /usr/sbin/sysctl -q -w net.core.rmem_max=2147483647

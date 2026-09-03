@@ -640,9 +640,14 @@ def render_hook_lines(device: Dict[str, Any], hook: str) -> List[str]:
 def render_device_script(build: Dict[str, str], device: Dict[str, Any]) -> str:
     platform = device["platform"]
     env_path = ENVIRONMENT_PATHS[platform]
+    startup = device["startup"]
     expected = "export MIDDLEWARE_PACKAGE_ID={}".format(shlex.quote("{}:{}:{}".format(build["version"], platform, device["commit_id"])))
     package_id = "{}:{}:{}".format(build["version"], platform, device["commit_id"])
-    receipt_path = "/var/lib/naviai/deliveries/{}-{}-{}.receipt".format(platform.lower(), build["version"], device["commit_id"])
+    # Service deliveries keep one stable receipt.  An older run package must
+    # not be able to uninstall the modules of the service it has since
+    # upgraded.
+    receipt_key = startup["name"] if startup is not None else "{}-{}".format(build["version"], device["commit_id"])
+    receipt_path = "/var/lib/naviai/deliveries/{}-{}.receipt".format(platform.lower(), receipt_key)
     packages_path = "$package_root/{}/packages.tsv".format(platform)
     environment_write = ["    env_dir={}".format(shlex.quote(str(PurePosixPath(env_path).parent))), "    mkdir -p \"$env_dir\"", "    env_tmp=$(mktemp \"$env_dir/.Middleware.env.XXXXXX\")", "    {"]
     for line in environment_lines(build, device):
@@ -651,7 +656,7 @@ def render_device_script(build: Dict[str, str], device: Dict[str, Any]) -> str:
 
     lines = [
         "#!/bin/sh", "set -eu", 'action="${1:-install}"', 'robot_type="${2:-}"', 'force="${3:-}"',
-        'if [ "$(id -u)" -ne 0 ] && [ "$action" != "--status" ] && [ "$action" != "--verify-only" ]; then echo "ERROR: run with sudo" >&2; exit 1; fi',
+        'if [ "$(id -u)" -ne 0 ] && [ "$action" != "--status" ] && [ "$action" != "--verify-only" ] && [ "$action" != "--pretest" ]; then echo "ERROR: run with sudo" >&2; exit 1; fi',
         'package_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)',
         'packages_file=' + packages_path,
         'receipt_path=' + shlex.quote(receipt_path),
@@ -660,7 +665,7 @@ def render_device_script(build: Dict[str, str], device: Dict[str, Any]) -> str:
         'check_packages() {',
         '    while IFS="	" read -r package_name package_version package_kind; do',
         '        [ "$package_kind" = deb ] || continue',
-        '        installed=$(dpkg-query -W -f="${Version}\t${Status}" "$package_name" 2>/dev/null || true)',
+        "        installed=$(dpkg-query -W -f='${Version}\\t${Status}' \"$package_name\" 2>/dev/null || true)",
         '        [ "$installed" = "${package_version}${tab}install ok installed" ] || { echo "ERROR: $package_name expected $package_version, got ${installed:-not-installed}" >&2; return 1; }',
         '    done < "$packages_file"',
         '}',
@@ -668,18 +673,36 @@ def render_device_script(build: Dict[str, str], device: Dict[str, Any]) -> str:
         '    [ -r ' + shlex.quote(env_path) + ' ] || { echo "ERROR: Middleware environment is missing: ' + env_path + '" >&2; return 1; }',
         '    /bin/bash -c ". ' + shlex.quote(env_path) + '"',
         '}',
+        'pretest_packages() {',
+        '    echo "Package pretest (expected | installed | action):"',
+        '    while IFS="\t" read -r package_name package_version package_kind; do',
+        '        if [ "$package_kind" != "deb" ]; then printf "%s | - | pull image\\n" "$package_name"; continue; fi',
+        "        installed=$(dpkg-query -W -f='${Version}\\t${db:Status-Status}' \"$package_name\" 2>/dev/null || true)",
+        '        installed_version=${installed%%"$tab"*}; installed_status=${installed#*"$tab"}',
+        '        if [ -z "$installed" ] || [ "$installed_status" != "installed" ]; then',
+        '            printf "%s=%s | not installed | install\\n" "$package_name" "$package_version"',
+        '        elif [ "$installed_version" = "$package_version" ]; then',
+        '            printf "%s=%s | %s | reinstall\\n" "$package_name" "$package_version" "$installed_version"',
+        '        elif dpkg --compare-versions "$installed_version" gt "$package_version"; then',
+        '            printf "%s=%s | %s | downgrade blocked\\n" "$package_name" "$package_version" "$installed_version"',
+        '        else',
+        '            printf "%s=%s | %s | upgrade\\n" "$package_name" "$package_version" "$installed_version"',
+        '        fi',
+        '    done < "$packages_file"',
+        '}',
         'case "$action" in',
         '  --status) if [ -r "$receipt_path" ] && [ "$(cat \"$receipt_path\")" = "$expected_receipt" ]; then echo "Delivery receipt: matched"; else echo "Delivery receipt: missing or mismatched"; fi; check_packages; check_runtime; exit $? ;;',
         '  --verify-only) check_packages; check_runtime; exit 0 ;;',
+        '  --pretest) pretest_packages; exit 0 ;;',
         '  install|uninstall) ;;',
         '  *) echo "ERROR: unsupported action: $action" >&2; exit 2 ;;',
         'esac',
         "",
         'if [ "$action" = install ]; then',
     ]
-    if device["startup"] is not None:
-        lines[lines.index('  --status) if [ -r "$receipt_path" ] && [ "$(cat \"$receipt_path\")" = "$expected_receipt" ]; then echo "Delivery receipt: matched"; else echo "Delivery receipt: missing or mismatched"; fi; check_packages; check_runtime; exit $? ;;')] = '  --status) if [ -r "$receipt_path" ] && [ "$(cat \"$receipt_path\")" = "$expected_receipt" ]; then echo "Delivery receipt: matched"; else echo "Delivery receipt: missing or mismatched"; fi; check_packages; check_runtime; echo "Service enabled:"; systemctl is-enabled {}.service || true; echo "Service active:"; systemctl is-active {}.service || true; exit 0 ;;'.format(device["startup"]["name"], device["startup"]["name"])
-        lines[lines.index('  --verify-only) check_packages; check_runtime; exit 0 ;;')] = '  --verify-only) check_packages; check_runtime; systemctl is-active --quiet {}.service || {{ echo "ERROR: {}.service is not active" >&2; exit 1; }}; exit 0 ;;'.format(device["startup"]["name"], device["startup"]["name"])
+    if startup is not None:
+        lines[lines.index('  --status) if [ -r "$receipt_path" ] && [ "$(cat \"$receipt_path\")" = "$expected_receipt" ]; then echo "Delivery receipt: matched"; else echo "Delivery receipt: missing or mismatched"; fi; check_packages; check_runtime; exit $? ;;')] = '  --status) if [ -r "$receipt_path" ] && [ "$(cat \"$receipt_path\")" = "$expected_receipt" ]; then echo "Delivery receipt: matched"; else echo "Delivery receipt: missing or mismatched"; fi; check_packages; check_runtime; echo "Service enabled:"; systemctl is-enabled {}.service || true; echo "Service active:"; systemctl is-active {}.service || true; exit 0 ;;'.format(startup["name"], startup["name"])
+        lines[lines.index('  --verify-only) check_packages; check_runtime; exit 0 ;;')] = '  --verify-only) check_packages; check_runtime; systemctl is-active --quiet {}.service || {{ echo "ERROR: {}.service is not active" >&2; exit 1; }}; exit 0 ;;'.format(startup["name"], startup["name"])
     # Some module postinst scripts source this file, so it must exist before
     # the first hook or dpkg transaction begins.
     lines.extend([
@@ -695,6 +718,13 @@ def render_device_script(build: Dict[str, str], device: Dict[str, Any]) -> str:
         '        chmod 0644 "$device_tmp"; mv "$device_tmp" "$device_config"',
         '    fi',
     ])
+    if startup is not None:
+        lines.extend([
+            '    # Avoid running an old process while its packages, environment and launcher are replaced.',
+            '    if [ -f {} ]; then'.format(shlex.quote(startup["service_path"])),
+            '        systemctl stop {}.service'.format(shlex.quote(startup["name"])),
+            '    fi',
+        ])
     lines.extend(environment_write)
     lines.extend("    " + line for line in render_hook_lines(device, "pre_install"))
     for module in device["modules"]:
@@ -702,7 +732,6 @@ def render_device_script(build: Dict[str, str], device: Dict[str, Any]) -> str:
     for resource in device["resources"]:
         lines.append('    install -D -m 0644 "$package_root/{}" {}'.format(resource["destination"], shlex.quote(resource["device_path"])))
     lines.extend("    " + line for line in render_hook_lines(device, "post_install"))
-    startup = device["startup"]
     if startup is not None:
         lines.extend([
             '    install -D -m 0755 "$package_root/{}" {}'.format(startup["script_destination"], shlex.quote(startup["script_path"])),
@@ -755,7 +784,7 @@ def render_launcher(devices: Sequence[Dict[str, Any]], build: Dict[str, str]) ->
         "#!/bin/sh", "set -eu", 'action="install"', 'device=""', 'robot_type=""', 'force=""',
         'usage() {',
         '  echo "Usage: $0 [install|uninstall] [--device ORIN|PICO|RDK] [--robot-type TYPE]"',
-        '  echo "       $0 -- --version|--delivery|--packages|--info|--verify|--status|--verify-only|--uninstall [--force]"',
+        '  echo "       $0 -- --version|--delivery|--packages|--info|--verify|--status|--verify-only|--pretest|--uninstall [--force]"',
         '  echo "Supported robot types:"; cut -f1 robot-types.tsv | paste -sd " " -',
         '}',
         'while [ "$#" -gt 0 ]; do',
@@ -769,7 +798,7 @@ def render_launcher(devices: Sequence[Dict[str, Any]], build: Dict[str, str]) ->
         '        --device) shift; [ "$#" -gt 0 ] || { echo "ERROR: --device needs ORIN, PICO, or RDK" >&2; exit 2; }; device="$1" ;;',
         '        --device=*) device="${1#--device=}" ;;',
         '        -h|--help) usage; exit 0 ;;',
-        '        --version|--delivery|--packages|--info|--verify|--status|--verify-only) action="$1" ;;',
+        '        --version|--delivery|--packages|--info|--verify|--status|--verify-only|--pretest) action="$1" ;;',
         '        *) echo "ERROR: unknown argument: $1" >&2; exit 2 ;;',
         '    esac',
         '    shift',

@@ -1,0 +1,35 @@
+# Orin Humble golden-image packages.
+# This is the platform contract previously carried by the common DEB.
+python3-venv
+python3-pip
+python3-rosdep
+python3-colcon-common-extensions
+python3-vcstool
+build-essential
+cmake
+pkg-config
+git
+libyaml-cpp0.7
+libspdlog-dev
+libspdlog1
+libfmt-dev
+libfmt8
+catch2
+network-manager
+libjsoncpp25
+zlib1g-dev
+ros-humble-rmw-cyclonedds-cpp
+ros-humble-fastcdr
+ros-humble-geometry-msgs
+ros-humble-rosidl-default-runtime
+ros-humble-std-msgs
+ros-humble-diagnostic-msgs
+ros-humble-launch-ros
+ros-humble-lifecycle-msgs
+ros-humble-nav-msgs
+ros-humble-rclcpp
+ros-humble-rclcpp-lifecycle
+ros-humble-sensor-msgs
+ros-humble-std-srvs
+ros-humble-tf2
+ros-humble-tf2-ros

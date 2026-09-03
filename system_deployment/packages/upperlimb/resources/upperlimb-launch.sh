@@ -77,13 +77,22 @@ append_library_path() {
     esac
 }
 
+append_optional_library_path() {
+    local directory=$1
+    if [[ ! -d "$directory" ]]; then
+        printf 'WARNING: optional upperlimb library directory is unavailable: %s\n' "$directory" >&2
+        return 0
+    fi
+    append_library_path "$directory"
+}
+
 append_library_path /opt/zj_humanoid/lib/logging
 append_library_path /opt/zj_humanoid/lib/rtipc_runtime
 append_library_path /opt/zj_humanoid/lib/uplimb_runtime
 # Pico V1 runtimes may provide the Pinocchio 3.4 / TinyXML2 ABI 6 bundle in
-# this validated location.  It is optional for Humble deployments and can be
-# overridden without editing the launcher.
-append_library_path "${UPLIMB_PINOCCHIO_LIBRARY_DIR:-/home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio}"
+# this location.  Keep starting when it is absent so a ROS reinstall cannot
+# turn an optional search path into an immediate service failure.
+append_optional_library_path "${UPLIMB_PINOCCHIO_LIBRARY_DIR:-/home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio}"
 
 # This service runs as root, so do not use sudo here.  The settings match the
 # previous manual launch procedure and are refreshed whenever the service

@@ -5,6 +5,11 @@
 - 全局 `common` 离线依赖包：Orin、Pico 与 RDK 的基础构建/运行环境；
 - 通过声明式清单部署共享系统文件，并在需要时重新加载/启用 systemd 服务。
 
+对于 Orin Ubuntu 22.04 / ROS 2 Humble，若交付方式改为母盘预装基础运行环境，请使用
+[golden_image/orin-humble/README.md](golden_image/orin-humble/README.md)。该流程将 common 的
+运行依赖沉入 JetPack 6.1 / Ubuntu 22.04 母盘；业务安装包不应再重复安装 common carrier。
+其余 target 的系统、ROS 与依赖基线见 [golden_image/TARGET_MATRIX.md](golden_image/TARGET_MATRIX.md)。
+
 模块自己的 `common_dep` 不迁入此项目。当前 `orin-sensor-common` 仍由
 `configs/dependency-bundles/orin-sensor-common.json` 和 Sensor 流水线原样维护。
 
