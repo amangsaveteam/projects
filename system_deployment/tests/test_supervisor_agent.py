@@ -35,6 +35,8 @@ class SupervisorAgentTest(unittest.TestCase):
     def test_dashboard_includes_process_controls_and_log_tail(self):
         for label in ("启动", "停止", "重启", "日志尾部", "自动刷新", "PID", "退出码"):
             self.assertIn(label, agent_module.INDEX_HTML)
+        self.assertIn("button.closest('.process')", agent_module.INDEX_HTML)
+        self.assertIn("version!==entry.version", agent_module.INDEX_HTML)
 
     def test_secret_is_stable_and_private(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -106,6 +108,19 @@ class SupervisorAgentTest(unittest.TestCase):
         self.assertEqual(connection.host, "192.168.217.66")
         self.assertEqual(connection.port, 19003)
         self.assertTrue(any(name == "Authorization" and value.startswith("Basic ") for name, value in transport._extra_headers))
+
+    def test_unreachable_module_reports_its_endpoint(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            password = Path(temporary) / "rpc.password"
+            agent_module.ensure_secret(password)
+            agent = agent_module.Agent({
+                "rpc_password_file": str(password),
+                "modules": {"chassis": {"endpoint": "http://192.168.217.100:19004/RPC2"}},
+            })
+            agent.proxy = lambda module: (_ for _ in ()).throw(OSError("Connection refused"))
+            status = agent.module_status("chassis")
+        self.assertFalse(status["reachable"])
+        self.assertIn("192.168.217.100:19004", status["error"])
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 {
-  // Fill url (and preferably sha256) for every target to be included.
+  // 唯一的交付配置文件：在这里维护所有目标和模块 URL。
   // A target is included automatically when it defines system_config or common.url.
   // extra_debs and runs are installed in the listed order.
   "schema_version": 1,
@@ -10,17 +10,123 @@
       "os_version": "22.04",
       "architecture": "arm64",
       "system_config": { "configure_target": "orin-humble", "base_image_contract": "orin-humble" },
-      "vision_supervisor": { "service": "navi-vision-supervisor.service", "ros_distro": "humble" },
+      "supervisor": {
+        "internal_ip": "192.168.217.100",
+        "agent_service": "navi-orin-supervisor-agent.service",
+        "agent_modules_directory": "/etc/naviai/supervisor-agent/modules.d",
+        "agent_password_file": "/etc/naviai/supervisor-agent/supervisor-rpc.password",
+        "module_root": "/etc/naviai/supervised-stack",
+        "runtime_root": "/run/naviai",
+        "log_root": "/var/log/naviai",
+        "sensor_rpc": {
+          "config": "/etc/naviai/navi-sensor-host-supervisor.conf",
+          "service": "navi-sensor-host.service",
+          "port": 19001
+        }
+      },
+      "supervisor_modules": [
+        {
+          "id": "chassis",
+          "description": "Navi Orin ROS 2 chassis node",
+          "mode": "managed",
+          "service_name": "navi-orin-chassis",
+          "port": 19004,
+          "working_directory": "/var/lib/naviai/navi-orin-chassis",
+          "source_files": ["/etc/naviai/Middleware.env"],
+          "prelude": [
+            "export HOME=/root",
+            "export ROS_HOME=/var/lib/naviai/navi-orin-chassis",
+            "export ROS_LOG_DIR=/var/log/naviai/navi-orin-chassis",
+            "install -d -m 0755 \"$ROS_HOME\" \"$ROS_LOG_DIR\""
+          ],
+          "command": "ros2 launch chassis chassis.launch.py",
+          "autorestart": "true",
+          "startsecs": 3
+        },
+        {
+          "id": "sensor",
+          "description": "Navi Orin Sensor stack",
+          "mode": "external",
+          "port": 19001
+        },
+        {
+          "id": "robot",
+          "description": "Jetson Orin robot-state ROS 2 stack (Supervisor)",
+          "mode": "managed",
+          "port": 19002,
+          "working_directory": "/var/lib/navi",
+          "source_files": ["/etc/naviai/Middleware.env", "/etc/naviai/robot/robot_env.sh"],
+          "environment": {
+            "HOME": "/var/lib/navi",
+            "ROS_HOME": "/var/lib/navi/ros",
+            "ROS_LOG_DIR": "/var/log/navi/ros",
+            "NAVI_ORIN_ROBOT_LOG_DIR": "/var/log/navi/robot",
+            "NAVI_ORIN_ROBOT_LOG_LEVEL": "INFO",
+            "RCUTILS_COLORIZED_OUTPUT": "0",
+            "RCUTILS_LOGGING_USE_STDOUT": "1",
+            "RCUTILS_LOGGING_BUFFERED_STREAM": "1"
+          },
+          "command": "ros2 launch orin_robot orin_robot.launch.py",
+          "autorestart": "unexpected",
+          "startsecs": 3,
+          "timeout_stop_seconds": 20
+        },
+        {
+          "id": "audio",
+          "description": "Jetson Orin Audio ROS 2 stack (Supervisor)",
+          "mode": "managed",
+          "port": 19003,
+          "working_directory": "/var/lib/navi-audio",
+          "unset_environment": ["AMENT_PREFIX_PATH", "COLCON_PREFIX_PATH", "CMAKE_PREFIX_PATH", "PYTHONPATH"],
+          "source_files": [
+            "/etc/naviai/Middleware.env",
+            "/opt/ros/humble/setup.bash",
+            "/opt/naviai/venvs/audio/bin/activate"
+          ],
+          "prelude": [
+            "set -a",
+            "source /etc/navi-audio/audio.env",
+            "set +a",
+            "export HOME=/var/lib/navi-audio",
+            "export ROS_HOME=/var/lib/navi-audio/ros",
+            "export ROS_LOG_DIR=/var/log/naviai/audio/ros",
+            "install -d -m 0755 \"$HOME\" \"$ROS_HOME\" \"$ROS_LOG_DIR\""
+          ],
+          "command": "ros2 launch navi_audio_pkg audio_bringup.launch.py intent_router_mode:=bt enable_face_bridge:=true voiceprint_adapter_mode:=real gesture_backend:=pico pico_gateway_url:=ws://192.168.217.66:8765 enable_background_task_test:=true",
+          "autorestart": "unexpected",
+          "startsecs": 5
+        },
+        {
+          "id": "vision",
+          "description": "Navi Vision ROS 2 stack (Supervisor)",
+          "mode": "managed",
+          "service_name": "navi-vision-supervisor",
+          "port": 19005,
+          "working_directory": "/var/lib/navi-vision",
+          "unset_environment": ["AMENT_PREFIX_PATH", "COLCON_PREFIX_PATH", "CMAKE_PREFIX_PATH", "PYTHONPATH"],
+          "source_files": [
+            "/etc/naviai/Middleware.env",
+            "/opt/ros/humble/setup.bash",
+            "/opt/naviai/venvs/vision/bin/activate"
+          ],
+          "prelude": [
+            "export HOME=/home/naviai",
+            "export YOLO_CONFIG_DIR=/var/lib/navi-vision/ultralytics",
+            "export ROS_DOMAIN_ID=72",
+            "export ROS_LOCALHOST_ONLY=0",
+            "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp",
+            "unset CYCLONEDDS_URI",
+            "install -d -m 0755 \"$YOLO_CONFIG_DIR\""
+          ],
+          "command": "ros2 launch navi_vision_pkg face_detection_node.launch.py selected_camera:=auto camera_auto_timeout_sec:=8.0",
+          "autorestart": "unexpected",
+          "startsecs": 5
+        }
+      ],
       "extra_debs": [
         {
           "name": "sensor",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/sensor/navi_sensor_dep-2.0.0-release-humble-arm64.deb",
-          "sha256": "",
-          "installers": ["auto"]
-        },
-        {
-          "name": "audio",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/audio/navi_audio_dep-2.0.0-release-humble-arm64.deb",
           "sha256": "",
           "installers": ["auto"]
         },
@@ -30,31 +136,13 @@
           "sha256": "",
           "installers": ["auto"],
           "environment": { "PIP_NO_BUILD_ISOLATION": "1" }
-        },
-        {
-          "name": "audio-module",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/develop/navi_audio_dep-2.0.0-release-humble-arm64.deb",
-          "sha256": "",
-          "installers": ["auto"]
-        },
-        {
-          "name": "vision",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/vision/develop/navi_vision_dep-2.0.0-release-humble-arm64.deb",
-          "sha256": "",
-          "installers": [],
-          "system_python_contract": {
-            "user": "naviai",
-            "module": "torch",
-            "version": "2.5.0a0+872d972e41.nv24.08",
-            "cuda": "12.6"
-          }
         }
       ],
       "runs": [
-        { "name": "chassis", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/chassis/develop/navi_chassis_orin_installer-2.0.0-release-humble-arm64.run", "sha256": "" },
-        { "name": "sensor", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/sensor/develop/navi_sensor_installer-2.0.0-release-humble-arm64.run", "sha256": "" },
-        { "name": "robot", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/develop/navi_robot_installer-2.0.0-release-humble-arm64.run", "sha256": "" },
-        { "name": "audio", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/develop/navi_audio_installer-2.0.0-release-humble-arm64.run", "sha256": "" },
+        { "name": "chassis", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/chassis/develop/navi_chassis_orin_installer-2.0.0-release-humble-arm64.run", "sha256": "", "arguments": ["--", "--robot-type", "{robot_type}"] },
+        { "name": "sensor", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/sensor/develop/navi_sensor_installer-2.0.0-release-humble-arm64.run", "sha256": "", "arguments": ["--", "--robot-type", "{robot_type}"] },
+        { "name": "robot", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/develop/navi_robot_installer-2.0.0-release-humble-arm64.run", "sha256": "", "arguments": [] },
+        { "name": "audio", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/humble/navi_audio_installer-2.0.0-release-humble-arm64.run", "sha256": "", "arguments": [], "start_policy": "supervisor" },
         { "name": "vision", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/vision/develop/navi_vision_installer-2.0.0-release-humble-arm64.run", "sha256": "", "arguments": [] }
       ]
     },
@@ -78,25 +166,13 @@
           "sha256": "",
           "installers": ["auto"],
           "environment": { "PIP_NO_BUILD_ISOLATION": "1" }
-        },
-        {
-          "name": "audio",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/jazzy/jenkins-audio_jazzy-54/navi_audio_dep-2.0.0-release-jazzy-arm64.deb",
-          "sha256": "",
-          "installers": ["auto"]
-        },
-        {
-          "name": "vision",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/vision/jazzy/navi_vision_dep-2.0.0-release-jazzy-arm64.deb",
-          "sha256": "",
-          "installers": []
         }
       ],
       "runs": [
-        { "name": "chassis", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/chassis/jazzy/navi_chassis_orin_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" },
-        { "name": "sensor", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/sensor/jazzy/navi_sensor_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" },
-        { "name": "robot", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/jazzy/navi_robot_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" },
-        { "name": "audio", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/jazzy/jenkins-audio_jazzy-54/navi_audio_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" },
+        { "name": "chassis", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/chassis/jazzy/navi_chassis_orin_installer-2.0.0-release-jazzy-arm64.run", "sha256": "", "arguments": ["--", "--robot-type", "{robot_type}"] },
+        { "name": "sensor", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/sensor/jazzy/navi_sensor_installer-2.0.0-release-jazzy-arm64.run", "sha256": "", "arguments": ["--", "--robot-type", "{robot_type}"] },
+        { "name": "robot", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/jazzy/navi_robot_installer-2.0.0-release-jazzy-arm64.run", "sha256": "", "arguments": [] },
+        { "name": "audio", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/jazzy/jenkins-audio_jazzy-54/navi_audio_installer-2.0.0-release-jazzy-arm64.run", "sha256": "", "arguments": [] },
         { "name": "vision", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/vision/jazzy/navi_vision_installer-2.0.0-release-jazzy-arm64.run", "sha256": "", "arguments": [] }
       ]
     },

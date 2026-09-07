@@ -17,6 +17,19 @@ SPEC.loader.exec_module(builder)
 
 
 class OneStopPackageTest(unittest.TestCase):
+    def test_orin_run_arguments_match_each_embedded_installer_interface(self) -> None:
+        config = builder.load(ROOT / "one_stop/package-urls.json")
+        for target_name in ("orin-humble", "orin-jazzy"):
+            runs = {
+                item["name"]: item["arguments"]
+                for item in config["targets"][target_name]["runs"]
+            }
+            self.assertEqual(runs["chassis"], ["--", "--robot-type", "{robot_type}"])
+            self.assertEqual(runs["sensor"], ["--", "--robot-type", "{robot_type}"])
+            self.assertEqual(runs["robot"], [])
+            self.assertEqual(runs["audio"], [])
+            self.assertEqual(runs["vision"], [])
+
     def test_extra_installer_environment_is_scoped_to_that_installer(self) -> None:
         script = builder.target_install(
             "orin-humble", "payloads/orin-humble/system-config", "", None,
@@ -31,6 +44,26 @@ class OneStopPackageTest(unittest.TestCase):
         self.assertEqual(builder.resolve_environment({"PIP_NO_BUILD_ISOLATION": "1"}, "test"), ["PIP_NO_BUILD_ISOLATION=1"])
         with self.assertRaises(builder.BuildError):
             builder.resolve_environment({"invalid-name": "1"}, "test")
+
+    def test_orin_humble_audio_is_installed_only_by_its_vendor_run_package(self) -> None:
+        config = builder.load(ROOT / "one_stop/package-urls.json")
+        humble = config["targets"]["orin-humble"]
+        self.assertNotIn("audio", {item["name"] for item in humble["extra_debs"]})
+        self.assertNotIn("audio-module", {item["name"] for item in humble["extra_debs"]})
+        audio = next(item for item in humble["runs"] if item["name"] == "audio")
+        self.assertEqual(audio["arguments"], [])
+        self.assertEqual(
+            audio["url"],
+            "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/humble/"
+            "navi_audio_installer-2.0.0-release-humble-arm64.run",
+        )
+
+    def test_vision_is_installed_only_by_its_vendor_run_package(self) -> None:
+        config = builder.load(ROOT / "one_stop/package-urls.json")
+        for target_name in ("orin-humble", "orin-jazzy"):
+            target = config["targets"][target_name]
+            self.assertNotIn("vision", {item["name"] for item in target["extra_debs"]})
+            self.assertIn("vision", {item["name"] for item in target["runs"]})
 
     def test_system_python_contract_is_checked_before_deb_install(self) -> None:
         contract = builder.resolve_system_python_contract({
@@ -184,6 +217,67 @@ class OneStopPackageTest(unittest.TestCase):
         self.assertIn('"$root/payloads/orin-jazzy/run-04.run"', install)
         self.assertNotIn('run-04.run" -- --robot-type', install)
         self.assertIn("/etc/systemd/system/navi-vision-supervisor.service", install)
+
+    def test_launcher_preserves_environment_and_virtualenv(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            environment = root / "environment.sh"
+            environment.write_text("export TEST_AUDIO_ENV=ready\n")
+            script = builder.supervisor_launch_script({
+                "working_directory": temporary,
+                "source_files": [str(environment)],
+                "prelude": ["export ROS_LOG_DIR=/tmp/audio-regression-logs"],
+                "command": "test \"$TEST_AUDIO_ENV\" = ready && test \"$ROS_LOG_DIR\" = /tmp/audio-regression-logs && ! shopt -q login_shell",
+            })
+            subprocess.run(["bash", "-c", script], check=True)
+
+    def test_orin_supervisor_modules_are_generated_from_the_only_delivery_config(self) -> None:
+        config = builder.load(ROOT / "one_stop/package-urls.json")
+        target = config["targets"]["orin-humble"]
+        with tempfile.TemporaryDirectory() as temporary:
+            stage = Path(temporary)
+            checksums = []
+            startup, registrations, post_install, paths = builder.stage_supervisor_modules(
+                stage, "orin-humble", target, checksums, False
+            )
+            agent = builder.stage_supervisor_agent(stage, "orin-humble", paths, checksums, False)
+            script = builder.target_install(
+                "orin-humble", "payloads/orin-humble/system-config", "", None, [], [],
+                [item[0] for item in startup], supervisor_startup=startup,
+                registrations=registrations, post_install=post_install, agent_service=paths, agent_payload=agent,
+            )
+
+            robot_entrypoint = (stage / "targets/orin-humble/supervisor/robot/supervisor-entrypoint.sh").read_text(encoding="utf-8")
+            audio_launch = (stage / "targets/orin-humble/supervisor/audio/launch.sh").read_text(encoding="utf-8")
+            robot_unit = (stage / "targets/orin-humble/supervisor/robot/navi-orin-robot-supervisor.service").read_text(encoding="utf-8")
+            robot_registration = (stage / "targets/orin-humble/supervisor/modules/robot.json").read_text(encoding="utf-8")
+            agent_unit_exists = (stage / "targets/orin-humble/supervisor-agent/navi-orin-supervisor-agent.service").is_file()
+
+        self.assertEqual(
+            {item[0] for item in startup},
+            {
+                "navi-orin-chassis.service",
+                "navi-orin-robot-supervisor.service",
+                "navi-orin-audio-supervisor.service",
+                "navi-vision-supervisor.service",
+            },
+        )
+        self.assertIn("port=192.168.217.100:19002", robot_entrypoint)
+        self.assertIn("supervisor.rpcinterface:make_main_rpcinterface", robot_entrypoint)
+        self.assertIn("unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH", audio_launch)
+        self.assertIn("source /opt/naviai/venvs/audio/bin/activate", audio_launch)
+        self.assertIn("export ROS_LOG_DIR=/var/log/naviai/audio/ros", audio_launch)
+        self.assertIn('install -d -m 0755 "$HOME" "$ROS_HOME" "$ROS_LOG_DIR"', audio_launch)
+        self.assertIn("pico_gateway_url:=ws://192.168.217.66:8765", audio_launch)
+        self.assertIn("ExecStart=/bin/bash /etc/naviai/supervised-stack/robot/supervisor-entrypoint.sh", robot_unit)
+        self.assertIn("http://192.168.217.100:19002/RPC2", robot_registration)
+        self.assertIn("/etc/naviai/supervisor-agent/modules.d/robot.json", script)
+        self.assertIn("configure_sensor_rpc.py", script)
+        self.assertIn("systemctl restart navi-sensor-host.service", script)
+        self.assertIn("systemctl restart navi-orin-supervisor-agent.service", script)
+        self.assertTrue(agent_unit_exists)
+        self.assertIn("/etc/naviai/supervisor-agent/modules.d/vision.json", script)
+        self.assertNotIn("/bin/bash -lc", audio_launch)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,8 @@ SHA = re.compile(r"^[0-9a-fA-F]{64}$")
 SERVICE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.@-]*\.service$")
 ENVIRONMENT_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 ROS_DISTRO = re.compile(r"^(humble|jazzy)$")
+MODULE_ID = re.compile(r"^[a-z][a-z0-9-]{0,62}$")
+HOST = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.:-]*$")
 DEPLOYMENT_ROOT = Path(__file__).resolve().parents[1]
 COMMON_ROOT = DEPLOYMENT_ROOT / "common"
 MIDDLEWARE_TEMPLATES = {
@@ -205,11 +207,24 @@ def resolve_run_arguments(values, field):
     return values
 
 
-def render_run_command(relpath, arguments):
+def resolve_run_start_policy(value, field):
+    """Return how a vendor run package is started after its installation phase."""
+    if value is None:
+        return "vendor"
+    if value not in {"vendor", "supervisor"}:
+        raise BuildError(field + ".start_policy must be vendor or supervisor")
+    return value
+
+
+def render_run_command(relpath, arguments, start_policy="vendor", helper_rel=None):
     rendered = []
     for argument in arguments:
         rendered.append('"$robot_type"' if argument == "{robot_type}" else shlex.quote(argument))
     suffix = " " + " ".join(rendered) if rendered else ""
+    if start_policy == "supervisor":
+        if helper_rel is None:
+            raise BuildError("a supervisor-managed run requires its installer helper")
+        return 'python3 "$root/{}" "$root/{}"{}'.format(helper_rel, relpath, suffix)
     return '/bin/bash "$root/{}"{}'.format(relpath, suffix)
 
 
@@ -281,6 +296,257 @@ def stage_vision_supervisor(stage, target_id, value, checksums, dry_run):
         unit.chmod(0o644)
         checksums.extend(((file_sha256(launch), launch_rel), (file_sha256(unit), service_rel)))
     return [(service, launch_rel, service_rel, destination)]
+
+
+def supervisor_paths(target_id, value):
+    """Validate the shared Supervisor Agent contract for a target."""
+    if value is None:
+        return None
+    required = {
+        "internal_ip", "agent_service", "agent_modules_directory", "agent_password_file",
+        "module_root", "runtime_root", "log_root",
+    }
+    optional = {"sensor_rpc"}
+    if not isinstance(value, dict) or not required <= set(value) or set(value) - required - optional:
+        raise BuildError(target_id + ".supervisor must contain " + ", ".join(sorted(required)))
+    result = {key: require(value.get(key), target_id + ".supervisor." + key) for key in required}
+    if not HOST.fullmatch(result["internal_ip"]):
+        raise BuildError(target_id + ".supervisor.internal_ip is invalid")
+    if not result["agent_service"].removesuffix(".service"):
+        raise BuildError(target_id + ".supervisor.agent_service is invalid")
+    for key in required - {"internal_ip", "agent_service"}:
+        if not result[key].startswith("/"):
+            raise BuildError(target_id + ".supervisor." + key + " must be an absolute path")
+    sensor_rpc = value.get("sensor_rpc")
+    if sensor_rpc is not None:
+        if not isinstance(sensor_rpc, dict) or set(sensor_rpc) != {"config", "service", "port"}:
+            raise BuildError(target_id + ".supervisor.sensor_rpc must contain config, service and port")
+        if not isinstance(sensor_rpc["config"], str) or not sensor_rpc["config"].startswith("/"):
+            raise BuildError(target_id + ".supervisor.sensor_rpc.config must be an absolute path")
+        if not isinstance(sensor_rpc["service"], str) or not SERVICE.fullmatch(sensor_rpc["service"]):
+            raise BuildError(target_id + ".supervisor.sensor_rpc.service is invalid")
+        if not isinstance(sensor_rpc["port"], int) or not 1 <= sensor_rpc["port"] <= 65535:
+            raise BuildError(target_id + ".supervisor.sensor_rpc.port must be a TCP port")
+        result["sensor_rpc"] = sensor_rpc
+    return result
+
+
+def supervisor_module(target_id, index, value):
+    """Validate one legacy Supervisor module now owned by the one-stop config."""
+    field = "{}.supervisor_modules[{}]".format(target_id, index)
+    if not isinstance(value, dict):
+        raise BuildError(field + " must be an object")
+    allowed = {
+        "id", "description", "mode", "port", "register", "service_name", "command",
+        "working_directory", "source_files", "unset_environment", "environment", "prelude",
+        "autorestart", "exitcodes", "startsecs", "startretries", "timeout_stop_seconds",
+        "after_services", "part_of_services", "log_maxbytes", "log_backups",
+    }
+    unknown = set(value) - allowed
+    if unknown:
+        raise BuildError(field + " has unsupported keys: " + ", ".join(sorted(unknown)))
+    result = dict(value)
+    identifier = require(result.get("id"), field + ".id")
+    if not MODULE_ID.fullmatch(identifier):
+        raise BuildError(field + ".id is invalid")
+    result["id"] = identifier
+    result["description"] = require(result.get("description"), field + ".description")
+    if result.get("mode") not in {"managed", "external"}:
+        raise BuildError(field + ".mode must be managed or external")
+    if not isinstance(result.get("port"), int) or not 1 <= result["port"] <= 65535:
+        raise BuildError(field + ".port must be a TCP port")
+    if "register" in result and not isinstance(result["register"], bool):
+        raise BuildError(field + ".register must be boolean")
+    for key in ("source_files", "unset_environment", "prelude", "after_services", "part_of_services"):
+        if key in result and (not isinstance(result[key], list) or not all(isinstance(item, str) and item for item in result[key])):
+            raise BuildError(field + ".{} must be a non-empty string list".format(key))
+    if "environment" in result and (not isinstance(result["environment"], dict) or not all(
+        isinstance(name, str) and ENVIRONMENT_KEY.fullmatch(name) and isinstance(item, str)
+        for name, item in result["environment"].items()
+    )):
+        raise BuildError(field + ".environment must be a string map")
+    if result["mode"] == "managed":
+        result["command"] = require(result.get("command"), field + ".command")
+        result["working_directory"] = require(result.get("working_directory"), field + ".working_directory")
+        if not result["working_directory"].startswith("/"):
+            raise BuildError(field + ".working_directory must be an absolute path")
+        service_name = result.get("service_name", "navi-{}-{}-supervisor".format(target_id.split("-", 1)[0], identifier))
+        if not isinstance(service_name, str) or not MODULE_ID.fullmatch(service_name):
+            raise BuildError(field + ".service_name is invalid")
+        result["service_name"] = service_name + ".service"
+    return result
+
+
+def supervisor_launch_script(module):
+    lines = ["#!/bin/bash", "# Generated from one_stop/package-urls.json.", "set -eo pipefail"]
+    unset_names = module.get("unset_environment", [])
+    if unset_names:
+        lines.append("unset {}".format(" ".join(shlex.quote(name) for name in unset_names)))
+    for key, value in module.get("environment", {}).items():
+        lines.append("export {}={}".format(key, shlex.quote(value)))
+    for path in module.get("source_files", []):
+        lines.append("source {}".format(shlex.quote(path)))
+    lines.extend(module.get("prelude", []))
+    lines.append("cd {}".format(shlex.quote(module["working_directory"])))
+    lines.append("exec /bin/bash -c {}".format(shlex.quote(module["command"])))
+    return "\n".join(lines) + "\n"
+
+
+def supervisor_entrypoint_script(module, paths):
+    identifier = module["id"]
+    runtime_dir = "{}/{}".format(paths["runtime_root"], identifier)
+    log_dir = "{}/{}".format(paths["log_root"], identifier)
+    install_dir = "{}/{}".format(paths["module_root"], identifier)
+    lines = [
+        "#!/bin/bash", "set -euo pipefail", 'runtime_dir="{}"'.format(runtime_dir),
+        'log_dir="{}"'.format(log_dir), 'config_path="${runtime_dir}/supervisord.conf"',
+        "password_file={}".format(shlex.quote(paths["agent_password_file"])),
+        'install -d -m 0750 "$runtime_dir" "$log_dir"',
+        'install -d -m 0755 {}'.format(shlex.quote(module['working_directory'])),
+        'password=$(tr -d "\\r\\n" < "$password_file")',
+        '[[ "$password" =~ ^[[:xdigit:]]{64}$ ]] || { echo "invalid Supervisor Agent RPC credential" >&2; exit 1; }',
+        'cat > "$config_path" <<EOF',
+        "[supervisord]", "nodaemon=true", "user=root", "logfile={}/supervisord.log".format(log_dir),
+        "pidfile={}/supervisord.pid".format(runtime_dir), "", "[unix_http_server]",
+        "file={}/supervisor.sock".format(runtime_dir), "chmod=0700", "", "[inet_http_server]",
+        "port={}:{}".format(paths["internal_ip"], module["port"]), "username=agent", "password=${password}", "",
+        "[rpcinterface:supervisor]", "supervisor.rpcinterface_factory=supervisor.rpcinterface:make_main_rpcinterface", "",
+        "[program:{}]".format(identifier), "command=/bin/bash {}/launch.sh".format(install_dir),
+        "directory={}".format(module["working_directory"]), "autostart=true",
+        "autorestart={}".format(module.get("autorestart", "unexpected")),
+        "exitcodes={}".format(module.get("exitcodes", "0")),
+        "startsecs={}".format(module.get("startsecs", 3)),
+        "startretries={}".format(module.get("startretries", 3)), "stopasgroup=true", "killasgroup=true",
+        "redirect_stderr=true", "stdout_logfile={}/{}.log".format(log_dir, identifier),
+        "stdout_logfile_maxbytes={}".format(module.get("log_maxbytes", "10MB")),
+        "stdout_logfile_backups={}".format(module.get("log_backups", 5)), "EOF",
+        'chmod 0600 "$config_path"', 'exec /usr/bin/supervisord -c "$config_path"',
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def supervisor_systemd_service(module, paths):
+    after = ["network-online.target", paths["agent_service"].removesuffix(".service") + ".service"]
+    after.extend(item.removesuffix(".service") + ".service" for item in module.get("after_services", []))
+    lines = [
+        "[Unit]", "Description={}".format(module["description"]), "After={}".format(" ".join(after)),
+        "Wants=network-online.target", "RequiresMountsFor={} {}".format(module["working_directory"], paths["log_root"]),
+    ]
+    if module.get("part_of_services"):
+        lines.append("PartOf={}".format(" ".join(item.removesuffix(".service") + ".service" for item in module["part_of_services"])))
+    lines.extend((
+        "", "[Service]", "Type=simple",
+        "ExecStart=/bin/bash {}/{}/supervisor-entrypoint.sh".format(paths["module_root"], module["id"]),
+        "Restart=on-failure", "RestartSec=3", "TimeoutStopSec={}".format(module.get("timeout_stop_seconds", 30)),
+        "", "[Install]", "WantedBy=multi-user.target", "",
+    ))
+    return "\n".join(lines)
+
+
+def stage_supervisor_modules(stage, target_id, target, checksums, dry_run):
+    """Stage legacy module registrations and managed Supervisor services in the one-stop archive."""
+    paths = supervisor_paths(target_id, target.get("supervisor"))
+    values = target.get("supervisor_modules", [])
+    if paths is None:
+        if values:
+            raise BuildError(target_id + ".supervisor_modules requires " + target_id + ".supervisor")
+        return [], [], [], None
+    if not isinstance(values, list):
+        raise BuildError(target_id + ".supervisor_modules must be a list")
+    modules, identifiers, startup, registrations = [], set(), [], []
+    for index, value in enumerate(values):
+        module = supervisor_module(target_id, index, value)
+        if module["id"] in identifiers:
+            raise BuildError(target_id + ".supervisor_modules ids must be unique")
+        identifiers.add(module["id"])
+        modules.append(module)
+    for module in modules:
+        identifier = module["id"]
+        if module.get("register", True):
+            relpath = "targets/{}/supervisor/modules/{}.json".format(target_id, identifier)
+            if not dry_run:
+                destination = stage / relpath
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_text(json.dumps({"modules": {identifier: {"endpoint": "http://{}:{}/RPC2".format(paths["internal_ip"], module["port"])}}}, indent=2) + "\n", encoding="utf-8")
+                checksums.append((file_sha256(destination), relpath))
+            registrations.append((relpath, "{}/{}.json".format(paths["agent_modules_directory"], identifier)))
+        if module["mode"] != "managed":
+            continue
+        base = "targets/{}/supervisor/{}".format(target_id, identifier)
+        launch_rel, entrypoint_rel = base + "/launch.sh", base + "/supervisor-entrypoint.sh"
+        unit_rel = base + "/" + module["service_name"]
+        if not dry_run:
+            directory = stage / base
+            directory.mkdir(parents=True, exist_ok=True)
+            launch, entrypoint, unit = stage / launch_rel, stage / entrypoint_rel, stage / unit_rel
+            launch.write_text(supervisor_launch_script(module), encoding="utf-8")
+            entrypoint.write_text(supervisor_entrypoint_script(module, paths), encoding="utf-8")
+            unit.write_text(supervisor_systemd_service(module, paths), encoding="utf-8")
+            launch.chmod(0o755); entrypoint.chmod(0o755); unit.chmod(0o644)
+            checksums.extend(((file_sha256(launch), launch_rel), (file_sha256(entrypoint), entrypoint_rel), (file_sha256(unit), unit_rel)))
+        startup.append((module["service_name"], launch_rel, entrypoint_rel, unit_rel, identifier))
+    post_install = []
+    if paths.get("sensor_rpc"):
+        helper_rel = "targets/{}/helpers/configure_sensor_rpc.py".format(target_id)
+        if not dry_run:
+            helper = stage / helper_rel
+            helper.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(Path(__file__).resolve().parent / "configure_sensor_rpc.py", helper)
+            helper.chmod(0o755)
+            checksums.append((file_sha256(helper), helper_rel))
+        sensor_rpc = paths["sensor_rpc"]
+        post_install.extend((
+            "python3 \"$root/{}\" --config {} --password-file {} --host {} --port {}".format(
+                helper_rel, shlex.quote(sensor_rpc["config"]), shlex.quote(paths["agent_password_file"]),
+                shlex.quote(paths["internal_ip"]), sensor_rpc["port"],
+            ),
+            "systemctl restart {}".format(shlex.quote(sensor_rpc["service"])),
+        ))
+    return startup, registrations, post_install, paths
+
+
+def stage_supervisor_agent(stage, target_id, paths, checksums, dry_run):
+    """Stage the local Agent whenever a target declares a Supervisor contract."""
+    if paths is None:
+        return None
+    device = target_id.split("-", 1)[0]
+    if device not in {"orin", "pico"}:
+        raise BuildError(target_id + ".supervisor is unsupported for this device")
+    source_root = DEPLOYMENT_ROOT / "packages" / "supervisor-agent"
+    module_config = source_root / "resources" / (device + "-modules.json")
+    initializer = source_root / "scripts" / ("initialize_orin_agent_secrets.py" if device == "orin" else "initialize_agent_secrets.py")
+    assets = {
+        "navi_supervisor_agent.py": source_root / "resources" / "navi_supervisor_agent.py",
+        "modules.json": module_config,
+        "initialize_agent_secrets.py": initializer,
+    }
+    base = "targets/{}/supervisor-agent".format(target_id)
+    if not dry_run:
+        for name, source in assets.items():
+            if not source.is_file():
+                raise BuildError("Supervisor Agent source is missing: {}".format(source))
+            destination = stage / base / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+            destination.chmod(0o755 if name.endswith(".py") else 0o644)
+            checksums.append((file_sha256(destination), (Path(base) / name).as_posix()))
+        service = stage / base / (paths["agent_service"].removesuffix(".service") + ".service")
+        service.write_text("\n".join((
+            "[Unit]", "Description=Navi {} Supervisor Agent".format(device.title()), "After=network-online.target",
+            "Wants=network-online.target", "", "[Service]", "Type=simple",
+            "ExecStart=/usr/bin/python3 {}/navi_supervisor_agent.py --config {}/modules.json".format(
+                paths["agent_modules_directory"].rsplit("/modules.d", 1)[0],
+                paths["agent_modules_directory"].rsplit("/modules.d", 1)[0],
+            ),
+            "Restart=on-failure", "RestartSec=3", "", "[Install]", "WantedBy=multi-user.target", "",
+        )), encoding="utf-8")
+        service.chmod(0o644)
+        checksums.append((file_sha256(service), (Path(base) / service.name).as_posix()))
+    return {
+        "base": base,
+        "service": paths["agent_service"].removesuffix(".service") + ".service",
+        "destination": paths["agent_modules_directory"].rsplit("/modules.d", 1)[0],
+    }
 
 
 def services_from_run(run_path):
@@ -375,8 +641,10 @@ def stage_system_config(stage, target_id, target, checksums, dry_run):
     return config_rel
 
 
-def target_install(target_id, system_config_rel, common_rel, common, extras, runs, services, startup_services=()):
-    lines = ["#!/bin/bash", "set -euo pipefail", "root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../..\" && pwd)\"", "robot_type=\"$1\"", "(cd \"$root\" && sha256sum -c \"targets/{}/payloads.sha256\")".format(target_id)]
+def target_install(target_id, system_config_rel, common_rel, common, extras, runs, services,
+                   startup_services=(), supervisor_startup=(), registrations=(), post_install=(), agent_service=None,
+                   agent_payload=None):
+    lines = ["#!/bin/bash", "set -euo pipefail", "umask 022", "root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../..\" && pwd)\"", "robot_type=\"$1\"", "(cd \"$root\" && sha256sum -c \"targets/{}/payloads.sha256\")".format(target_id)]
     if services:
         lines.extend([
             "managed_services=(" + " ".join('\"{}\"'.format(item) for item in services) + ")",
@@ -400,22 +668,53 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         lines.append("dpkg -i \"$root/{}\"".format(relpath))
         prefix = "env " + " ".join(environment) + " " if environment else ""
         lines.extend(prefix + "\"{}\"".format(item) for item in installers)
-    for item, arguments in runs:
-        lines.append(render_run_command(item, arguments))
+    for run in runs:
+        item, arguments = run[:2]
+        start_policy = run[2] if len(run) > 2 else "vendor"
+        helper_rel = run[3] if len(run) > 3 else None
+        lines.append(render_run_command(item, arguments, start_policy, helper_rel))
         if services:
             lines.append("stop_managed_services")
     for _, launch_rel, service_rel, destination in startup_services:
         lines.extend((
-            "install -d -m 0755 /usr/local/lib/navi-vision",
+            "install -d -m 0755 {}".format(shlex.quote(str(Path(destination).parent))),
             "install -m 0755 \"$root/{}\" {}".format(launch_rel, shlex.quote(destination)),
             "install -m 0644 \"$root/{}\" /etc/systemd/system/{}".format(service_rel, shlex.quote(Path(service_rel).name)),
         ))
+    for service, launch_rel, entrypoint_rel, service_rel, identifier in supervisor_startup:
+        module_root = Path(agent_service["module_root"]) / identifier
+        lines.extend((
+            "install -d -m 0755 {}".format(shlex.quote(str(module_root))),
+            "install -m 0755 \"$root/{}\" {}".format(launch_rel, shlex.quote(str(module_root / "launch.sh"))),
+            "install -m 0755 \"$root/{}\" {}".format(entrypoint_rel, shlex.quote(str(module_root / "supervisor-entrypoint.sh"))),
+            "install -m 0644 \"$root/{}\" /etc/systemd/system/{}".format(service_rel, shlex.quote(service)),
+        ))
+    if agent_payload:
+        agent_base = agent_payload["base"]
+        destination = agent_payload["destination"]
+        lines.extend((
+            "install -d -m 0755 {}".format(shlex.quote(destination)),
+            "install -m 0755 \"$root/{}/navi_supervisor_agent.py\" {}/navi_supervisor_agent.py".format(agent_base, shlex.quote(destination)),
+            "install -m 0644 \"$root/{}/modules.json\" {}/modules.json".format(agent_base, shlex.quote(destination)),
+            "install -m 0755 \"$root/{}/initialize_agent_secrets.py\" {}/initialize_agent_secrets.py".format(agent_base, shlex.quote(destination)),
+            "python3 {}/initialize_agent_secrets.py".format(shlex.quote(destination)),
+            "install -m 0644 \"$root/{}/{}\" /etc/systemd/system/{}".format(agent_base, agent_payload["service"], shlex.quote(agent_payload["service"])),
+        ))
+    if registrations:
+        lines.append("install -d -m 0755 {}".format(shlex.quote(agent_service["agent_modules_directory"])))
+        lines.extend("install -m 0644 \"$root/{}\" {}".format(relpath, shlex.quote(destination)) for relpath, destination in registrations)
+    lines.extend(post_install)
     if services:
         lines.extend([
             "systemctl daemon-reload", "for unit in \"${managed_services[@]}\"; do",
             "  if [[ -f \"/etc/systemd/system/$unit\" ]]; then", "    systemctl enable \"$unit\"", "    systemctl restart \"$unit\"", "  fi",
             "done", "install_complete=1", "trap - EXIT",
         ])
+    if agent_payload:
+        lines.extend((
+            "systemctl daemon-reload", "systemctl enable {}".format(shlex.quote(agent_payload["service"])),
+            "systemctl restart {}".format(shlex.quote(agent_payload["service"])),
+        ))
     return "\n".join(lines) + "\n"
 
 
@@ -449,7 +748,8 @@ def target_pretest(target_id, system_config_rel, common_rel, extras, runs):
         if contract:
             lines.append("echo 'Required system Python: {} {} / CUDA {}'".format(contract["module"], contract["version"], contract["cuda"]))
         lines.append("pretest_deb \"$root/{}\"".format(relpath))
-    for relpath, _ in runs:
+    for run in runs:
+        relpath = run[0]
         lines.extend([
             "echo \"Run package: {}\"".format(relpath),
             "pretest_run \"$root/{}\"".format(relpath),
@@ -525,6 +825,11 @@ def build(version_file, urls_file, output_dir, dry_run=False):
                 stage, target_id, configured_vision_supervisor, target_checksums, dry_run
             )
             services.extend(item[0] for item in startup_services)
+            supervisor_startup, registrations, supervisor_post_install, supervisor_config = stage_supervisor_modules(
+                stage, target_id, target, target_checksums, dry_run
+            )
+            supervisor_agent = stage_supervisor_agent(stage, target_id, supervisor_config, target_checksums, dry_run)
+            services.extend(item[0] for item in supervisor_startup)
             for index, item in enumerate(target.get("extra_debs", [])):
                 if not isinstance(item, dict) or not item.get("url"): continue
                 relpath = "payloads/{}/extra-{:02d}.deb".format(target_id, index); path = stage / relpath; path.parent.mkdir(parents=True, exist_ok=True)
@@ -536,6 +841,7 @@ def build(version_file, urls_file, output_dir, dry_run=False):
                     resolve_environment(item.get("environment"), target_id + ".extra.environment"),
                     resolve_system_python_contract(item.get("system_python_contract"), target_id + ".extra"),
                 ))
+            requires_no_final_exec_helper = False
             for index, item in enumerate(target.get("runs", [])):
                 if not isinstance(item, dict) or not item.get("url"): continue
                 relpath = "payloads/{}/run-{:02d}.run".format(target_id, index); path = stage / relpath; path.parent.mkdir(parents=True, exist_ok=True)
@@ -544,12 +850,30 @@ def build(version_file, urls_file, output_dir, dry_run=False):
                     path.chmod(0o755)
                     target_checksums.append((file_sha256(path), relpath))
                     services.extend(services_from_run(path))
+                start_policy = resolve_run_start_policy(item.get("start_policy"), target_id + ".run")
+                requires_no_final_exec_helper |= start_policy == "supervisor"
                 runs.append((
                     relpath,
                     resolve_run_arguments(item.get("arguments"), target_id + ".run"),
+                    start_policy,
+                    "targets/{}/helpers/install_run_without_final_exec.py".format(target_id) if start_policy == "supervisor" else None,
                 ))
+            if requires_no_final_exec_helper and not dry_run:
+                helper_source = Path(__file__).resolve().parent / "install_run_without_final_exec.py"
+                helper_rel = "targets/{}/helpers/install_run_without_final_exec.py".format(target_id)
+                helper = stage / helper_rel
+                helper.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(helper_source, helper)
+                helper.chmod(0o755)
+                target_checksums.append((file_sha256(helper), helper_rel))
             script = stage / "targets" / target_id / "install.sh"; script.parent.mkdir(parents=True, exist_ok=True)
-            script.write_text(target_install(target_id, system_config_rel, common_rel, common, extras, runs, sorted(set(services)), startup_services), encoding="utf-8"); script.chmod(0o755)
+            script.write_text(
+                target_install(
+                    target_id, system_config_rel, common_rel, common, extras, runs, sorted(set(services)),
+                    startup_services, supervisor_startup, registrations, supervisor_post_install, supervisor_config,
+                    supervisor_agent,
+                ), encoding="utf-8"
+            ); script.chmod(0o755)
             pretest = stage / "targets" / target_id / "pretest.sh"
             pretest.write_text(target_pretest(target_id, system_config_rel, common_rel, extras, runs), encoding="utf-8")
             pretest.chmod(0o755)
@@ -577,7 +901,7 @@ def build(version_file, urls_file, output_dir, dry_run=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True, type=Path); parser.add_argument("--urls", required=True, type=Path)
-    parser.add_argument("--output-dir", type=Path, default=Path("dist/one-stop")); parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parents[2] / "dist"); parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     try: build(args.version.resolve(), args.urls.resolve(), args.output_dir.resolve(), args.dry_run)
     except BuildError as error: print("ERROR: {}".format(error), file=sys.stderr); return 1

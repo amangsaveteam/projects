@@ -21,6 +21,7 @@ def ensure_secret(path):
 
 if __name__ == "__main__":
     ensure_secret("/etc/naviai/supervisor-agent/supervisor-rpc.password")
+    subprocess.run(["systemctl", "daemon-reload"], check=True)
     chassis_service = "navi-orin-chassis.service"
-    if subprocess.run(["systemctl", "is-active", "--quiet", chassis_service], check=False).returncode == 0:
+    if subprocess.run(["systemctl", "cat", chassis_service], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False).returncode == 0:
         subprocess.run(["systemctl", "restart", chassis_service], check=True)
