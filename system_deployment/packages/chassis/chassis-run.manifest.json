@@ -22,6 +22,10 @@
       // dependency through the compatibility package below.
       "pre_install": [
         {
+          "name": "require-supervisor",
+          "cmd": "command -v supervisord >/dev/null || { echo 'ERROR: install the supervisor package before the chassis run package' >&2; exit 1; }"
+        },
+        {
           "name": "replace-legacy-naviai-log",
           "cmd": "if dpkg-query -W -f='${db:Status-Status}' zj-humanoid-naviai-log 2>/dev/null | grep -qx installed; then dpkg --remove --force-depends zj-humanoid-naviai-log; fi"
         },
@@ -72,10 +76,16 @@
         "sha256": "3c2715610ad69cf23f1c689e7c03be4c780d2e1f6e245d2f0dd0310ee7428979"
       }
     ],
+    "resource": [
+      {
+        "local_path": "resources/entrypoint.sh",
+        "path": "/etc/naviai/chassis/entrypoint.sh"
+      }
+    ],
     "startup": {
       "name": "navi-orin-chassis",
       "description": "Navi Orin ROS 2 chassis node",
-      "command": "ros2 launch chassis chassis.launch.py namespace:=zj_humanoid",
+      "command": "/bin/bash /etc/naviai/chassis/entrypoint.sh",
       "script_directory": "/etc/naviai/chassis",
       "restart": "on-failure",
       "start_on_install": true

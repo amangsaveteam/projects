@@ -1,6 +1,6 @@
 {
   // Fill url (and preferably sha256) for every target to be included.
-  // A target is included automatically when common.url is non-empty.
+  // A target is included automatically when it defines system_config or common.url.
   // extra_debs and runs are installed in the listed order.
   "schema_version": 1,
   "targets": {
@@ -10,6 +10,7 @@
       "os_version": "22.04",
       "architecture": "arm64",
       "system_config": { "configure_target": "orin-humble", "base_image_contract": "orin-humble" },
+      "vision_supervisor": { "service": "navi-vision-supervisor.service", "ros_distro": "humble" },
       "extra_debs": [
         {
           "name": "sensor",
@@ -40,7 +41,13 @@
           "name": "vision",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/vision/develop/navi_vision_dep-2.0.0-release-humble-arm64.deb",
           "sha256": "",
-          "installers": ["auto"]
+          "installers": [],
+          "system_python_contract": {
+            "user": "naviai",
+            "module": "torch",
+            "version": "2.5.0a0+872d972e41.nv24.08",
+            "cuda": "12.6"
+          }
         }
       ],
       "runs": [
@@ -48,7 +55,7 @@
         { "name": "sensor", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/sensor/develop/navi_sensor_installer-2.0.0-release-humble-arm64.run", "sha256": "" },
         { "name": "robot", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/develop/navi_robot_installer-2.0.0-release-humble-arm64.run", "sha256": "" },
         { "name": "audio", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/develop/navi_audio_installer-2.0.0-release-humble-arm64.run", "sha256": "" },
-        { "name": "vision", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/vision/develop/navi_vision_installer-2.0.0-release-humble-arm64.run", "sha256": "" }
+        { "name": "vision", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/vision/develop/navi_vision_installer-2.0.0-release-humble-arm64.run", "sha256": "", "arguments": [] }
       ]
     },
     "orin-jazzy": {
@@ -57,6 +64,7 @@
       "os_version": "24.04",
       "architecture": "arm64",
       "system_config": { "configure_target": "orin-jazzy", "base_image_contract": "orin-jazzy" },
+      "vision_supervisor": { "service": "navi-vision-supervisor.service", "ros_distro": "jazzy" },
       "extra_debs": [
         {
           "name": "sensor",
@@ -76,13 +84,20 @@
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/jazzy/jenkins-audio_jazzy-54/navi_audio_dep-2.0.0-release-jazzy-arm64.deb",
           "sha256": "",
           "installers": ["auto"]
+        },
+        {
+          "name": "vision",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/vision/jazzy/navi_vision_dep-2.0.0-release-jazzy-arm64.deb",
+          "sha256": "",
+          "installers": []
         }
       ],
       "runs": [
         { "name": "chassis", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/chassis/jazzy/navi_chassis_orin_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" },
         { "name": "sensor", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/sensor/jazzy/navi_sensor_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" },
         { "name": "robot", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/jazzy/navi_robot_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" },
-        { "name": "audio", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/jazzy/jenkins-audio_jazzy-54/navi_audio_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" }
+        { "name": "audio", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/jazzy/jenkins-audio_jazzy-54/navi_audio_installer-2.0.0-release-jazzy-arm64.run", "sha256": "" },
+        { "name": "vision", "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/vision/jazzy/navi_vision_installer-2.0.0-release-jazzy-arm64.run", "sha256": "", "arguments": [] }
       ]
     },
     "pico-humble": {

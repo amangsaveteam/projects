@@ -69,6 +69,16 @@ class BuildRunPackageTest(unittest.TestCase):
         )
         self.assertIn('export MIDDLEWARE_ROS_DISTRO="jazzy"', lines)
 
+    def test_orin_environment_has_a_profile_compatibility_dds_fallback(self) -> None:
+        lines = build_run_package.environment_lines(
+            {"version": "v1", "build_time": "2026-08-31", "branch_name": "test", "commit_id": "abcdef"},
+            {"platform": "ORIN", "sys_env_version": "ubuntu-22.04", "modules": [], "environment": {}, "build_time": "2026-08-31", "branch_name": "test", "commit_id": "abcdef"},
+        )
+        rendered = "\n".join(lines)
+        self.assertIn("Older device profiles may not export DDS settings", rendered)
+        self.assertIn("export ROS_DOMAIN_ID=72", rendered)
+        self.assertIn("export RMW_IMPLEMENTATION", rendered)
+
     def test_builds_platform_specific_payload_and_scripts(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
@@ -196,6 +206,7 @@ class BuildRunPackageTest(unittest.TestCase):
             with self.read_payload(output) as payload:
                 orin_script = payload.extractfile("ORIN/run.sh").read().decode("utf-8")
                 startup_script = payload.extractfile("ORIN/startup/navi-orin-chassis-start.sh").read().decode("utf-8")
+                chassis_entrypoint = payload.extractfile("ORIN/resources/000-entrypoint.sh").read().decode("utf-8")
             legacy_removal = "dpkg --remove --force-depends zj-humanoid-naviai-log"
             chassis_removal = "dpkg --remove --force-depends ros-humble-chassis"
             replacement_install = "000-zj-humanoid-log-l1.deb"
@@ -203,7 +214,9 @@ class BuildRunPackageTest(unittest.TestCase):
             self.assertIn(chassis_removal, orin_script)
             self.assertLess(orin_script.index(legacy_removal), orin_script.index(replacement_install))
             self.assertLess(orin_script.index(chassis_removal), orin_script.index(replacement_install))
-            self.assertIn("ros2 launch chassis chassis.launch.py namespace:=zj_humanoid", startup_script)
+            self.assertIn("/bin/bash /etc/naviai/chassis/entrypoint.sh", startup_script)
+            self.assertIn("unset ROS_DOMAIN_ID RMW_IMPLEMENTATION CYCLONEDDS_URI; source /etc/naviai/Middleware.env; exec ros2 launch chassis chassis.launch.py namespace:=zj_humanoid", chassis_entrypoint)
+            self.assertIn("port=192.168.217.100:19004", chassis_entrypoint)
 
 
 if __name__ == "__main__":

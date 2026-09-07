@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "name": "Navi Orin Humble supervised modules",
+  "output_name": "navi_orin_humble_modules_supervisor-2.0.0-release-humble-arm64",
+  "target": {
+    "platform": "ORIN",
+    "os_version": "22.04",
+    "architecture": "arm64",
+    "internal_ip": "192.168.217.100",
+    "middleware_env": "/etc/naviai/Middleware.env",
+    "agent_service": "navi-orin-supervisor-agent",
+    "agent_port": 9080
+  },
+  "modules": [
+    {
+      "id": "agent",
+      "description": "Navi Orin Supervisor Agent",
+      "artifact": {"type": "run", "url": "local://output/navi_orin_supervisor_agent-1.0.0-arm64.run", "delivery": "embed"},
+      "install": {"arguments": ["install", "--device", "ORIN", "--robot-type", "{robot_type}"]},
+      "supervisor": {"mode": "external", "port": 9080, "register": false}
+    },
+    {
+      "id": "chassis",
+      "description": "Navi Orin ROS 2 chassis node",
+      "artifact": {"type": "run", "url": "local://output/navi_chassis_orin_installer-2.0.0-release-humble-arm64.run", "delivery": "embed"},
+      "install": {"arguments": ["install", "--device", "ORIN", "--robot-type", "{robot_type}"]},
+      "supervisor": {"mode": "external", "port": 19004}
+    },
+    {
+      "id": "sensor",
+      "description": "Navi Orin Sensor stack",
+      "artifact": {
+        "type": "run",
+        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/sensor/develop/navi_sensor_installer-2.0.0-release-humble-arm64.run",
+        "sha256": "460461704506b183b803963be532e59586f0c15a96ffc271264b347b366be275",
+        "delivery": "embed"
+      },
+      "install": {"arguments": ["--", "--robot-type", "{robot_type}"]},
+      "helpers": ["orin_humble_stack/templates/configure_sensor_rpc.py"],
+      "hooks": {"post_install": ["python3 \"$root/helpers/configure_sensor_rpc.py\" --config /etc/naviai/navi-sensor-host-supervisor.conf --password-file /etc/naviai/supervisor-agent/supervisor-rpc.password", "systemctl restart navi-sensor-host.service"]},
+      "supervisor": {"mode": "external", "port": 19001}
+    },
+    {
+      "id": "robot",
+      "description": "Jetson Orin robot-state ROS 2 stack (Supervisor)",
+      "artifact": {
+        "type": "run",
+        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/develop/navi_robot_installer-2.0.0-release-humble-arm64.run",
+        "sha256": "8a275abf032d08e9f37b0453f2ab07d4cf1b13bc04f4a58dfb63634d9a430452",
+        "delivery": "embed"
+      },
+      "install": {"disable_units": ["navi-supervisor-agent.service", "navi-orin-robot.service"]},
+      "supervisor": {
+        "mode": "managed",
+        "port": 19002,
+        "working_directory": "/var/lib/navi",
+        "source_files": ["/etc/naviai/Middleware.env", "/etc/naviai/robot/robot_env.sh"],
+        "environment": {"HOME": "/var/lib/navi", "ROS_HOME": "/var/lib/navi/ros", "ROS_LOG_DIR": "/var/log/navi/ros", "NAVI_ORIN_ROBOT_LOG_DIR": "/var/log/navi/robot", "NAVI_ORIN_ROBOT_LOG_LEVEL": "INFO", "RCUTILS_COLORIZED_OUTPUT": "0", "RCUTILS_LOGGING_USE_STDOUT": "1", "RCUTILS_LOGGING_BUFFERED_STREAM": "1"},
+        "command": "ros2 launch orin_robot orin_robot.launch.py",
+        "autorestart": "unexpected",
+        "startsecs": 3,
+        "timeout_stop_seconds": 20
+      }
+    },
+    {
+      "id": "audio",
+      "description": "Jetson Orin Audio ROS 2 stack (Supervisor)",
+      "artifact": {
+        "type": "run",
+        "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/develop/navi_audio_installer-2.0.0-release-humble-arm64.run",
+        "sha256": "5de2f36e19f3470f68b636d946b5e80844fde2d75d1aaa4342e396b5679a0f3e",
+        "delivery": "embed"
+      },
+      "install": {"handler": "orin_humble_stack/templates/install_audio_without_start.py"},
+      "supervisor": {
+        "mode": "managed",
+        "port": 19003,
+        "working_directory": "/var/lib/navi-audio",
+        "unset_environment": ["AMENT_PREFIX_PATH", "COLCON_PREFIX_PATH", "CMAKE_PREFIX_PATH", "PYTHONPATH"],
+        "environment": {"HOME": "/var/lib/navi-audio", "ROS_HOME": "/var/lib/navi-audio/ros", "ROS_LOG_DIR": "/var/log/naviai/audio/ros"},
+        "prelude": ["install -d -m 0755 \"$ROS_HOME\" \"$ROS_LOG_DIR\"", "source /opt/ros/humble/setup.bash", "source /etc/naviai/Middleware.env", "platform_ros_domain_id=\"${ROS_DOMAIN_ID:?Middleware.env did not set ROS_DOMAIN_ID}\"", "platform_rmw_implementation=\"${RMW_IMPLEMENTATION:?Middleware.env did not set RMW_IMPLEMENTATION}\"", "platform_cyclonedds_uri=\"${CYCLONEDDS_URI:-}\"", "source /opt/naviai/venvs/audio/bin/activate", "set -a", "source /etc/navi-audio/audio.env", "set +a", "export ROS_DOMAIN_ID=\"$platform_ros_domain_id\"", "export RMW_IMPLEMENTATION=\"$platform_rmw_implementation\"", "if [[ -n \"$platform_cyclonedds_uri\" ]]; then export CYCLONEDDS_URI=\"$platform_cyclonedds_uri\"; else unset CYCLONEDDS_URI; fi"],
+        "command": "ros2 launch navi_audio_pkg audio_bringup.launch.py mic_device:=plughw:3,0 spk_device:=plughw:2,0 intent_router_mode:=bt enable_face_bridge:=true voiceprint_adapter_mode:=real pico_uri:=ws://192.168.217.66:8765 gesture_backend:=pico pico_gateway_url:=ws://192.168.217.66:8765 enable_background_task_test:=true",
+        "autorestart": "unexpected",
+        "startsecs": 5
+      }
+    }
+  ]
+}

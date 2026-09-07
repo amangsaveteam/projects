@@ -18,6 +18,7 @@ TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.+-]*$")
 SHA = re.compile(r"^[0-9a-fA-F]{64}$")
 SERVICE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.@-]*\.service$")
 ENVIRONMENT_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+ROS_DISTRO = re.compile(r"^(humble|jazzy)$")
 DEPLOYMENT_ROOT = Path(__file__).resolve().parents[1]
 COMMON_ROOT = DEPLOYMENT_ROOT / "common"
 MIDDLEWARE_TEMPLATES = {
@@ -150,6 +151,138 @@ def resolve_environment(values, field):
     return result
 
 
+def resolve_system_python_contract(values, field):
+    """Validate an optional system-Python runtime requirement for a DEB."""
+    if values is None:
+        return None
+    expected = {"user", "module", "version", "cuda"}
+    if not isinstance(values, dict) or set(values) != expected:
+        raise BuildError(field + ".system_python_contract must contain user, module, version and cuda")
+    result = {key: require(values.get(key), field + ".system_python_contract." + key) for key in expected}
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", result["module"]):
+        raise BuildError(field + ".system_python_contract.module is invalid")
+    if not re.fullmatch(r"[a-z_][a-z0-9_-]*", result["user"]):
+        raise BuildError(field + ".system_python_contract.user is invalid")
+    return result
+
+
+def system_python_contract_check(contract):
+    """Render a clean-environment, GPU-capable system Torch preflight."""
+    if contract is None:
+        return []
+    code = (
+        "import importlib, pathlib, sys; "
+        "module=importlib.import_module(sys.argv[1]); "
+        "expected_version=sys.argv[2]; expected_cuda=sys.argv[3]; "
+        "actual=pathlib.Path(module.__file__).resolve(); "
+        "assert module.__version__ == expected_version, module.__version__; "
+        "assert module.version.cuda == expected_cuda, module.version.cuda; "
+        "assert module.cuda.is_available(), 'CUDA is unavailable'; "
+        "assert '/.local/' not in str(actual), actual; "
+        "print('{} {} CUDA {} from {}'.format(sys.argv[1], module.__version__, module.version.cuda, actual))"
+    )
+    command = (
+        "runuser -u {user} -- env -u PYTHONPATH -u PYTHONNOUSERSITE "
+        "-u VISION_CUDNN_ROOT -u VISION_CUDNN_LIB HOME=/home/{user} "
+        "/usr/bin/python3 -s -c {code} {module} {version} {cuda}"
+    ).format(
+        user=shlex.quote(contract["user"]), code=shlex.quote(code),
+        module=shlex.quote(contract["module"]), version=shlex.quote(contract["version"]),
+        cuda=shlex.quote(contract["cuda"]),
+    )
+    return [
+        "echo 'Checking system Python contract for {} before installing Vision dependencies'".format(contract["module"]),
+        "{} || {{ echo 'ERROR: required NVIDIA system Torch is absent or incompatible; do not run apt --fix-broken install until the approved Orin Torch runtime is restored.' >&2; exit 1; }}".format(command),
+    ]
+
+
+def resolve_run_arguments(values, field):
+    """Return literal run-package arguments, with a robot-type placeholder."""
+    if values is None:
+        return ["--", "--robot-type", "{robot_type}"]
+    if not isinstance(values, list) or not all(isinstance(value, str) and "\x00" not in value for value in values):
+        raise BuildError(field + ".arguments must be a string list")
+    return values
+
+
+def render_run_command(relpath, arguments):
+    rendered = []
+    for argument in arguments:
+        rendered.append('"$robot_type"' if argument == "{robot_type}" else shlex.quote(argument))
+    suffix = " " + " ".join(rendered) if rendered else ""
+    return '/bin/bash "$root/{}"{}'.format(relpath, suffix)
+
+
+def vision_supervisor(target_id, target):
+    """Validate the document-defined Vision service for an Orin target."""
+    value = target.get("vision_supervisor")
+    if value is None:
+        return None
+    if not isinstance(value, dict) or set(value) != {"service", "ros_distro"}:
+        raise BuildError(target_id + ".vision_supervisor must contain service and ros_distro")
+    service = require(value.get("service"), target_id + ".vision_supervisor.service")
+    distro = require(value.get("ros_distro"), target_id + ".vision_supervisor.ros_distro")
+    if not SERVICE.fullmatch(service):
+        raise BuildError(target_id + ".vision_supervisor.service is invalid")
+    if not ROS_DISTRO.fullmatch(distro):
+        raise BuildError(target_id + ".vision_supervisor.ros_distro must be humble or jazzy")
+    if target.get("device") != "ORIN":
+        raise BuildError(target_id + ".vision_supervisor is supported only on ORIN")
+    return service, distro
+
+
+def vision_launch_script(ros_distro):
+    """Render Vision's supported ROS/DDS environment exactly once per start."""
+    return "\n".join((
+        "#!/bin/bash", "set -euo pipefail",
+        "unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH",
+        "source /etc/naviai/Middleware.env",
+        "unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH",
+        "source /opt/ros/{}/setup.bash".format(ros_distro),
+        "source /opt/naviai/venvs/vision/bin/activate",
+        "export HOME=/home/naviai",
+        "export YOLO_CONFIG_DIR=/var/lib/navi-vision/ultralytics",
+        "export ROS_DOMAIN_ID=72",
+        "export ROS_LOCALHOST_ONLY=0",
+        "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp",
+        "unset CYCLONEDDS_URI",
+        "install -d -m 0755 \"$YOLO_CONFIG_DIR\"",
+        "exec ros2 launch navi_vision_pkg face_detection_node.launch.py selected_camera:=auto camera_auto_timeout_sec:=8.0",
+        "",
+    ))
+
+
+def vision_service(launch_path):
+    return "\n".join((
+        "[Unit]", "Description=Navi Vision ROS 2 stack (Supervisor)",
+        "After=network-online.target", "Wants=network-online.target", "",
+        "[Service]", "Type=simple", "ExecStart=/bin/bash {}".format(launch_path),
+        "Restart=on-failure", "RestartSec=5", "TimeoutStopSec=30", "",
+        "[Install]", "WantedBy=multi-user.target", "",
+    ))
+
+
+def stage_vision_supervisor(stage, target_id, value, checksums, dry_run):
+    """Stage the Vision launcher and systemd supervisor when configured."""
+    if value is None:
+        return []
+    service, ros_distro = value
+    launch_name = service.removesuffix(".service") + "-launch.sh"
+    launch_rel = "targets/{}/startup/{}".format(target_id, launch_name)
+    service_rel = "targets/{}/startup/{}".format(target_id, service)
+    destination = "/usr/local/lib/navi-vision/" + launch_name
+    if not dry_run:
+        launch = stage / launch_rel
+        unit = stage / service_rel
+        launch.parent.mkdir(parents=True, exist_ok=True)
+        launch.write_text(vision_launch_script(ros_distro), encoding="utf-8")
+        launch.chmod(0o755)
+        unit.write_text(vision_service(destination), encoding="utf-8")
+        unit.chmod(0o644)
+        checksums.extend(((file_sha256(launch), launch_rel), (file_sha256(unit), service_rel)))
+    return [(service, launch_rel, service_rel, destination)]
+
+
 def services_from_run(run_path):
     """Return service units embedded by a Middleware-format run package."""
     try:
@@ -242,7 +375,7 @@ def stage_system_config(stage, target_id, target, checksums, dry_run):
     return config_rel
 
 
-def target_install(target_id, system_config_rel, common_rel, common, extras, runs, services):
+def target_install(target_id, system_config_rel, common_rel, common, extras, runs, services, startup_services=()):
     lines = ["#!/bin/bash", "set -euo pipefail", "root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../..\" && pwd)\"", "robot_type=\"$1\"", "(cd \"$root\" && sha256sum -c \"targets/{}/payloads.sha256\")".format(target_id)]
     if services:
         lines.extend([
@@ -262,14 +395,21 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         lines.extend(["dpkg -i \"$root/{}\"".format(common_rel), "python3 \"{}\" configure --target \"{}\" --robot-type \"$robot_type\"".format(tool, configure_target), "\"{}\"".format(installer)])
     else:
         raise BuildError(target_id + " must configure system_config or common")
-    for relpath, installers, environment in extras:
+    for relpath, installers, environment, contract in extras:
+        lines.extend(system_python_contract_check(contract))
         lines.append("dpkg -i \"$root/{}\"".format(relpath))
         prefix = "env " + " ".join(environment) + " " if environment else ""
         lines.extend(prefix + "\"{}\"".format(item) for item in installers)
-    for item in runs:
-        lines.append("/bin/bash \"$root/{}\" -- --robot-type \"$robot_type\"".format(item))
+    for item, arguments in runs:
+        lines.append(render_run_command(item, arguments))
         if services:
             lines.append("stop_managed_services")
+    for _, launch_rel, service_rel, destination in startup_services:
+        lines.extend((
+            "install -d -m 0755 /usr/local/lib/navi-vision",
+            "install -m 0755 \"$root/{}\" {}".format(launch_rel, shlex.quote(destination)),
+            "install -m 0644 \"$root/{}\" /etc/systemd/system/{}".format(service_rel, shlex.quote(Path(service_rel).name)),
+        ))
     if services:
         lines.extend([
             "systemctl daemon-reload", "for unit in \"${managed_services[@]}\"; do",
@@ -305,9 +445,11 @@ def target_pretest(target_id, system_config_rel, common_rel, extras, runs):
         lines.append("echo 'System configuration: deploy/update'")
     elif common_rel:
         lines.append("pretest_deb \"$root/{}\"".format(common_rel))
-    for relpath, _, _ in extras:
+    for relpath, _, _, contract in extras:
+        if contract:
+            lines.append("echo 'Required system Python: {} {} / CUDA {}'".format(contract["module"], contract["version"], contract["cuda"]))
         lines.append("pretest_deb \"$root/{}\"".format(relpath))
-    for relpath in runs:
+    for relpath, _ in runs:
         lines.extend([
             "echo \"Run package: {}\"".format(relpath),
             "pretest_run \"$root/{}\"".format(relpath),
@@ -378,6 +520,11 @@ def build(version_file, urls_file, output_dir, dry_run=False):
             if not isinstance(configured_services, list) or any(not isinstance(item, str) or not SERVICE.fullmatch(item) for item in configured_services):
                 raise BuildError(target_id + ".managed_services must be a list of systemd unit names")
             services = list(configured_services)
+            configured_vision_supervisor = vision_supervisor(target_id, target)
+            startup_services = stage_vision_supervisor(
+                stage, target_id, configured_vision_supervisor, target_checksums, dry_run
+            )
+            services.extend(item[0] for item in startup_services)
             for index, item in enumerate(target.get("extra_debs", [])):
                 if not isinstance(item, dict) or not item.get("url"): continue
                 relpath = "payloads/{}/extra-{:02d}.deb".format(target_id, index); path = stage / relpath; path.parent.mkdir(parents=True, exist_ok=True)
@@ -387,6 +534,7 @@ def build(version_file, urls_file, output_dir, dry_run=False):
                     relpath,
                     resolve_installers(path, item.get("installers", []), target_id + ".extra.installers", dry_run),
                     resolve_environment(item.get("environment"), target_id + ".extra.environment"),
+                    resolve_system_python_contract(item.get("system_python_contract"), target_id + ".extra"),
                 ))
             for index, item in enumerate(target.get("runs", [])):
                 if not isinstance(item, dict) or not item.get("url"): continue
@@ -396,9 +544,12 @@ def build(version_file, urls_file, output_dir, dry_run=False):
                     path.chmod(0o755)
                     target_checksums.append((file_sha256(path), relpath))
                     services.extend(services_from_run(path))
-                runs.append(relpath)
+                runs.append((
+                    relpath,
+                    resolve_run_arguments(item.get("arguments"), target_id + ".run"),
+                ))
             script = stage / "targets" / target_id / "install.sh"; script.parent.mkdir(parents=True, exist_ok=True)
-            script.write_text(target_install(target_id, system_config_rel, common_rel, common, extras, runs, sorted(set(services))), encoding="utf-8"); script.chmod(0o755)
+            script.write_text(target_install(target_id, system_config_rel, common_rel, common, extras, runs, sorted(set(services)), startup_services), encoding="utf-8"); script.chmod(0o755)
             pretest = stage / "targets" / target_id / "pretest.sh"
             pretest.write_text(target_pretest(target_id, system_config_rel, common_rel, extras, runs), encoding="utf-8")
             pretest.chmod(0o755)

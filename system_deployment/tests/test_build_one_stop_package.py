@@ -20,7 +20,7 @@ class OneStopPackageTest(unittest.TestCase):
     def test_extra_installer_environment_is_scoped_to_that_installer(self) -> None:
         script = builder.target_install(
             "orin-humble", "payloads/orin-humble/system-config", "", None,
-            [("payloads/orin-humble/extra-02.deb", ["/usr/lib/orin-robot-common-deb/install_robot_deps.sh"], ["PIP_NO_BUILD_ISOLATION=1"])],
+            [("payloads/orin-humble/extra-02.deb", ["/usr/lib/orin-robot-common-deb/install_robot_deps.sh"], ["PIP_NO_BUILD_ISOLATION=1"], None)],
             [], [],
         )
 
@@ -31,6 +31,22 @@ class OneStopPackageTest(unittest.TestCase):
         self.assertEqual(builder.resolve_environment({"PIP_NO_BUILD_ISOLATION": "1"}, "test"), ["PIP_NO_BUILD_ISOLATION=1"])
         with self.assertRaises(builder.BuildError):
             builder.resolve_environment({"invalid-name": "1"}, "test")
+
+    def test_system_python_contract_is_checked_before_deb_install(self) -> None:
+        contract = builder.resolve_system_python_contract({
+            "user": "naviai", "module": "torch",
+            "version": "2.5.0a0+872d972e41.nv24.08", "cuda": "12.6",
+        }, "orin-humble.vision")
+        script = builder.target_install(
+            "orin-humble", "payloads/orin-humble/system-config", "", None,
+            [("payloads/orin-humble/extra-04.deb", ["/usr/lib/orin-vision-common-deb/install_vision_deps.sh"], [], contract)],
+            [], [],
+        )
+
+        self.assertLess(script.index("Checking system Python contract"), script.index("dpkg -i \"$root/payloads/orin-humble/extra-04.deb\""))
+        self.assertIn("runuser -u naviai", script)
+        self.assertIn("module.cuda.is_available", script)
+        self.assertIn("do not run apt --fix-broken install", script)
 
     def test_system_config_replaces_common_deb(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -133,6 +149,41 @@ class OneStopPackageTest(unittest.TestCase):
         self.assertLess(install.index("systemctl stop \"$unit\""), install.index("install-system-config.sh"))
         self.assertLess(install.index("install-system-config.sh"), install.index("systemctl restart \"$unit\""))
         self.assertIn("managed services are being kept stopped", install)
+
+    def test_vision_supervisor_uses_the_documented_isolated_dds_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            stage = Path(temporary)
+            checksums = []
+            startup = builder.stage_vision_supervisor(
+                stage,
+                "orin-jazzy",
+                builder.vision_supervisor("orin-jazzy", {
+                    "device": "ORIN",
+                    "vision_supervisor": {
+                        "service": "navi-vision-supervisor.service",
+                        "ros_distro": "jazzy",
+                    },
+                }),
+                checksums,
+                False,
+            )
+            launch = (stage / startup[0][1]).read_text(encoding="utf-8")
+            service = (stage / startup[0][2]).read_text(encoding="utf-8")
+            install = builder.target_install(
+                "orin-jazzy", "payloads/orin-jazzy/system-config", "", None,
+                [], [("payloads/orin-jazzy/run-04.run", [])],
+                ["navi-vision-supervisor.service"], startup,
+            )
+
+        self.assertIn("source /opt/ros/jazzy/setup.bash", launch)
+        self.assertIn("source /opt/naviai/venvs/vision/bin/activate", launch)
+        self.assertIn("export ROS_DOMAIN_ID=72", launch)
+        self.assertIn("unset CYCLONEDDS_URI", launch)
+        self.assertIn("selected_camera:=auto camera_auto_timeout_sec:=8.0", launch)
+        self.assertIn("ExecStart=/bin/bash /usr/local/lib/navi-vision/navi-vision-supervisor-launch.sh", service)
+        self.assertIn('"$root/payloads/orin-jazzy/run-04.run"', install)
+        self.assertNotIn('run-04.run" -- --robot-type', install)
+        self.assertIn("/etc/systemd/system/navi-vision-supervisor.service", install)
 
 
 if __name__ == "__main__":

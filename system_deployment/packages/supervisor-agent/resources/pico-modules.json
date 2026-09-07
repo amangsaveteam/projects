@@ -1,0 +1,14 @@
+{
+  "device": "pico",
+  "listen": "0.0.0.0",
+  "port": 9080,
+  "rpc_username": "agent",
+  "rpc_password_file": "/etc/nav01/supervisor-agent/supervisor-rpc.password",
+  "module_config_directory": "/etc/nav01/supervisor-agent/modules.d",
+  "rpc_timeout_seconds": 3,
+  "modules": {
+    "upperlimb": {
+      "endpoint": "http://192.168.217.66:19003/RPC2"
+    }
+  }
+}

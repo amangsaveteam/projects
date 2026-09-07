@@ -1,0 +1,7 @@
+{
+  "modules": {
+    "sensor": {
+      "endpoint": "http://192.168.217.100:19001/RPC2"
+    }
+  }
+}

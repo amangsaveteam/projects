@@ -1,0 +1,15 @@
+[Unit]
+Description=Jetson Orin robot-state ROS 2 stack (Supervisor)
+After=network-online.target
+Wants=network-online.target
+RequiresMountsFor=/var/log/navi /var/lib/navi
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /etc/naviai/robot/supervisor-entrypoint.sh
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

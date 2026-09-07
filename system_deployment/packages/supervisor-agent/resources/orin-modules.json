@@ -1,0 +1,19 @@
+{
+  "device": "orin",
+  "listen": "0.0.0.0",
+  "port": 9080,
+  "rpc_username": "agent",
+  "rpc_password_file": "/etc/naviai/supervisor-agent/supervisor-rpc.password",
+  "module_config_directory": "/etc/naviai/supervisor-agent/modules.d",
+  "rpc_timeout_seconds": 3,
+  "modules": {
+    "chassis": {
+      "endpoint": "http://192.168.217.100:19004/RPC2"
+    }
+  },
+  "remote_agents": {
+    "pico": {
+      "endpoint": "http://192.168.217.66:9080"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "name": "Navi unified Pico and Orin Humble stack",
+  "output_name": "navi_unified_humble_stack-2.0.1-release",
+  "targets": {
+    "PICO": "supervised_stack/configs/pico-humble.json",
+    "ORIN": "supervised_stack/configs/orin-humble.json"
+  }
+}

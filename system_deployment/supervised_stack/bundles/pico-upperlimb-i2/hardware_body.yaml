@@ -1,0 +1,835 @@
+model: I2
+alias: [I2, I2-S, I2-D, I2-E]
+version: 'V1.0'
+
+scripts:
+    - name: neckPitchLimitByYaw
+      content: |
+        function neckPitchLimitByYaw(neckYaw)
+            if neckYaw < -42.0000 or neckYaw > 42.0000 then
+                return { min = -9.7000, max = 19.0000 }
+            end
+
+            local absYaw = math.abs(neckYaw)
+            if absYaw <= 10.0000 then
+                return { min = -9.7000, max = 34.7000 }
+            end
+
+            if absYaw < 15.0000 then
+                local maxPitch = 34.7000 - (absYaw - 10.0000) * 10.7000 / 5.0000
+                return { min = -9.7000, max = maxPitch }
+            end
+
+            local maxPitch = 24.0000 - (absYaw - 15.0000) / 5.4000
+            return { min = -9.7000, max = maxPitch }
+        end
+    - name: neckYawLimitByPitch
+      content: |
+        function neckYawLimitByPitch(neckPitch)
+            if neckPitch < -9.7000 then
+                return { min = -42.0000, max = 42.0000 }
+            end
+
+            if neckPitch > 34.7000 then
+                return { min = -10.0000, max = 10.0000 }
+            end
+
+            if neckPitch <= 19.0000 then
+                return { min = -42.0000, max = 42.0000 }
+            end
+
+            if neckPitch < 24.0000 then
+                local yawMax = 42.0000 - (neckPitch - 19.0000) * 5.4000
+                return { min = -yawMax, max = yawMax }
+            end
+            
+            local yawMax = 15.0000 - (neckPitch - 24.0000) * 5.0000 / 10.7000
+            return { min = -yawMax, max = yawMax }
+        end
+
+joints:
+    -   name: leftShoulderPitch
+        urdfName: Shoulder_Y_L
+        limit:
+            hw: {min: -190.0000, max: 70.0000}
+            servo: {min: -189.0000, max: 69.0000}
+            sdk: {min: -188.0000, max: 68.0000}
+            algo: {min: -187.0000, max: 67.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftShoulderRoll
+        urdfName: Shoulder_X_L
+        limit:
+            hw: {min: -0.5000, max: 180.0000}
+            servo: {min: -0.4000, max: 179.0000}
+            sdk: {min: -0.3000, max: 178.0000}
+            algo: {min: -0.2000, max: 177.0000}
+        zero:
+            position: 10.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftShoulderYaw
+        urdfName: Shoulder_Z_L
+        limit:
+            hw: {min: -168.5000, max: 168.5000}
+            servo: {min: -167.5000, max: 167.5000}
+            sdk: {min: -166.5000, max: 166.5000}
+            algo: {min: -165.5000, max: 165.5000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftElbow
+        urdfName: Elbow_L
+        limit:
+            hw: {min: -120.0000, max: 5.0000}
+            servo: {min: -119.0000, max: 4.9000}
+            sdk: {min: -118.0000, max: 4.8000}
+            algo: {min: -117.0000, max: 4.7000}
+        zero:
+            position: -5.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftWristYaw
+        urdfName: Wrist_Z_L
+        limit:
+            hw: {min: -170.0000, max: 170.0000}
+            servo: {min: -169.0000, max: 169.0000}
+            sdk: {min: -168.0000, max: 168.0000}
+            algo: {min: -167.0000, max: 167.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftWristPitch
+        urdfName: Wrist_Y_L
+        limit:
+            hw: {min: -90.0000, max: 75.0000}
+            servo: {min: -89.0000, max: 74.0000}
+            sdk: {min: -88.0000, max: 73.0000}
+            algo: {min: -87.0000, max: 72.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: leftWristRoll
+        urdfName: Wrist_X_L
+        limit:
+            hw: {min: -90.0000, max: 90.0000}
+            servo: {min: -89.0000, max: 89.0000}
+            sdk: {min: -88.0000, max: 88.0000}
+            algo: {min: -87.0000, max: 87.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightShoulderPitch
+        urdfName: Shoulder_Y_R
+        limit:
+            hw: {min: -190.0000, max: 70.0000}
+            servo: {min: -189.0000, max: 69.0000}
+            sdk: {min: -188.0000, max: 68.0000}
+            algo: {min: -187.0000, max: 67.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightShoulderRoll
+        urdfName: Shoulder_X_R
+        limit:
+            hw: {min: -180.0000, max: 0.5000}
+            servo: {min: -179.0000, max: 0.4000}
+            sdk: {min: -178.0000, max: 0.3000}
+            algo: {min: -177.0000, max: 0.2000}
+        zero:
+            position: -10.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightShoulderYaw
+        urdfName: Shoulder_Z_R
+        limit:
+            hw: {min: -168.5000, max: 168.5000}
+            servo: {min: -167.5000, max: 167.5000}
+            sdk: {min: -166.5000, max: 166.5000}
+            algo: {min: -165.5000, max: 165.5000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightElbow
+        urdfName: Elbow_R
+        limit:
+            hw: {min: -120.0000, max: 5.0000}
+            servo: {min: -119.0000, max: 4.9000}
+            sdk: {min: -118.0000, max: 4.8000}
+            algo: {min: -117.0000, max: 4.7000}
+        zero:
+            position: -5.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightWristYaw
+        urdfName: Wrist_Z_R
+        limit:
+            hw: {min: -170.0000, max: 170.0000}
+            servo: {min: -169.0000, max: 169.0000}
+            sdk: {min: -168.0000, max: 168.0000}
+            algo: {min: -167.0000, max: 167.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightWristPitch
+        urdfName: Wrist_Y_R
+        limit:
+            hw: {min: -90.0000, max: 75.0000}
+            servo: {min: -89.0000, max: 74.0000}
+            sdk: {min: -88.0000, max: 73.0000}
+            algo: {min: -87.0000, max: 72.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: rightWristRoll
+        urdfName: Wrist_X_R
+        limit:
+            hw: {min: -90.0000, max: 90.0000}
+            servo: {min: -89.0000, max: 89.0000}
+            sdk: {min: -88.0000, max: 88.0000}
+            algo: {min: -87.0000, max: 87.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: neckYaw
+        urdfName: Neck_Z
+        limit:
+            hw: {min: -45.0000, max: 45.0000}
+            servo: {min: -44.0000, max: 44.0000}
+            sdk: {min: -43.0000, max: 43.0000}
+            algo: {min: -42.0000, max: 42.0000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: neckPitch
+        urdfName: Neck_Y
+        limit:
+            hw: {min: -10.0000, max: 20.0000}
+            servo: {min: -9.9000, max: 19.9000}
+            sdk: {min: -9.8000, max: 19.8000}
+            algo: {min: -9.7000, max: 19.7000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    -   name: waist
+        urdfName: A_Waist
+        limit:
+            hw: {min: -30.0000, max: 30.0000}
+            servo: {min: -29.9000, max: 29.9000}
+            sdk: {min: -29.8000, max: 29.8000}
+            algo: {min: -29.7000, max: 29.7000}
+        zero:
+            position: 0.0000
+            offset: 0.0000
+            maxOffset: 0.0000
+            minOffset: 0.0000
+    # -   name: leftHipYaw
+    #     urdfName: Hip_Z_L
+    #     limit:
+    #         hw: {min: -12.0000, max: 12.0000}
+    #         servo: {min: -11.9000, max: 11.9000}
+    #         sdk: {min: -11.8000, max: 11.8000}
+    #         algo: {min: -11.7000, max: 11.7000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+    # -   name: leftHipRoll
+    #     urdfName: Hip_X_L
+    #     limit:
+    #         hw: {min: -25.0000, max: 25.0000}
+    #         servo: {min: -24.9000, max: 24.9000}
+    #         sdk: {min: -24.8000, max: 24.8000}
+    #         algo: {min: -24.7000, max: 24.7000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+    # -   name: leftHipPitch
+    #     urdfName: Hip_Y_L
+    #     limit:
+    #         hw: {min: -140.0000, max: 25.0000}
+    #         servo: {min: -139.0000, max: 24.9000}
+    #         sdk: {min: -138.0000, max: 24.8000}
+    #         algo: {min: -137.0000, max: 24.7000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+    # -   name: leftKnee
+    #     urdfName: Knee_L
+    #     limit:
+    #         hw: {min: 0.0000, max: 130.0000}
+    #         servo: {min: 0.0000, max: 129.0000}
+    #         sdk: {min: 0.0000, max: 128.0000}
+    #         algo: {min: 0.0000, max: 127.0000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+    # -   name: leftAnklePitch
+    #     urdfName: Ankle_Y_L
+    #     limit:
+    #         hw: {min: -40.0000, max: 30.0000}
+    #         servo: {min: -39.0000, max: 29.9000}
+    #         sdk: {min: -38.0000, max: 29.8000}
+    #         algo: {min: -37.0000, max: 29.7000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+    # -   name: leftAnkleRoll
+    #     urdfName: Ankle_X_L
+    #     limit:
+    #         hw: {min: -19.0000, max: 19.0000}
+    #         servo: {min: -18.9000, max: 18.9000}
+    #         sdk: {min: -18.8000, max: 18.8000}
+    #         algo: {min: -18.7000, max: 18.7000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+    # -   name: rightHipYaw
+    #     urdfName: Hip_Z_R
+    #     limit:
+    #         hw: {min: -12.0000, max: 12.0000}
+    #         servo: {min: -11.9000, max: 11.9000}
+    #         sdk: {min: -11.8000, max: 11.8000}
+    #         algo: {min: -11.7000, max: 11.7000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+    # -   name: rightHipRoll
+    #     urdfName: Hip_X_R
+    #     limit:
+    #         hw: {min: -25.0000, max: 25.0000}
+    #         servo: {min: -24.9000, max: 24.9000}
+    #         sdk: {min: -24.8000, max: 24.8000}
+    #         algo: {min: -24.7000, max: 24.7000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+    # -   name: rightHipPitch
+    #     urdfName: Hip_Y_R
+    #     limit:
+    #         hw: {min: -140.0000, max: 25.0000}
+    #         servo: {min: -139.0000, max: 24.9000}
+    #         sdk: {min: -138.0000, max: 24.8000}
+    #         algo: {min: -137.0000, max: 24.7000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+    # -   name: rightKnee
+    #     urdfName: Knee_R
+    #     limit:
+    #         hw: {min: 0.0000, max: 130.0000}
+    #         servo: {min: 0.0000, max: 129.0000}
+    #         sdk: {min: 0.0000, max: 128.0000}
+    #         algo: {min: 0.0000, max: 127.0000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+    # -   name: rightAnklePitch
+    #     urdfName: Ankle_Y_R
+    #     limit:
+    #         hw: {min: -40.0000, max: 30.0000}
+    #         servo: {min: -39.0000, max: 29.9000}
+    #         sdk: {min: -38.0000, max: 29.8000}
+    #         algo: {min: -37.0000, max: 29.7000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+    # -   name: rightAnkleRoll
+    #     urdfName: Ankle_X_R
+    #     limit:
+    #         hw: {min: -19.0000, max: 19.0000}
+    #         servo: {min: -18.9000, max: 18.9000}
+    #         sdk: {min: -18.8000, max: 18.8000}
+    #         algo: {min: -18.7000, max: 18.7000}
+    #     zero:
+    #         position: 0.0000
+    #         offset: 0.0000
+    #         maxOffset: 0.0000
+    #         minOffset: 0.0000
+
+hardware:
+- leftHipRoll:
+    type: joint
+    openModeMaxLimit: 25.0
+    openModeMinLimit: -25.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 30.0
+    zeroSide: 0
+    urdfName: Hip_X_L
+    openModeDrvMaxLimit: 24.9
+    openModeSdkMaxLimit: 24.8
+    openModeDrvMinLimit: -24.9
+    openModeSdkMinLimit: -24.8
+- leftHipYaw:
+    type: joint
+    openModeMaxLimit: 12.0
+    openModeMinLimit: -12.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 30.0
+    zeroSide: 0
+    urdfName: Hip_Z_L
+    openModeDrvMaxLimit: 11.9
+    openModeSdkMaxLimit: 11.8
+    openModeDrvMinLimit: -11.9
+    openModeSdkMinLimit: -11.8
+- leftHipPitch:
+    type: joint
+    openModeMaxLimit: 25.0
+    openModeMinLimit: -140.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 30.0
+    zeroSide: 0
+    urdfName: Hip_Y_L
+    openModeDrvMaxLimit: 24.9
+    openModeSdkMaxLimit: 24.8
+    openModeDrvMinLimit: -139.0
+    openModeSdkMinLimit: -138.0
+- leftKnee:
+    type: joint
+    openModeMaxLimit: 130.0
+    openModeMinLimit: 0.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 30.0
+    zeroSide: 0
+    urdfName: Knee_L
+    openModeDrvMaxLimit: 129.0
+    openModeSdkMaxLimit: 128.0
+    openModeDrvMinLimit: 0.1
+    openModeSdkMinLimit: 0.2
+- leftAnklePitch:
+    type: joint
+    openModeMaxLimit: 30.0
+    openModeMinLimit: -40.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Ankle_Y_L
+    openModeDrvMaxLimit: 29.9
+    openModeSdkMaxLimit: 29.8
+    openModeDrvMinLimit: -39.0
+    openModeSdkMinLimit: -38.0
+- leftAnkleRoll:
+    type: joint
+    openModeMaxLimit: 19.0
+    openModeMinLimit: -19.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Ankle_X_L
+    openModeDrvMaxLimit: 18.9
+    openModeSdkMaxLimit: 18.8
+    openModeDrvMinLimit: -18.9
+    openModeSdkMinLimit: -18.8
+- rightHipRoll:
+    type: joint
+    openModeMaxLimit: 25.0
+    openModeMinLimit: -25.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 30.0
+    zeroSide: 0
+    urdfName: Hip_X_R
+    openModeDrvMaxLimit: 24.9
+    openModeSdkMaxLimit: 24.8
+    openModeDrvMinLimit: -24.9
+    openModeSdkMinLimit: -24.8
+- rightHipYaw:
+    type: joint
+    openModeMaxLimit: 12.0
+    openModeMinLimit: -12.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 30.0
+    zeroSide: 0
+    urdfName: Hip_Z_R
+    openModeDrvMaxLimit: 11.9
+    openModeSdkMaxLimit: 11.8
+    openModeDrvMinLimit: -11.9
+    openModeSdkMinLimit: -11.8
+- rightHipPitch:
+    type: joint
+    openModeMaxLimit: 25.0
+    openModeMinLimit: -140.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 30.0
+    zeroSide: 0
+    urdfName: Hip_Y_R
+    openModeDrvMaxLimit: 24.9
+    openModeSdkMaxLimit: 24.8
+    openModeDrvMinLimit: -139.0
+    openModeSdkMinLimit: -138.0
+- rightKnee:
+    type: joint
+    openModeMaxLimit: 130.0
+    openModeMinLimit: 0.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 30.0
+    zeroSide: 0
+    urdfName: Knee_R
+    openModeDrvMaxLimit: 129.0
+    openModeSdkMaxLimit: 128.0
+    openModeDrvMinLimit: 0.1
+    openModeSdkMinLimit: 0.2
+- rightAnklePitch:
+    type: joint
+    openModeMaxLimit: 30.0
+    openModeMinLimit: -40.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Ankle_Y_R
+    openModeDrvMaxLimit: 29.9
+    openModeSdkMaxLimit: 29.8
+    openModeDrvMinLimit: -39.0
+    openModeSdkMinLimit: -38.0
+- rightAnkleRoll:
+    type: joint
+    openModeMaxLimit: 19.0
+    openModeMinLimit: -19.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Ankle_X_R
+    openModeDrvMaxLimit: 18.9
+    openModeSdkMaxLimit: 18.8
+    openModeDrvMinLimit: -18.9
+    openModeSdkMinLimit: -18.8
+- waist:
+    type: joint
+    openModeMaxLimit: 30.0
+    openModeMinLimit: -30.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: A_Waist
+    openModeDrvMaxLimit: 29.9
+    openModeSdkMaxLimit: 29.8
+    openModeDrvMinLimit: -29.9
+    openModeSdkMinLimit: -29.8
+- leftShoulderRoll:
+    type: joint
+    openModeMaxLimit: 180.0
+    openModeMinLimit: -0.5
+    zeroPosition: 10.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 20.0
+    zeroSide: 0
+    urdfName: Shoulder_X_L
+    openModeDrvMaxLimit: 179.0
+    openModeSdkMaxLimit: 178.0
+    openModeDrvMinLimit: -0.4
+    openModeSdkMinLimit: -0.3
+- leftShoulderYaw:
+    type: joint
+    openModeMaxLimit: 168.5
+    openModeMinLimit: -168.5
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 20.0
+    zeroSide: 0
+    urdfName: Shoulder_Z_L
+    openModeDrvMaxLimit: 167.5
+    openModeSdkMaxLimit: 166.5
+    openModeDrvMinLimit: -167.5
+    openModeSdkMinLimit: -166.5
+- leftShoulderPitch:
+    type: joint
+    openModeMaxLimit: 70.0
+    openModeMinLimit: -190.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 20.0
+    zeroSide: 0
+    urdfName: Shoulder_Y_L
+    openModeDrvMaxLimit: 69.0
+    openModeSdkMaxLimit: 68.0
+    openModeDrvMinLimit: -189.0
+    openModeSdkMinLimit: -188.0
+- leftElbow:
+    type: joint
+    openModeMaxLimit: 5.0
+    openModeMinLimit: -120.0
+    zeroPosition: -5.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 20.0
+    zeroSide: 0
+    urdfName: Elbow_L
+    openModeDrvMaxLimit: 4.9
+    openModeSdkMaxLimit: 4.8
+    openModeDrvMinLimit: -119.0
+    openModeSdkMinLimit: -118.0
+- leftWristRoll:
+    type: joint
+    openModeMaxLimit: 90.0
+    openModeMinLimit: -90.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Wrist_X_L
+    openModeDrvMaxLimit: 89.0
+    openModeSdkMaxLimit: 88.0
+    openModeDrvMinLimit: -89.0
+    openModeSdkMinLimit: -88.0
+- leftWristYaw:
+    type: joint
+    openModeMaxLimit: 170.0
+    openModeMinLimit: -170.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Wrist_Z_L
+    openModeDrvMaxLimit: 169.0
+    openModeSdkMaxLimit: 168.0
+    openModeDrvMinLimit: -169.0
+    openModeSdkMinLimit: -168.0
+- leftWristPitch:
+    type: joint
+    openModeMaxLimit: 75.0
+    openModeMinLimit: -90.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Wrist_Y_L
+    openModeDrvMaxLimit: 74.0
+    openModeSdkMaxLimit: 73.0
+    openModeDrvMinLimit: -89.0
+    openModeSdkMinLimit: -88.0
+- rightShoulderRoll:
+    type: joint
+    openModeMaxLimit: 0.5
+    openModeMinLimit: -180.0
+    zeroPosition: -10.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 20.0
+    zeroSide: 0
+    urdfName: Shoulder_X_R
+    openModeDrvMaxLimit: 0.4
+    openModeSdkMaxLimit: 0.3
+    openModeDrvMinLimit: -179.0
+    openModeSdkMinLimit: -178.0
+- rightShoulderYaw:
+    type: joint
+    openModeMaxLimit: 168.5
+    openModeMinLimit: -168.5
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Shoulder_Z_R
+    openModeDrvMaxLimit: 167.5
+    openModeSdkMaxLimit: 166.5
+    openModeDrvMinLimit: -167.5
+    openModeSdkMinLimit: -166.5
+- rightShoulderPitch:
+    type: joint
+    openModeMaxLimit: 70.0
+    openModeMinLimit: -190.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Shoulder_Y_R
+    openModeDrvMaxLimit: 69.0
+    openModeSdkMaxLimit: 68.0
+    openModeDrvMinLimit: -189.0
+    openModeSdkMinLimit: -188.0
+- rightElbow:
+    type: joint
+    openModeMaxLimit: 5.0
+    openModeMinLimit: -120.0
+    zeroPosition: -5.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 20.0
+    zeroSide: 0
+    urdfName: Elbow_R
+    openModeDrvMaxLimit: 4.9
+    openModeSdkMaxLimit: 4.8
+    openModeDrvMinLimit: -119.0
+    openModeSdkMinLimit: -118.0
+- rightWristRoll:
+    type: joint
+    openModeMaxLimit: 90.0
+    openModeMinLimit: -90.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Wrist_X_R
+    openModeDrvMaxLimit: 89.0
+    openModeSdkMaxLimit: 88.0
+    openModeDrvMinLimit: -89.0
+    openModeSdkMinLimit: -88.0
+- rightWristYaw:
+    type: joint
+    openModeMaxLimit: 170.0
+    openModeMinLimit: -170.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Wrist_Z_R
+    openModeDrvMaxLimit: 169.0
+    openModeSdkMaxLimit: 168.0
+    openModeDrvMinLimit: -169.0
+    openModeSdkMinLimit: -168.0
+- rightWristPitch:
+    type: joint
+    openModeMaxLimit: 75.0
+    openModeMinLimit: -90.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Wrist_Y_R
+    openModeDrvMaxLimit: 74.0
+    openModeSdkMaxLimit: 73.0
+    openModeDrvMinLimit: -89.0
+    openModeSdkMinLimit: -88.0
+- neckPitch:
+    type: joint
+    openModeMaxLimit: 20.0
+    openModeMinLimit: -10.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Neck_Y
+    openModeDrvMaxLimit: 19.9
+    openModeSdkMaxLimit: 19.8
+    openModeDrvMinLimit: -9.9
+    openModeSdkMinLimit: -9.8
+- neckYaw:
+    type: joint
+    openModeMaxLimit: 45.0
+    openModeMinLimit: -45.0
+    zeroPosition: 0.0
+    zeroToMaxOffset: 0.0
+    zeroToMinOffset: 0.0
+    zeroOffset: 0.0
+    zeroMaxTorque: 10.0
+    zeroSide: 0
+    urdfName: Neck_Z
+    openModeDrvMaxLimit: 44.0
+    openModeSdkMaxLimit: 43.0
+    openModeDrvMinLimit: -44.0
+    openModeSdkMinLimit: -43.0

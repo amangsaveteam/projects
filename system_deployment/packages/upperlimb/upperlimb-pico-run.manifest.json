@@ -64,6 +64,10 @@
         "device_path": "/etc/nav01/upperlimb/upperlimb-launch.sh"
       },
       {
+        "local_path": "resources/cyclonedds.xml",
+        "device_path": "/etc/nav01/upperlimb/cyclonedds.xml"
+      },
+      {
         "local_path": "resources/hardware/h1-u1/hardware_body.yaml",
         "device_path": "/etc/nav01/upperlimb/hardware/h1-u1/hardware_body.yaml"
       },
@@ -98,6 +102,10 @@
       {
         "local_path": "resources/hardware/zyd/hardware_body.yaml",
         "device_path": "/etc/nav01/upperlimb/hardware/zyd/hardware_body.yaml"
+      },
+      {
+        "local_path": "resources/entrypoint.sh",
+        "device_path": "/etc/nav01/upperlimb/entrypoint.sh"
       }
     ],
     "scripts": {
@@ -119,7 +127,7 @@
     "startup": {
       "name": "navi-pico-upperlimb",
       "description": "Navi Pico ROS 2 upperlimb node",
-      "command": "/bin/bash /etc/nav01/upperlimb/upperlimb-launch.sh",
+      "command": "/bin/bash /etc/nav01/upperlimb/entrypoint.sh",
       "script_directory": "/etc/nav01/upperlimb",
       "restart": "on-failure",
       "start_on_install": true
