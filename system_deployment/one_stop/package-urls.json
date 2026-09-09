@@ -1,7 +1,9 @@
 {
   // 唯一的交付配置文件：在这里维护所有目标和模块 URL。
   // A target is included automatically when it defines system_config or common.url.
-  // extra_debs and runs are installed in the listed order.
+  // All Common DEBs are built and published by their target-specific build
+  // machines. This installer downloads them from the artifact server.
+  // extra_debs and runs are installed in their listed order.
   "schema_version": 1,
   "targets": {
     "orin-humble": {
@@ -10,6 +12,7 @@
       "os_version": "22.04",
       "architecture": "arm64",
       "system_config": { "configure_target": "orin-humble", "base_image_contract": "orin-humble" },
+      "sensor_parent_compatibility": true,
       "supervisor": {
         "internal_ip": "192.168.217.100",
         "agent_service": "navi-orin-supervisor-agent.service",
@@ -17,12 +20,7 @@
         "agent_password_file": "/etc/naviai/supervisor-agent/supervisor-rpc.password",
         "module_root": "/etc/naviai/supervised-stack",
         "runtime_root": "/run/naviai",
-        "log_root": "/var/log/naviai",
-        "sensor_rpc": {
-          "config": "/etc/naviai/navi-sensor-host-supervisor.conf",
-          "service": "navi-sensor-host.service",
-          "port": 19001
-        }
+        "log_root": "/var/log/naviai"
       },
       "supervisor_modules": [
         {
@@ -47,7 +45,8 @@
           "id": "sensor",
           "description": "Navi Orin Sensor stack",
           "mode": "external",
-          "port": 19001
+          "port": 19001,
+          "restart_service": "navi-sensor-host.service"
         },
         {
           "id": "robot",
@@ -125,6 +124,12 @@
       ],
       "extra_debs": [
         {
+          "name": "orin-common",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/navi_common_dep-2.0.0-release-humble-arm64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        },
+        {
           "name": "sensor",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/sensor/navi_sensor_dep-2.0.0-release-humble-arm64.deb",
           "sha256": "",
@@ -182,7 +187,42 @@
       "os_version": "20.04",
       "architecture": "amd64",
       "system_config": { "configure_target": "pico-humble", "base_image_contract": "pico-humble" },
+      "supervisor": {
+        "internal_ip": "192.168.217.66",
+        "agent_service": "navi-pico-supervisor-agent.service",
+        "agent_modules_directory": "/etc/nav01/supervisor-agent/modules.d",
+        "agent_password_file": "/etc/nav01/supervisor-agent/supervisor-rpc.password",
+        "module_root": "/etc/nav01/supervised-stack",
+        "runtime_root": "/run/naviai",
+        "log_root": "/var/log/naviai"
+      },
+      "managed_services": [
+        "navi-pico-robot-supervisor.service",
+        "navi-pico-upperlimb.service"
+      ],
+      "supervisor_modules": [
+        {
+          "id": "robot",
+          "description": "Navi PICO robot hardware stack",
+          "mode": "external",
+          "port": 19002,
+          "restart_service": "navi-pico-robot-supervisor.service"
+        },
+        {
+          "id": "upperlimb",
+          "description": "Navi PICO upperlimb stack",
+          "mode": "external",
+          "port": 19003,
+          "restart_service": "navi-pico-upperlimb.service"
+        }
+      ],
       "extra_debs": [
+        {
+          "name": "pico-common",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/pico/develop/navi_pico_common_dep-2.0.0-release-humble-amd64.deb",
+          "sha256": "",
+          "installers": ["auto"]
+        },
         {
           "name": "upperlimb-common",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/upperlimb/develop/navi_pico_upperlimb_common_dep-2.0.0-release-humble-amd64.deb",

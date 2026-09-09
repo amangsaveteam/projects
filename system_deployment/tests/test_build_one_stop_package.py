@@ -17,6 +17,54 @@ SPEC.loader.exec_module(builder)
 
 
 class OneStopPackageTest(unittest.TestCase):
+    def test_pico_common_is_downloaded_before_module_dependencies(self) -> None:
+        target = builder.load(ROOT / "one_stop/package-urls.json")["targets"]["pico-humble"]
+        extras = target["extra_debs"]
+        self.assertEqual([item["name"] for item in extras[:3]], ["pico-common", "upperlimb-common", "robot"])
+        self.assertEqual(
+            extras[0]["url"],
+            "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/pico/develop/"
+            "navi_pico_common_dep-2.0.0-release-humble-amd64.deb",
+        )
+
+    def test_pico_payload_has_a_runtime_platform_guard(self) -> None:
+        script = builder.target_install(
+            "pico-humble", "payloads/pico-humble/system-config", "", None,
+            [("payloads/pico-humble/extra-00.deb", ["/usr/sbin/install_pico_common_deps.sh"], [], None)],
+            [], [], target_platform=("ubuntu", "20.04", "amd64"),
+        )
+
+        self.assertIn('"${ID,,}" != ubuntu', script)
+        self.assertIn('"${VERSION_ID:-}" != 20.04', script)
+        self.assertIn('"$actual_arch" != amd64', script)
+        self.assertIn("pico-humble payloads require ubuntu 20.04 / amd64", script)
+        self.assertLess(
+            script.index("pico-humble payloads require"),
+            script.index('dpkg -i "$root/payloads/pico-humble/extra-00.deb"'),
+        )
+
+    def test_environment_and_robot_type_are_configured_before_common_payloads(self) -> None:
+        setup = builder.system_config_installer(
+            "pico-humble", "pico-humble", "payloads/pico-humble/system-config"
+        )
+        install = builder.target_install(
+            "pico-humble", "payloads/pico-humble/system-config", "", None,
+            [("payloads/pico-humble/extra-00.deb", ["/usr/sbin/install_pico_common_deps.sh"], [], None)],
+            [], [],
+        )
+
+        self.assertLess(setup.index("cyclonedds.xml"), setup.index("Middleware.env"))
+        self.assertLess(setup.index("Middleware.env"), setup.index("deploy_common.py\" configure"))
+        self.assertIn('robot_type="${1:?robot type is required}"', setup)
+        self.assertLess(
+            install.index("install-system-config.sh"),
+            install.index("dpkg -i \"$root/payloads/pico-humble/extra-00.deb\""),
+        )
+        self.assertLess(
+            install.index("dpkg -i \"$root/payloads/pico-humble/extra-00.deb\""),
+            install.index("/usr/sbin/install_pico_common_deps.sh"),
+        )
+
     def test_orin_run_arguments_match_each_embedded_installer_interface(self) -> None:
         config = builder.load(ROOT / "one_stop/package-urls.json")
         for target_name in ("orin-humble", "orin-jazzy"):
@@ -45,6 +93,13 @@ class OneStopPackageTest(unittest.TestCase):
         with self.assertRaises(builder.BuildError):
             builder.resolve_environment({"invalid-name": "1"}, "test")
 
+    def test_auto_installer_reports_an_invalid_debian_archive(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            payload = Path(temporary) / "not-a-deb"
+            payload.write_text("gateway error", encoding="utf-8")
+            with self.assertRaisesRegex(builder.BuildError, "extra.installers is not a readable Debian package"):
+                builder.resolve_installers(payload, ["auto"], "extra.installers", False)
+
     def test_orin_humble_audio_is_installed_only_by_its_vendor_run_package(self) -> None:
         config = builder.load(ROOT / "one_stop/package-urls.json")
         humble = config["targets"]["orin-humble"]
@@ -56,6 +111,49 @@ class OneStopPackageTest(unittest.TestCase):
             audio["url"],
             "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/humble/"
             "navi_audio_installer-2.0.0-release-humble-arm64.run",
+        )
+
+    def test_orin_humble_installs_sensor_parent_bundle_first(self) -> None:
+        target = builder.load(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
+        extras = target["extra_debs"]
+        self.assertEqual([item["name"] for item in extras[:3]], ["orin-common", "sensor", "robot"])
+        self.assertTrue(target["sensor_parent_compatibility"])
+        self.assertEqual(
+            extras[0]["url"],
+            "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/"
+            "navi_common_dep-2.0.0-release-humble-arm64.deb",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            stage = Path(temporary)
+            checksums = []
+            compatibility = builder.stage_sensor_parent_compatibility(
+                stage, "orin-humble", target, checksums, False
+            )
+            compatibility_deb = stage / compatibility
+            self.assertEqual(
+                subprocess.check_output(["dpkg-deb", "-f", str(compatibility_deb), "Package"], text=True).strip(),
+                "orin-common-deb",
+            )
+            unpacked = stage / "unpacked"
+            subprocess.run(["dpkg-deb", "-x", str(compatibility_deb), str(unpacked)], check=True)
+            wrapper = (unpacked / "usr/lib/orin-common-deb/install_deps.sh").read_text(encoding="utf-8")
+            self.assertIn("/usr/sbin/install_common_deps.sh", wrapper)
+            self.assertIn("--verify-only", wrapper)
+        install = builder.target_install(
+            "orin-humble", "payloads/orin-humble/system-config", "", None,
+            [
+                ("payloads/orin-humble/extra-00.deb", ["/usr/lib/orin-common-deb/install_deps.sh"], [], None),
+                ("payloads/orin-humble/orin-common-deb-compat.deb", [], [], None),
+                ("payloads/orin-humble/extra-01.deb", ["/usr/lib/orin-sensor-common-deb/install_deps.sh"], [], None),
+            ], [], [],
+        )
+        self.assertLess(
+            install.index('/usr/lib/orin-common-deb/install_deps.sh'),
+            install.index('/usr/lib/orin-sensor-common-deb/install_deps.sh'),
+        )
+        self.assertLess(
+            install.index('orin-common-deb-compat.deb'),
+            install.index('/usr/lib/orin-sensor-common-deb/install_deps.sh'),
         )
 
     def test_vision_is_installed_only_by_its_vendor_run_package(self) -> None:
@@ -226,10 +324,16 @@ class OneStopPackageTest(unittest.TestCase):
             script = builder.supervisor_launch_script({
                 "working_directory": temporary,
                 "source_files": [str(environment)],
-                "prelude": ["export ROS_LOG_DIR=/tmp/audio-regression-logs"],
-                "command": "test \"$TEST_AUDIO_ENV\" = ready && test \"$ROS_LOG_DIR\" = /tmp/audio-regression-logs && ! shopt -q login_shell",
+                "prelude": [
+                    "export ROS_LOG_DIR=/tmp/audio-regression-logs",
+                    "test \"$ROS_LOG_DIR\" = /tmp/audio-regression-logs",
+                    "! shopt -q login_shell",
+                ],
+                "command": "test \"$TEST_AUDIO_ENV\" = ready",
             })
             subprocess.run(["bash", "-c", script], check=True)
+            self.assertIn('exec test "$TEST_AUDIO_ENV" = ready', script)
+            self.assertNotIn("/bin/bash -c", script)
 
     def test_orin_supervisor_modules_are_generated_from_the_only_delivery_config(self) -> None:
         config = builder.load(ROOT / "one_stop/package-urls.json")
@@ -272,12 +376,46 @@ class OneStopPackageTest(unittest.TestCase):
         self.assertIn("ExecStart=/bin/bash /etc/naviai/supervised-stack/robot/supervisor-entrypoint.sh", robot_unit)
         self.assertIn("http://192.168.217.100:19002/RPC2", robot_registration)
         self.assertIn("/etc/naviai/supervisor-agent/modules.d/robot.json", script)
-        self.assertIn("configure_sensor_rpc.py", script)
+        self.assertNotIn("configure_sensor_rpc.py", script)
         self.assertIn("systemctl restart navi-sensor-host.service", script)
         self.assertIn("systemctl restart navi-orin-supervisor-agent.service", script)
         self.assertTrue(agent_unit_exists)
         self.assertIn("/etc/naviai/supervisor-agent/modules.d/vision.json", script)
         self.assertNotIn("/bin/bash -lc", audio_launch)
+        self.assertIn("exec ros2 launch navi_audio_pkg audio_bringup.launch.py", audio_launch)
+
+    def test_pico_native_supervisor_modules_are_registered_without_config_injection(self) -> None:
+        config = builder.load(ROOT / "one_stop/package-urls.json")
+        target = config["targets"]["pico-humble"]
+        with tempfile.TemporaryDirectory() as temporary:
+            stage = Path(temporary)
+            checksums = []
+            startup, registrations, post_install, paths = builder.stage_supervisor_modules(
+                stage, "pico-humble", target, checksums, False
+            )
+            agent = builder.stage_supervisor_agent(stage, "pico-humble", paths, checksums, False)
+            script = builder.target_install(
+                "pico-humble", "payloads/pico-humble/system-config", "", None, [], [],
+                target["managed_services"], supervisor_startup=startup, registrations=registrations,
+                post_install=post_install, agent_service=paths, agent_payload=agent,
+            )
+            robot = (stage / "targets/pico-humble/supervisor/modules/robot.json").read_text(encoding="utf-8")
+            upperlimb = (stage / "targets/pico-humble/supervisor/modules/upperlimb.json").read_text(encoding="utf-8")
+
+        self.assertEqual(startup, [])
+        self.assertEqual(
+            json.loads(robot)["modules"]["robot"]["endpoint"],
+            "http://192.168.217.66:19002/RPC2",
+        )
+        self.assertEqual(
+            json.loads(upperlimb)["modules"]["upperlimb"]["endpoint"],
+            "http://192.168.217.66:19003/RPC2",
+        )
+        self.assertIn("navi-pico-robot-supervisor.service", script)
+        self.assertIn("navi-pico-upperlimb.service", script)
+        self.assertIn("/etc/nav01/supervisor-agent/modules.d/robot.json", script)
+        self.assertIn("/etc/nav01/supervisor-agent/modules.d/upperlimb.json", script)
+        self.assertNotIn("configure_sensor_rpc.py", script)
 
 
 if __name__ == "__main__":

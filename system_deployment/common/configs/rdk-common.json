@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "id": "rdk-common",
+  "package_name": "navi-rdk-common-dep",
+  "release_version": "2.0.0~jazzy+4",
+  "device_config_target": "rdk-jazzy",
+  "description": "RDK OS V5.1.0 Jazzy offline DEB build dependency bootstrap",
+  "target": {
+    "os_id": "rdk os",
+    "os_version": "V5.1.0",
+    "architecture": "arm64",
+    "machine": "aarch64",
+    "required_files": ["/etc/os-release"],
+    "require_non_root": true
+  },
+  "manifest": "common/manifests/rdk/apt-packages.tsv",
+  "output_dir": "../dist/common/rdk/base",
+  "artifact_filename": "navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb",
+  "deb_depends": ["bash (>= 5.2)", "coreutils (>= 9.1)", "dpkg (>= 1.22)", "apt (>= 2.7)"],
+  "parent_packages": [],
+  "installer_aliases": ["install_rdk_common_deps.sh"],
+  "exact_packages": [],
+  "vendor_debs": [],
+  "extra_files": [
+    {
+      "source": "common/files/etc/profile.d/zj_humanoid.sh",
+      "destination": "etc/profile.d/zj_humanoid.sh",
+      "mode": "0644"
+    },
+    {
+      "source": "common/templates/Middleware.rdk.env",
+      "destination": "etc/naviai/Middleware.env",
+      "mode": "0644",
+      "conffile": true
+    },
+    {
+      "source": "common/templates/device.env.example",
+      "destination": "etc/zj_humanoid/device.env",
+      "mode": "0644",
+      "conffile": true
+    },
+    {
+      "source": "common/files/etc/zj_humanoid/cyclonedds.xml",
+      "destination": "etc/zj_humanoid/cyclonedds.xml",
+      "mode": "0644",
+      "conffile": true
+    },
+    {
+      "source": "common/deploy_common.py",
+      "destination": "usr/lib/navi-rdk-common-dep/deploy_common.py",
+      "mode": "0755"
+    },
+    {
+      "source": "common/configs/targets.json",
+      "destination": "usr/lib/navi-rdk-common-dep/configs/targets.json",
+      "mode": "0644"
+    },
+    {
+      "source": "common/configs/robot-types.json",
+      "destination": "usr/lib/navi-rdk-common-dep/configs/robot-types.json",
+      "mode": "0644"
+    },
+    {
+      "source": "COMMON_DEB_USAGE.md",
+      "destination": "usr/share/doc/navi-rdk-common-dep/USAGE.md",
+      "mode": "0644"
+    }
+  ],
+  "publish": {
+    "directory": "/ros2_modules/common/rdk/jazzy/develop/",
+    "remote_name": "navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb"
+  }
+}

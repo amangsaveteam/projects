@@ -118,7 +118,13 @@ def resolve_installers(deb_path, values, field, dry_run):
     if dry_run:
         print("Would inspect {} for its installer alias".format(deb_path.name))
         return ["/usr/sbin/<auto-detected>"]
-    result = subprocess.run(["dpkg-deb", "-c", str(deb_path)], text=True, capture_output=True, check=True)
+    try:
+        result = subprocess.run(
+            ["dpkg-deb", "-c", str(deb_path)], text=True, capture_output=True, check=True
+        )
+    except subprocess.CalledProcessError as error:
+        detail = (error.stderr or error.stdout or "invalid Debian archive").strip()
+        raise BuildError("{} is not a readable Debian package: {}".format(field, detail)) from error
     candidates = []
     for line in result.stdout.splitlines():
         fields = line.split(maxsplit=5)
@@ -136,6 +142,55 @@ def resolve_installers(deb_path, values, field, dry_run):
     if len(candidates) != 1:
         raise BuildError("{}: expected one installer, found {}".format(field, candidates))
     return candidates
+
+
+def stage_sensor_parent_compatibility(stage, target_id, target, checksums, dry_run):
+    """Bridge the current Orin common package to Sensor's parent contract."""
+    enabled = target.get("sensor_parent_compatibility", False)
+    if not isinstance(enabled, bool):
+        raise BuildError(target_id + ".sensor_parent_compatibility must be boolean")
+    if not enabled:
+        return None
+    if target_id != "orin-humble":
+        raise BuildError(target_id + ".sensor_parent_compatibility is only supported on orin-humble")
+    extras = target.get("extra_debs")
+    if not isinstance(extras, list) or not extras or extras[0].get("name") != "orin-common":
+        raise BuildError(target_id + ".sensor_parent_compatibility requires orin-common as the first extra_deb")
+
+    relpath = "payloads/{}/orin-common-deb-compat.deb".format(target_id)
+    if dry_run:
+        return relpath
+    destination = stage / relpath
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="orin-common-deb-compat-") as temporary:
+        package_root = Path(temporary) / "package"
+        control = package_root / "DEBIAN" / "control"
+        wrapper = package_root / "usr" / "lib" / "orin-common-deb" / "install_deps.sh"
+        control.parent.mkdir(parents=True)
+        wrapper.parent.mkdir(parents=True)
+        control.write_text("\n".join((
+            "Package: orin-common-deb",
+            "Version: 0.0.0+one-stop-compat1",
+            "Architecture: arm64",
+            "Depends: navi-common-dep",
+            "Maintainer: ZJ Humanoid <dev@zj-humanoid.com>",
+            "Description: Compatibility parent for the Orin Sensor common bundle",
+            " Bridges the current navi-common-dep artifact to the Sensor parent contract.",
+            "",
+        )), encoding="utf-8")
+        wrapper.write_text("\n".join((
+            "#!/bin/bash", "set -euo pipefail",
+            "legacy_installer=/usr/sbin/install_common_deps.sh",
+            "dpkg-query -W -f='${Status}' navi-common-dep 2>/dev/null | grep -Fxq 'install ok installed' || { echo 'ERROR: navi-common-dep is not installed' >&2; exit 1; }",
+            "[[ -x \"$legacy_installer\" ]] || { echo \"ERROR: common dependency installer is missing: $legacy_installer\" >&2; exit 1; }",
+            "if [[ \"${1:-}\" == --verify-only ]]; then [[ $# -eq 1 ]] || { echo 'ERROR: --verify-only accepts no additional arguments' >&2; exit 2; }; exit 0; fi",
+            "[[ $# -eq 0 ]] || { echo \"ERROR: unsupported argument: $1\" >&2; exit 2; }",
+            "exec \"$legacy_installer\"", "",
+        )), encoding="utf-8")
+        wrapper.chmod(0o755)
+        subprocess.run(["dpkg-deb", "--build", "--root-owner-group", str(package_root), str(destination)], check=True)
+    checksums.append((file_sha256(destination), relpath))
+    return relpath
 
 
 def resolve_environment(values, field):
@@ -306,8 +361,7 @@ def supervisor_paths(target_id, value):
         "internal_ip", "agent_service", "agent_modules_directory", "agent_password_file",
         "module_root", "runtime_root", "log_root",
     }
-    optional = {"sensor_rpc"}
-    if not isinstance(value, dict) or not required <= set(value) or set(value) - required - optional:
+    if not isinstance(value, dict) or set(value) != required:
         raise BuildError(target_id + ".supervisor must contain " + ", ".join(sorted(required)))
     result = {key: require(value.get(key), target_id + ".supervisor." + key) for key in required}
     if not HOST.fullmatch(result["internal_ip"]):
@@ -317,17 +371,6 @@ def supervisor_paths(target_id, value):
     for key in required - {"internal_ip", "agent_service"}:
         if not result[key].startswith("/"):
             raise BuildError(target_id + ".supervisor." + key + " must be an absolute path")
-    sensor_rpc = value.get("sensor_rpc")
-    if sensor_rpc is not None:
-        if not isinstance(sensor_rpc, dict) or set(sensor_rpc) != {"config", "service", "port"}:
-            raise BuildError(target_id + ".supervisor.sensor_rpc must contain config, service and port")
-        if not isinstance(sensor_rpc["config"], str) or not sensor_rpc["config"].startswith("/"):
-            raise BuildError(target_id + ".supervisor.sensor_rpc.config must be an absolute path")
-        if not isinstance(sensor_rpc["service"], str) or not SERVICE.fullmatch(sensor_rpc["service"]):
-            raise BuildError(target_id + ".supervisor.sensor_rpc.service is invalid")
-        if not isinstance(sensor_rpc["port"], int) or not 1 <= sensor_rpc["port"] <= 65535:
-            raise BuildError(target_id + ".supervisor.sensor_rpc.port must be a TCP port")
-        result["sensor_rpc"] = sensor_rpc
     return result
 
 
@@ -337,7 +380,7 @@ def supervisor_module(target_id, index, value):
     if not isinstance(value, dict):
         raise BuildError(field + " must be an object")
     allowed = {
-        "id", "description", "mode", "port", "register", "service_name", "command",
+        "id", "description", "mode", "port", "register", "service_name", "restart_service", "command",
         "working_directory", "source_files", "unset_environment", "environment", "prelude",
         "autorestart", "exitcodes", "startsecs", "startretries", "timeout_stop_seconds",
         "after_services", "part_of_services", "log_maxbytes", "log_backups",
@@ -357,6 +400,11 @@ def supervisor_module(target_id, index, value):
         raise BuildError(field + ".port must be a TCP port")
     if "register" in result and not isinstance(result["register"], bool):
         raise BuildError(field + ".register must be boolean")
+    if "restart_service" in result:
+        if result["mode"] != "external":
+            raise BuildError(field + ".restart_service is only valid for an external module")
+        if not isinstance(result["restart_service"], str) or not SERVICE.fullmatch(result["restart_service"]):
+            raise BuildError(field + ".restart_service is invalid")
     for key in ("source_files", "unset_environment", "prelude", "after_services", "part_of_services"):
         if key in result and (not isinstance(result[key], list) or not all(isinstance(item, str) and item for item in result[key])):
             raise BuildError(field + ".{} must be a non-empty string list".format(key))
@@ -388,7 +436,10 @@ def supervisor_launch_script(module):
         lines.append("source {}".format(shlex.quote(path)))
     lines.extend(module.get("prelude", []))
     lines.append("cd {}".format(shlex.quote(module["working_directory"])))
-    lines.append("exec /bin/bash -c {}".format(shlex.quote(module["command"])))
+    # A Supervisor program must own the long-running module process.  Replacing
+    # this setup shell with the configured command keeps Supervisor's PID tied
+    # to `ros2 launch` (or the configured daemon), rather than launch.sh.
+    lines.append("exec {}".format(module["command"]))
     return "\n".join(lines) + "\n"
 
 
@@ -485,23 +536,13 @@ def stage_supervisor_modules(stage, target_id, target, checksums, dry_run):
             launch.chmod(0o755); entrypoint.chmod(0o755); unit.chmod(0o644)
             checksums.extend(((file_sha256(launch), launch_rel), (file_sha256(entrypoint), entrypoint_rel), (file_sha256(unit), unit_rel)))
         startup.append((module["service_name"], launch_rel, entrypoint_rel, unit_rel, identifier))
-    post_install = []
-    if paths.get("sensor_rpc"):
-        helper_rel = "targets/{}/helpers/configure_sensor_rpc.py".format(target_id)
-        if not dry_run:
-            helper = stage / helper_rel
-            helper.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(Path(__file__).resolve().parent / "configure_sensor_rpc.py", helper)
-            helper.chmod(0o755)
-            checksums.append((file_sha256(helper), helper_rel))
-        sensor_rpc = paths["sensor_rpc"]
-        post_install.extend((
-            "python3 \"$root/{}\" --config {} --password-file {} --host {} --port {}".format(
-                helper_rel, shlex.quote(sensor_rpc["config"]), shlex.quote(paths["agent_password_file"]),
-                shlex.quote(paths["internal_ip"]), sensor_rpc["port"],
-            ),
-            "systemctl restart {}".format(shlex.quote(sensor_rpc["service"])),
-        ))
+    # Native module packages own their Supervisor configuration.  The total
+    # installer only provisions the shared Agent credential and restarts the
+    # declared native service afterwards so it can reread that credential.
+    post_install = [
+        "systemctl restart {}".format(shlex.quote(module["restart_service"]))
+        for module in modules if module.get("restart_service")
+    ]
     return startup, registrations, post_install, paths
 
 
@@ -643,8 +684,25 @@ def stage_system_config(stage, target_id, target, checksums, dry_run):
 
 def target_install(target_id, system_config_rel, common_rel, common, extras, runs, services,
                    startup_services=(), supervisor_startup=(), registrations=(), post_install=(), agent_service=None,
-                   agent_payload=None):
+                   agent_payload=None, target_platform=None):
     lines = ["#!/bin/bash", "set -euo pipefail", "umask 022", "root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../..\" && pwd)\"", "robot_type=\"$1\"", "(cd \"$root\" && sha256sum -c \"targets/{}/payloads.sha256\")".format(target_id)]
+    if target_platform is not None:
+        expected_os, expected_version, expected_arch = target_platform
+        lines.extend((
+            "[[ -r /etc/os-release ]] || { echo 'ERROR: /etc/os-release is missing' >&2; exit 2; }",
+            ". /etc/os-release",
+            "case \"$(uname -m)\" in x86_64) actual_arch=amd64 ;; aarch64|arm64) actual_arch=arm64 ;; *) actual_arch=unknown ;; esac",
+            "if [[ \"${{ID,,}}\" != {} || \"${{VERSION_ID:-}}\" != {} || \"$actual_arch\" != {} ]]; then".format(
+                shlex.quote(expected_os), shlex.quote(expected_version), shlex.quote(expected_arch)
+            ),
+            "  echo {} >&2".format(shlex.quote(
+                "ERROR: {} payloads require {} {} / {}; refusing to install on this device.".format(
+                    target_id, expected_os, expected_version, expected_arch
+                )
+            )),
+            "  exit 2",
+            "fi",
+        ))
     if services:
         lines.extend([
             "managed_services=(" + " ".join('\"{}\"'.format(item) for item in services) + ")",
@@ -830,6 +888,9 @@ def build(version_file, urls_file, output_dir, dry_run=False):
             )
             supervisor_agent = stage_supervisor_agent(stage, target_id, supervisor_config, target_checksums, dry_run)
             services.extend(item[0] for item in supervisor_startup)
+            sensor_parent_compatibility = stage_sensor_parent_compatibility(
+                stage, target_id, target, target_checksums, dry_run
+            )
             for index, item in enumerate(target.get("extra_debs", [])):
                 if not isinstance(item, dict) or not item.get("url"): continue
                 relpath = "payloads/{}/extra-{:02d}.deb".format(target_id, index); path = stage / relpath; path.parent.mkdir(parents=True, exist_ok=True)
@@ -841,6 +902,8 @@ def build(version_file, urls_file, output_dir, dry_run=False):
                     resolve_environment(item.get("environment"), target_id + ".extra.environment"),
                     resolve_system_python_contract(item.get("system_python_contract"), target_id + ".extra"),
                 ))
+                if index == 0 and sensor_parent_compatibility:
+                    extras.append((sensor_parent_compatibility, [], [], None))
             requires_no_final_exec_helper = False
             for index, item in enumerate(target.get("runs", [])):
                 if not isinstance(item, dict) or not item.get("url"): continue
@@ -871,7 +934,7 @@ def build(version_file, urls_file, output_dir, dry_run=False):
                 target_install(
                     target_id, system_config_rel, common_rel, common, extras, runs, sorted(set(services)),
                     startup_services, supervisor_startup, registrations, supervisor_post_install, supervisor_config,
-                    supervisor_agent,
+                    supervisor_agent, (os_id, os_version, arch),
                 ), encoding="utf-8"
             ); script.chmod(0o755)
             pretest = stage / "targets" / target_id / "pretest.sh"
