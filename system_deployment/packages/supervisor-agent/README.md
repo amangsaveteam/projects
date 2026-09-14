@@ -27,5 +27,6 @@ would install `/etc/naviai/supervisor-agent/modules.d/robot.json`:
 ```
 
 The matching module Supervisor must use the Agent's local RPC credential file
-and restart after that file is provisioned.  Agent package upgrades preserve
-both `modules.d` and all secret files.
+and restart after that file is provisioned. The module username is `agent`
+and the fixed password is `1`. Installation replaces legacy random passwords
+with `1` while preserving `modules.d`.

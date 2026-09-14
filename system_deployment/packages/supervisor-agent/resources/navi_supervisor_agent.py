@@ -5,9 +5,8 @@ import argparse
 import http.client
 import json
 import os
-import secrets
-import stat
 import sys
+import time
 import urllib.parse
 import urllib.error
 import urllib.request
@@ -22,23 +21,20 @@ MAX_LOG_LENGTH = 32 * 1024
 
 def read_secret(path):
     value = Path(path).read_text(encoding="utf-8").strip()
-    if len(value) != 64 or any(char not in "0123456789abcdefABCDEF" for char in value):
-        raise ValueError("secret at {} must contain exactly 64 hexadecimal characters".format(path))
+    if value != "1" and (len(value) != 64 or any(char not in "0123456789abcdefABCDEF" for char in value)):
+        raise ValueError("secret at {} must contain 1 or a legacy 64-character hexadecimal credential".format(path))
     return value
 
 
 def ensure_secret(path):
     target = Path(path)
     target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    try:
-        descriptor = os.open(str(target), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    except FileExistsError:
-        os.chmod(str(target), stat.S_IRUSR | stat.S_IWUSR)
-        return read_secret(target)
+    descriptor = os.open(str(target), os.O_WRONLY | os.O_CREAT, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8") as output:
-        value = secrets.token_hex(32)
-        output.write(value + "\n")
-    return value
+        os.fchmod(output.fileno(), 0o600)
+        output.truncate(0)
+        output.write("1\n")
+    return "1"
 
 
 class TimeoutTransport(xmlrpc.client.Transport):
@@ -262,6 +258,8 @@ class Handler(BaseHTTPRequestHandler):
                 offset = max(0, int(query.get("offset", ["0"])[0]))
                 length = min(MAX_LOG_LENGTH, max(1, int(query.get("length", [str(MAX_LOG_LENGTH)])[0])))
                 self.write_json(200, self.agent.process_log(urllib.parse.unquote(parts[4]), urllib.parse.unquote(parts[6]), offset, length))
+            except KeyError as error:
+                self.write_json(404, {"error": str(error)})
             except (ValueError, OSError, xmlrpc.client.Error) as error:
                 self.write_json(502, {"error": str(error)})
             return
@@ -294,11 +292,37 @@ def load_config(path):
     return config
 
 
+def wait_ready(config, timeout=30):
+    host = config.get("listen", "0.0.0.0")
+    if host == "0.0.0.0":
+        host = "127.0.0.1"
+    if host == "::":
+        host = "[::1]"
+    url = "http://{}:{}/api/v1/health".format(host, int(config.get("port", 9080)))
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            with opener.open(url, timeout=1) as response:
+                health = json.load(response)
+            if health.get("ok") is True and health.get("device") == config.get("device", "unknown"):
+                return
+        except (OSError, ValueError):
+            pass
+        if time.monotonic() >= deadline:
+            raise RuntimeError("Supervisor Agent did not become ready at " + url)
+        time.sleep(0.25)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
+    parser.add_argument("--wait-ready", action="store_true")
     arguments = parser.parse_args()
     config = load_config(arguments.config)
+    if arguments.wait_ready:
+        wait_ready(config)
+        return
     Handler.agent = Agent(config)
     server = ThreadingHTTPServer((config.get("listen", "0.0.0.0"), int(config.get("port", 9080))), Handler)
     print("Navi Supervisor Agent listening on {}:{}".format(*server.server_address), flush=True)

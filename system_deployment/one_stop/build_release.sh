@@ -15,5 +15,6 @@ export no_proxy="${no_proxy:+${no_proxy},}${internal_artifact_host}"
 exec python3 "$script_dir/build_one_stop_package.py" \
     --version "$script_dir/version.json" \
     --urls "$script_dir/package-urls.json" \
+    --supervisor "$script_dir/supervisor.json" \
     --output-dir "$script_dir/../../dist" \
     "$@"

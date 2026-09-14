@@ -3,6 +3,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
+from unittest.mock import patch, MagicMock
 from pathlib import Path
 
 
@@ -17,6 +18,51 @@ SPEC.loader.exec_module(agent_module)
 
 
 class SupervisorAgentTest(unittest.TestCase):
+    def test_installers_replace_legacy_password_with_fixed_password(self):
+        for filename in ("initialize_agent_secrets.py", "initialize_orin_agent_secrets.py"):
+            with self.subTest(initializer=filename), tempfile.TemporaryDirectory() as temporary:
+                spec = importlib.util.spec_from_file_location(
+                    "initializer", ROOT / "packages/supervisor-agent/scripts" / filename
+                )
+                initializer = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(initializer)
+                path = Path(temporary) / "password"
+                initializer.ensure_secret(path)
+                self.assertEqual(path.read_text(), "1\n")
+                path.write_text("a" * 64 + "\n")
+                path.chmod(0o644)
+                initializer.ensure_secret(path)
+                initializer.ensure_secret(path)
+                self.assertEqual(path.read_text(), "1\n")
+                self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+
+    def test_unknown_module_log_returns_json_404(self):
+        handler = object.__new__(agent_module.Handler)
+        handler.path = '/api/v1/modules/missing/processes/example/log'
+        handler.agent = MagicMock()
+        handler.agent.process_log.side_effect = KeyError('unknown module')
+        handler.write_json = MagicMock()
+        handler.do_GET()
+        self.assertEqual(handler.write_json.call_args.args[0], 404)
+
+    def test_readiness_retries_connection_refused_and_checks_device(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = b'{"ok":true,"device":"orin"}'
+        with patch.object(agent_module.urllib.request, "build_opener") as factory, \
+             patch.object(agent_module.time, "sleep"):
+            factory.return_value.open.side_effect = [ConnectionRefusedError(), response]
+            agent_module.wait_ready({"device": "orin"})
+            self.assertEqual(factory.return_value.open.call_count, 2)
+            self.assertEqual(factory.return_value.open.call_args.args[0], "http://127.0.0.1:9080/api/v1/health")
+
+    def test_readiness_rejects_wrong_agent(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = b'{"ok":true,"device":"pico"}'
+        with patch.object(agent_module.urllib.request, "build_opener") as factory:
+            factory.return_value.open.return_value = response
+            with self.assertRaisesRegex(RuntimeError, "did not become ready"):
+                agent_module.wait_ready({"device": "orin"}, timeout=0)
+
     def test_agent_http_has_no_token_state(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
@@ -41,8 +87,11 @@ class SupervisorAgentTest(unittest.TestCase):
     def test_secret_is_stable_and_private(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "secret"
+            path.write_text("a" * 64 + "\n")
             first = agent_module.ensure_secret(path)
             second = agent_module.ensure_secret(path)
+            self.assertEqual(first, "1")
+            self.assertEqual(agent_module.read_secret(path), "1")
             self.assertEqual(first, second)
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 

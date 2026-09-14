@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "targets": {
+    "orin-humble": {
+      "supervisor": {
+        "internal_ip": "192.168.217.100",
+        "agent_service": "navi-orin-supervisor-agent.service",
+        "agent_modules_directory": "/etc/naviai/supervisor-agent/modules.d",
+        "agent_password_file": "/etc/naviai/supervisor-agent/supervisor-rpc.password",
+        "module_root": "/etc/naviai/supervised-stack",
+        "runtime_root": "/run/naviai",
+        "log_root": "/var/log/naviai"
+      },
+      "supervisor_modules": [
+        {
+          "id": "chassis",
+          "description": "Navi Orin ROS 2 chassis node",
+          "mode": "managed",
+          "service_name": "navi-orin-chassis",
+          "port": 19004,
+          "working_directory": "/var/lib/naviai/navi-orin-chassis",
+          "source_files": [
+            "/etc/naviai/Middleware.env"
+          ],
+          "prelude": [
+            "export HOME=/root",
+            "export ROS_HOME=/var/lib/naviai/navi-orin-chassis",
+            "export ROS_LOG_DIR=/var/log/naviai/navi-orin-chassis",
+            "install -d -m 0755 \"$ROS_HOME\" \"$ROS_LOG_DIR\""
+          ],
+          "command": "ros2 launch chassis chassis.launch.py namespace:=zj_humanoid",
+          "autorestart": "true",
+          "startsecs": 3
+        },
+        {
+          "id": "sensor",
+          "description": "Navi Orin Sensor stack",
+          "mode": "external",
+          "port": 19001,
+          "restart_service": "navi-sensor-host.service",
+          "native_rpc_config": "/etc/naviai/navi-sensor-host-supervisor.conf"
+        },
+        {
+          "id": "robot",
+          "description": "Jetson Orin robot-state ROS 2 stack (Supervisor)",
+          "mode": "managed",
+          "port": 19002,
+          "working_directory": "/var/lib/navi",
+          "source_files": [
+            "/etc/naviai/Middleware.env",
+            "/etc/naviai/robot/robot_env.sh"
+          ],
+          "environment": {
+            "HOME": "/var/lib/navi",
+            "ROS_HOME": "/var/lib/navi/ros",
+            "ROS_LOG_DIR": "/var/log/navi/ros",
+            "NAVI_ORIN_ROBOT_LOG_DIR": "/var/log/navi/robot",
+            "NAVI_ORIN_ROBOT_LOG_LEVEL": "INFO",
+            "RCUTILS_COLORIZED_OUTPUT": "0",
+            "RCUTILS_LOGGING_USE_STDOUT": "1",
+            "RCUTILS_LOGGING_BUFFERED_STREAM": "1"
+          },
+          "command": "ros2 launch orin_robot orin_robot.launch.py",
+          "autorestart": "unexpected",
+          "startsecs": 3,
+          "timeout_stop_seconds": 20,
+          "remove_packages": [
+            "navi-robot-state"
+          ]
+        },
+        {
+          "id": "audio",
+          "description": "Jetson Orin Audio ROS 2 stack (Supervisor)",
+          "mode": "managed",
+          "port": 19003,
+          "working_directory": "/var/lib/navi-audio",
+          "unset_environment": [
+            "AMENT_PREFIX_PATH",
+            "COLCON_PREFIX_PATH",
+            "CMAKE_PREFIX_PATH",
+            "PYTHONPATH"
+          ],
+          "source_files": [
+            "/etc/naviai/Middleware.env",
+            "/opt/ros/humble/setup.bash",
+            "/opt/naviai/venvs/audio/bin/activate"
+          ],
+          "prelude": [
+            "set -a",
+            "source /etc/navi-audio/audio.env",
+            "set +a",
+            "export HOME=/var/lib/navi-audio",
+            "export ROS_HOME=/var/lib/navi-audio/ros",
+            "export ROS_LOG_DIR=/var/log/naviai/audio/ros",
+            "install -d -m 0755 \"$HOME\" \"$ROS_HOME\" \"$ROS_LOG_DIR\""
+          ],
+          "command": "ros2 launch navi_audio_pkg audio_bringup.launch.py intent_router_mode:=bt enable_face_bridge:=true voiceprint_adapter_mode:=real gesture_backend:=pico pico_gateway_url:=ws://192.168.217.66:8765 enable_background_task_test:=true",
+          "autorestart": "unexpected",
+          "startsecs": 5,
+          "start_policy": "supervisor"
+        },
+        {
+          "id": "vision",
+          "description": "Navi Vision Humble",
+          "mode": "managed",
+          "port": 19005,
+          "working_directory": "/var/lib/navi-vision/supervised",
+          "prelude": [
+            "install -d -o naviai -g naviai -m 0750 /var/log/naviai/vision",
+            "install -d -o naviai -g naviai -m 0755 /var/lib/navi-vision/supervised /var/lib/navi-vision/supervised/ros /var/lib/navi-vision/supervised/ultralytics /var/log/naviai/vision/ros"
+          ],
+          "command": "runuser -u naviai -- /bin/bash -c 'set -e; export HOME=/home/naviai; source /etc/naviai/Middleware.env; source /usr/lib/orin-vision-common-deb/vision_environment.sh; set +u; export ROS_HOME=/var/lib/navi-vision/supervised/ros ROS_LOG_DIR=/var/log/naviai/vision/ros YOLO_CONFIG_DIR=/var/lib/navi-vision/supervised/ultralytics; exec ros2 launch navi_vision_pkg face_detection_node.launch.py selected_camera:=auto camera_auto_timeout_sec:=8.0'",
+          "startsecs": 20,
+          "after_services": [
+            "navi-sensor-host.service"
+          ],
+          "start_policy": "vision-preserve-shared"
+        }
+      ]
+    },
+    "orin-jazzy": {
+      "supervisor": {
+        "internal_ip": "192.168.217.100",
+        "agent_service": "navi-orin-supervisor-agent.service",
+        "agent_modules_directory": "/etc/naviai/supervisor-agent/modules.d",
+        "agent_password_file": "/etc/naviai/supervisor-agent/supervisor-rpc.password",
+        "module_root": "/etc/naviai/supervised-stack",
+        "runtime_root": "/run/naviai",
+        "log_root": "/var/log/naviai"
+      },
+      "supervisor_modules": [
+        {
+          "id": "vision",
+          "description": "Navi Vision Jazzy",
+          "mode": "managed",
+          "service_name": "navi-vision-supervisor",
+          "port": 19005,
+          "working_directory": "/var/lib/navi-vision/supervised",
+          "prelude": [
+            "install -d -o naviai -g naviai -m 0750 /var/log/naviai/vision",
+            "install -d -o naviai -g naviai -m 0755 /var/lib/navi-vision/supervised /var/lib/navi-vision/supervised/ros /var/lib/navi-vision/supervised/ultralytics /var/log/naviai/vision/ros"
+          ],
+          "command": "runuser -u naviai -- /bin/bash -c 'set -e; unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH; source /etc/naviai/Middleware.env; unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH; source /opt/ros/jazzy/setup.bash; source /opt/naviai/venvs/vision/bin/activate; export HOME=/home/naviai ROS_HOME=/var/lib/navi-vision/supervised/ros ROS_LOG_DIR=/var/log/naviai/vision/ros YOLO_CONFIG_DIR=/var/lib/navi-vision/supervised/ultralytics ROS_DOMAIN_ID=72 ROS_LOCALHOST_ONLY=0 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp; unset CYCLONEDDS_URI; exec ros2 launch navi_vision_pkg face_detection_node.launch.py selected_camera:=auto camera_auto_timeout_sec:=8.0'",
+          "startsecs": 20,
+          "after_services": [
+            "navi-sensor-host.service"
+          ]
+        }
+      ]
+    },
+    "pico-humble": {
+      "supervisor": {
+        "internal_ip": "192.168.217.66",
+        "agent_service": "navi-pico-supervisor-agent.service",
+        "agent_modules_directory": "/etc/nav01/supervisor-agent/modules.d",
+        "agent_password_file": "/etc/nav01/supervisor-agent/supervisor-rpc.password",
+        "module_root": "/etc/nav01/supervised-stack",
+        "runtime_root": "/run/naviai",
+        "log_root": "/var/log/naviai"
+      },
+      "supervisor_modules": [
+        {
+          "id": "robot",
+          "description": "Navi PICO robot hardware stack",
+          "mode": "external",
+          "port": 19002,
+          "startup_priority": 10,
+          "restart_service": "navi-pico-robot-supervisor.service"
+        },
+        {
+          "id": "upperlimb",
+          "description": "Navi PICO upperlimb stack",
+          "mode": "external",
+          "port": 19003,
+          "startup_priority": 20,
+          "restart_service": "navi-pico-upperlimb.service"
+        }
+      ],
+      "managed_services": [
+        "navi-pico-robot-supervisor.service",
+        "navi-pico-upperlimb.service"
+      ]
+    }
+  }
+}

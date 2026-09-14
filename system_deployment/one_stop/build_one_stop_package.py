@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Build a target-aware one-stop installer from version.json and package URLs."""
 import argparse
+import copy
+import datetime
 import hashlib
 import json
 import re
@@ -12,6 +14,7 @@ import tarfile
 import time
 import tempfile
 import urllib.request
+import uuid
 from pathlib import Path
 
 TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.+-]*$")
@@ -144,55 +147,6 @@ def resolve_installers(deb_path, values, field, dry_run):
     return candidates
 
 
-def stage_sensor_parent_compatibility(stage, target_id, target, checksums, dry_run):
-    """Bridge the current Orin common package to Sensor's parent contract."""
-    enabled = target.get("sensor_parent_compatibility", False)
-    if not isinstance(enabled, bool):
-        raise BuildError(target_id + ".sensor_parent_compatibility must be boolean")
-    if not enabled:
-        return None
-    if target_id != "orin-humble":
-        raise BuildError(target_id + ".sensor_parent_compatibility is only supported on orin-humble")
-    extras = target.get("extra_debs")
-    if not isinstance(extras, list) or not extras or extras[0].get("name") != "orin-common":
-        raise BuildError(target_id + ".sensor_parent_compatibility requires orin-common as the first extra_deb")
-
-    relpath = "payloads/{}/orin-common-deb-compat.deb".format(target_id)
-    if dry_run:
-        return relpath
-    destination = stage / relpath
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="orin-common-deb-compat-") as temporary:
-        package_root = Path(temporary) / "package"
-        control = package_root / "DEBIAN" / "control"
-        wrapper = package_root / "usr" / "lib" / "orin-common-deb" / "install_deps.sh"
-        control.parent.mkdir(parents=True)
-        wrapper.parent.mkdir(parents=True)
-        control.write_text("\n".join((
-            "Package: orin-common-deb",
-            "Version: 0.0.0+one-stop-compat1",
-            "Architecture: arm64",
-            "Depends: navi-common-dep",
-            "Maintainer: ZJ Humanoid <dev@zj-humanoid.com>",
-            "Description: Compatibility parent for the Orin Sensor common bundle",
-            " Bridges the current navi-common-dep artifact to the Sensor parent contract.",
-            "",
-        )), encoding="utf-8")
-        wrapper.write_text("\n".join((
-            "#!/bin/bash", "set -euo pipefail",
-            "legacy_installer=/usr/sbin/install_common_deps.sh",
-            "dpkg-query -W -f='${Status}' navi-common-dep 2>/dev/null | grep -Fxq 'install ok installed' || { echo 'ERROR: navi-common-dep is not installed' >&2; exit 1; }",
-            "[[ -x \"$legacy_installer\" ]] || { echo \"ERROR: common dependency installer is missing: $legacy_installer\" >&2; exit 1; }",
-            "if [[ \"${1:-}\" == --verify-only ]]; then [[ $# -eq 1 ]] || { echo 'ERROR: --verify-only accepts no additional arguments' >&2; exit 2; }; exit 0; fi",
-            "[[ $# -eq 0 ]] || { echo \"ERROR: unsupported argument: $1\" >&2; exit 2; }",
-            "exec \"$legacy_installer\"", "",
-        )), encoding="utf-8")
-        wrapper.chmod(0o755)
-        subprocess.run(["dpkg-deb", "--build", "--root-owner-group", str(package_root), str(destination)], check=True)
-    checksums.append((file_sha256(destination), relpath))
-    return relpath
-
-
 def resolve_environment(values, field):
     if values is None:
         return []
@@ -262,13 +216,93 @@ def resolve_run_arguments(values, field):
     return values
 
 
+def load_delivery(urls_file, supervisor_file=None):
+    """Join package and operations contracts by target and module identifier."""
+    packages = load(urls_file)
+    supervisor_file = supervisor_file or urls_file.with_name("supervisor.json")
+    if not supervisor_file.exists():
+        if any(p.get("runtime") for t in packages.get("targets", {}).values() for p in t.get("runs", [])):
+            raise BuildError("runtime requires supervisor.json")
+        return packages
+    operations = load(supervisor_file)
+    if operations.get("schema_version") != 1:
+        raise BuildError("supervisor schema_version must be 1")
+    result = copy.deepcopy(packages)
+    for target_id, settings in operations.get("targets", {}).items():
+        if target_id not in result["targets"]:
+            raise BuildError("Supervisor references unknown target: " + target_id)
+        target = result["targets"][target_id]
+        for key in settings:
+            if key not in {"supervisor", "supervisor_modules", "managed_services"}:
+                raise BuildError("unsupported Supervisor target field: " + key)
+            if key in target:
+                raise BuildError("duplicate configuration in package and supervisor files: " + key)
+        target.update(settings)
+        runs = {item["name"]: item for item in target.get("runs", [])}
+        if len(runs) != len(target.get("runs", [])):
+            raise BuildError("duplicate package name in " + target_id)
+        ports = set()
+        matched = set()
+        for module in target.get("supervisor_modules", []):
+            name = module.get("package", module["id"])
+            if name not in runs:
+                raise BuildError("Supervisor module references unknown package: " + name)
+            matched.add(name)
+            if module["port"] in ports:
+                raise BuildError("duplicate Supervisor port in " + target_id)
+            ports.add(module["port"])
+            package = runs[name]
+            for key in ("start_policy", "remove_packages"):
+                if key in module:
+                    if key in package:
+                        raise BuildError("duplicate install policy for " + name)
+                    package[key] = module.pop(key)
+            module.pop("package", None)
+            runtime = package.get("runtime", {})
+            if not isinstance(runtime, dict) or set(runtime) - {"environment", "source_files", "unset_environment"}:
+                raise BuildError(name + ".runtime supports environment, source_files and unset_environment")
+            if runtime and module["mode"] != "managed":
+                raise BuildError(name + ": external runtime must be configured by its native service")
+            if runtime:
+                for key in ("source_files", "unset_environment"):
+                    values = runtime.get(key, [])
+                    if not isinstance(values, list) or any(not isinstance(v, str) or not v for v in values):
+                        raise BuildError(name + ".runtime." + key + " must be a string list")
+                if any(not ENVIRONMENT_KEY.fullmatch(v) for v in runtime.get("unset_environment", [])):
+                    raise BuildError(name + ".runtime.unset_environment contains an invalid variable name")
+                if any(not v.startswith("/") or "\x00" in v for v in runtime.get("source_files", [])):
+                    raise BuildError(name + ".runtime.source_files requires absolute device paths")
+                # Apply developer settings after native environments; operations
+                # prelude retains the final say for platform-specific overrides.
+                setup = ["unset " + " ".join(shlex.quote(v) for v in runtime["unset_environment"])] if runtime.get("unset_environment") else []
+                setup += ["source " + shlex.quote(v) for v in runtime.get("source_files", [])]
+                setup += ["export " + v for v in resolve_environment(runtime.get("environment"), name + ".runtime.environment")]
+                module["prelude"] = setup + module.get("prelude", [])
+        for package in runs.values():
+            if package.get("runtime") and package["name"] not in matched:
+                raise BuildError("runtime has no Supervisor module: " + package["name"])
+    for target_id, target in result.get("targets", {}).items():
+        if target_id not in operations.get("targets", {}) and any(p.get("runtime") for p in target.get("runs", [])):
+            raise BuildError(target_id + ": runtime requires Supervisor configuration")
+    return result
+
+
 def resolve_run_start_policy(value, field):
     """Return how a vendor run package is started after its installation phase."""
     if value is None:
         return "vendor"
-    if value not in {"vendor", "supervisor"}:
-        raise BuildError(field + ".start_policy must be vendor or supervisor")
+    if value not in {"vendor", "supervisor", "vision-preserve-shared"}:
+        raise BuildError(field + ".start_policy must be vendor, supervisor or vision-preserve-shared")
     return value
+
+
+def resolve_run_remove_packages(values, field):
+    """Validate explicitly retired packages removed before a vendor run installs."""
+    if values is None:
+        return []
+    if not isinstance(values, list) or not all(isinstance(value, str) and TOKEN.fullmatch(value) for value in values):
+        raise BuildError(field + ".remove_packages must be a package-name list")
+    return values
 
 
 def render_run_command(relpath, arguments, start_policy="vendor", helper_rel=None):
@@ -276,81 +310,13 @@ def render_run_command(relpath, arguments, start_policy="vendor", helper_rel=Non
     for argument in arguments:
         rendered.append('"$robot_type"' if argument == "{robot_type}" else shlex.quote(argument))
     suffix = " " + " ".join(rendered) if rendered else ""
-    if start_policy == "supervisor":
+    if start_policy in {"supervisor", "vision-preserve-shared"}:
         if helper_rel is None:
             raise BuildError("a supervisor-managed run requires its installer helper")
         return 'python3 "$root/{}" "$root/{}"{}'.format(helper_rel, relpath, suffix)
     return '/bin/bash "$root/{}"{}'.format(relpath, suffix)
 
 
-def vision_supervisor(target_id, target):
-    """Validate the document-defined Vision service for an Orin target."""
-    value = target.get("vision_supervisor")
-    if value is None:
-        return None
-    if not isinstance(value, dict) or set(value) != {"service", "ros_distro"}:
-        raise BuildError(target_id + ".vision_supervisor must contain service and ros_distro")
-    service = require(value.get("service"), target_id + ".vision_supervisor.service")
-    distro = require(value.get("ros_distro"), target_id + ".vision_supervisor.ros_distro")
-    if not SERVICE.fullmatch(service):
-        raise BuildError(target_id + ".vision_supervisor.service is invalid")
-    if not ROS_DISTRO.fullmatch(distro):
-        raise BuildError(target_id + ".vision_supervisor.ros_distro must be humble or jazzy")
-    if target.get("device") != "ORIN":
-        raise BuildError(target_id + ".vision_supervisor is supported only on ORIN")
-    return service, distro
-
-
-def vision_launch_script(ros_distro):
-    """Render Vision's supported ROS/DDS environment exactly once per start."""
-    return "\n".join((
-        "#!/bin/bash", "set -euo pipefail",
-        "unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH",
-        "source /etc/naviai/Middleware.env",
-        "unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH",
-        "source /opt/ros/{}/setup.bash".format(ros_distro),
-        "source /opt/naviai/venvs/vision/bin/activate",
-        "export HOME=/home/naviai",
-        "export YOLO_CONFIG_DIR=/var/lib/navi-vision/ultralytics",
-        "export ROS_DOMAIN_ID=72",
-        "export ROS_LOCALHOST_ONLY=0",
-        "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp",
-        "unset CYCLONEDDS_URI",
-        "install -d -m 0755 \"$YOLO_CONFIG_DIR\"",
-        "exec ros2 launch navi_vision_pkg face_detection_node.launch.py selected_camera:=auto camera_auto_timeout_sec:=8.0",
-        "",
-    ))
-
-
-def vision_service(launch_path):
-    return "\n".join((
-        "[Unit]", "Description=Navi Vision ROS 2 stack (Supervisor)",
-        "After=network-online.target", "Wants=network-online.target", "",
-        "[Service]", "Type=simple", "ExecStart=/bin/bash {}".format(launch_path),
-        "Restart=on-failure", "RestartSec=5", "TimeoutStopSec=30", "",
-        "[Install]", "WantedBy=multi-user.target", "",
-    ))
-
-
-def stage_vision_supervisor(stage, target_id, value, checksums, dry_run):
-    """Stage the Vision launcher and systemd supervisor when configured."""
-    if value is None:
-        return []
-    service, ros_distro = value
-    launch_name = service.removesuffix(".service") + "-launch.sh"
-    launch_rel = "targets/{}/startup/{}".format(target_id, launch_name)
-    service_rel = "targets/{}/startup/{}".format(target_id, service)
-    destination = "/usr/local/lib/navi-vision/" + launch_name
-    if not dry_run:
-        launch = stage / launch_rel
-        unit = stage / service_rel
-        launch.parent.mkdir(parents=True, exist_ok=True)
-        launch.write_text(vision_launch_script(ros_distro), encoding="utf-8")
-        launch.chmod(0o755)
-        unit.write_text(vision_service(destination), encoding="utf-8")
-        unit.chmod(0o644)
-        checksums.extend(((file_sha256(launch), launch_rel), (file_sha256(unit), service_rel)))
-    return [(service, launch_rel, service_rel, destination)]
 
 
 def supervisor_paths(target_id, value):
@@ -383,7 +349,8 @@ def supervisor_module(target_id, index, value):
         "id", "description", "mode", "port", "register", "service_name", "restart_service", "command",
         "working_directory", "source_files", "unset_environment", "environment", "prelude",
         "autorestart", "exitcodes", "startsecs", "startretries", "timeout_stop_seconds",
-        "after_services", "part_of_services", "log_maxbytes", "log_backups",
+        "after_services", "part_of_services", "log_maxbytes", "log_backups", "native_rpc_config",
+        "startup_priority",
     }
     unknown = set(value) - allowed
     if unknown:
@@ -393,11 +360,20 @@ def supervisor_module(target_id, index, value):
     if not MODULE_ID.fullmatch(identifier):
         raise BuildError(field + ".id is invalid")
     result["id"] = identifier
+    if "native_rpc_config" in result:
+        if result.get("mode") != "external" or not isinstance(result["native_rpc_config"], str) or not result["native_rpc_config"].startswith("/"):
+            raise BuildError(field + ".native_rpc_config requires an external module and absolute path")
     result["description"] = require(result.get("description"), field + ".description")
     if result.get("mode") not in {"managed", "external"}:
         raise BuildError(field + ".mode must be managed or external")
     if not isinstance(result.get("port"), int) or not 1 <= result["port"] <= 65535:
         raise BuildError(field + ".port must be a TCP port")
+    if "startup_priority" in result and (
+        not isinstance(result["startup_priority"], int) or isinstance(result["startup_priority"], bool)
+        or not 1 <= result["startup_priority"] <= 9999
+    ):
+        raise BuildError(field + ".startup_priority must be an integer from 1 to 9999")
+    result.setdefault("startup_priority", 100)
     if "register" in result and not isinstance(result["register"], bool):
         raise BuildError(field + ".register must be boolean")
     if "restart_service" in result:
@@ -455,7 +431,7 @@ def supervisor_entrypoint_script(module, paths):
         'install -d -m 0750 "$runtime_dir" "$log_dir"',
         'install -d -m 0755 {}'.format(shlex.quote(module['working_directory'])),
         'password=$(tr -d "\\r\\n" < "$password_file")',
-        '[[ "$password" =~ ^[[:xdigit:]]{64}$ ]] || { echo "invalid Supervisor Agent RPC credential" >&2; exit 1; }',
+        '[[ "$password" == 1 || "$password" =~ ^[[:xdigit:]]{64}$ ]] || { echo "invalid Supervisor Agent RPC credential" >&2; exit 1; }',
         'cat > "$config_path" <<EOF',
         "[supervisord]", "nodaemon=true", "user=root", "logfile={}/supervisord.log".format(log_dir),
         "pidfile={}/supervisord.pid".format(runtime_dir), "", "[unix_http_server]",
@@ -543,7 +519,27 @@ def stage_supervisor_modules(stage, target_id, target, checksums, dry_run):
         "systemctl restart {}".format(shlex.quote(module["restart_service"]))
         for module in modules if module.get("restart_service")
     ]
+    for module in modules:
+        if module.get("native_rpc_config"):
+            destination = paths["agent_modules_directory"].rsplit("/modules.d", 1)[0]
+            post_install.insert(0, "python3 {} {} {} {}".format(
+                shlex.quote(destination + "/configure_native_rpc.py"),
+                shlex.quote(module["native_rpc_config"]), shlex.quote(paths["agent_password_file"]),
+                shlex.quote("{}:{}".format(paths["internal_ip"], module["port"]))))
     return startup, registrations, post_install, paths
+
+
+def supervisor_service_priorities(target_id, target):
+    """Return service priorities derived from the Supervisor module contract."""
+    priorities = {}
+    for index, value in enumerate(target.get("supervisor_modules", [])):
+        module = supervisor_module(target_id, index, value)
+        service = module.get("service_name") if module["mode"] == "managed" else module.get("restart_service")
+        if service:
+            if service in priorities and priorities[service] != module["startup_priority"]:
+                raise BuildError(target_id + ": one service has conflicting startup priorities")
+            priorities[service] = module["startup_priority"]
+    return priorities
 
 
 def stage_supervisor_agent(stage, target_id, paths, checksums, dry_run):
@@ -560,6 +556,7 @@ def stage_supervisor_agent(stage, target_id, paths, checksums, dry_run):
         "navi_supervisor_agent.py": source_root / "resources" / "navi_supervisor_agent.py",
         "modules.json": module_config,
         "initialize_agent_secrets.py": initializer,
+        "configure_native_rpc.py": source_root / "scripts/configure_native_rpc.py",
     }
     base = "targets/{}/supervisor-agent".format(target_id)
     if not dry_run:
@@ -569,16 +566,26 @@ def stage_supervisor_agent(stage, target_id, paths, checksums, dry_run):
             destination = stage / base / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, destination)
+            if name == "modules.json" and target_id == "orin-jazzy":
+                config = json.loads(destination.read_text(encoding="utf-8"))
+                config["modules"] = {}
+                config["remote_agents"] = {}
+                destination.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
             destination.chmod(0o755 if name.endswith(".py") else 0o644)
             checksums.append((file_sha256(destination), (Path(base) / name).as_posix()))
         service = stage / base / (paths["agent_service"].removesuffix(".service") + ".service")
         service.write_text("\n".join((
             "[Unit]", "Description=Navi {} Supervisor Agent".format(device.title()), "After=network-online.target",
+            *( ["Conflicts=navi-supervisor-agent.service", "After=navi-supervisor-agent.service"] if device == "orin" else [] ),
             "Wants=network-online.target", "", "[Service]", "Type=simple",
             "ExecStart=/usr/bin/python3 {}/navi_supervisor_agent.py --config {}/modules.json".format(
                 paths["agent_modules_directory"].rsplit("/modules.d", 1)[0],
                 paths["agent_modules_directory"].rsplit("/modules.d", 1)[0],
             ),
+            "ExecStartPost=/usr/bin/python3 {0}/navi_supervisor_agent.py --config {0}/modules.json --wait-ready".format(
+                paths["agent_modules_directory"].rsplit("/modules.d", 1)[0]
+            ),
+            "TimeoutStartSec=40",
             "Restart=on-failure", "RestartSec=3", "", "[Install]", "WantedBy=multi-user.target", "",
         )), encoding="utf-8")
         service.chmod(0o644)
@@ -587,6 +594,7 @@ def stage_supervisor_agent(stage, target_id, paths, checksums, dry_run):
         "base": base,
         "service": paths["agent_service"].removesuffix(".service") + ".service",
         "destination": paths["agent_modules_directory"].rsplit("/modules.d", 1)[0],
+        "replaces_services": ["navi-supervisor-agent.service"] if device == "orin" else [],
     }
 
 
@@ -617,7 +625,7 @@ def services_from_run(run_path):
 
 
 def header():
-    lines = ["#!/bin/sh", "set -eu", "archive_line=10", "work_dir=$(mktemp -d \"${TMPDIR:-/tmp}/navi-one-stop.XXXXXX\")", "cleanup() { rm -rf \"$work_dir\"; }", "trap cleanup EXIT HUP INT TERM", "tail -n +\"$archive_line\" \"$0\" | tar -xzf - -C \"$work_dir\"", "exec \"$work_dir/install.sh\" \"$@\"", "__ARCHIVE_BELOW__", ""]
+    lines = ["#!/bin/sh", "set -eu", "archive_line=10", "work_dir=$(mktemp -d \"${TMPDIR:-/tmp}/navi-one-stop.XXXXXX\")", "cleanup() { rm -rf \"$work_dir\"; }", "trap cleanup EXIT; trap 'exit 129' HUP; trap 'exit 130' INT; trap 'exit 143' TERM", "tail -n +\"$archive_line\" \"$0\" | tar -xzf - -C \"$work_dir\"", "\"$work_dir/install.sh\" \"$@\"; exit 0", "__ARCHIVE_BELOW__", ""]
     return "\n".join(lines).encode("utf-8")
 
 
@@ -684,7 +692,20 @@ def stage_system_config(stage, target_id, target, checksums, dry_run):
 
 def target_install(target_id, system_config_rel, common_rel, common, extras, runs, services,
                    startup_services=(), supervisor_startup=(), registrations=(), post_install=(), agent_service=None,
-                   agent_payload=None, target_platform=None):
+                   agent_payload=None, target_platform=None, release_tracking=False, service_priorities=None):
+    # Native modules are also part of the installation lifecycle, even when
+    # their units come from a DEB instead of a Middleware-format run archive.
+    native_services = [
+        shlex.split(command)[2] for command in post_install
+        if command.startswith("systemctl restart ") and len(shlex.split(command)) == 3
+    ]
+    services = sorted(set(services) | set(native_services))
+    service_priorities = service_priorities or {}
+    unknown_priorities = set(service_priorities) - set(services)
+    if unknown_priorities:
+        raise BuildError(target_id + ": startup priority references unmanaged service: " +
+                         ", ".join(sorted(unknown_priorities)))
+    services = sorted(services, key=lambda service: (service_priorities.get(service, 100), service))
     lines = ["#!/bin/bash", "set -euo pipefail", "umask 022", "root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../..\" && pwd)\"", "robot_type=\"$1\"", "(cd \"$root\" && sha256sum -c \"targets/{}/payloads.sha256\")".format(target_id)]
     if target_platform is not None:
         expected_os, expected_version, expected_arch = target_platform
@@ -703,14 +724,32 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             "  exit 2",
             "fi",
         ))
+    if release_tracking:
+        lines.extend([
+            "install -d -m 0755 /var/lib/naviai/release",
+            "exec 9>/var/lib/naviai/release/install.lock",
+            "flock -n 9 || { echo 'ERROR: another release installation is running' >&2; exit 1; }",
+            "install -d -m 0755 /usr/local/bin",
+            'install -m 0755 "$root/release_state.py" /usr/local/bin/navi-version',
+            'navi_release() { /usr/bin/python3 "$root/release_state.py" "$@"; }',
+            'navi_release begin --manifest "$root/targets/{}/release-manifest.json" --robot-type "$robot_type"'.format(target_id),
+        ])
     if services:
         lines.extend([
             "managed_services=(" + " ".join('\"{}\"'.format(item) for item in services) + ")",
-            "stop_managed_services() {", "  local unit", "  for unit in \"${managed_services[@]}\"; do",
-            "    if systemctl is-active --quiet \"$unit\"; then", "      echo \"Stopping $unit\"", "      systemctl stop \"$unit\"", "    fi",
-            "  done", "}", "install_complete=0", "on_install_exit() {", "  status=$?",
+            "stop_managed_services() {", "  local unit failed=0", "  for unit in \"${managed_services[@]}\"; do",
+            "    if systemctl is-active --quiet \"$unit\"; then", "      echo \"Stopping $unit\"", "      systemctl stop \"$unit\" || failed=1", "    fi",
+            "  done", "  return \"$failed\"", "}", "install_complete=0", "on_install_exit() {", "  status=$?",
             "  if [[ \"$install_complete\" -ne 1 ]]; then", "    echo \"ERROR: overall installation failed; managed services are being kept stopped.\" >&2",
-            "    stop_managed_services || true", "  fi", "  exit \"$status\"", "}", "trap on_install_exit EXIT", "stop_managed_services",
+            "    stop_managed_services || true",
+            *(['    navi_release fail || true'] if release_tracking else []),
+            "  fi", "  exit \"$status\"", "}", "trap on_install_exit EXIT", "stop_managed_services",
+        ])
+    elif release_tracking:
+        lines.extend([
+            "install_complete=0",
+            'on_install_exit() { status=$?; if [[ "$install_complete" -ne 1 ]]; then navi_release fail || true; fi; exit "$status"; }',
+            "trap on_install_exit EXIT",
         ])
     if system_config_rel:
         lines.append("/bin/bash \"$root/targets/{}/install-system-config.sh\" \"$robot_type\"".format(target_id))
@@ -721,6 +760,10 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         lines.extend(["dpkg -i \"$root/{}\"".format(common_rel), "python3 \"{}\" configure --target \"{}\" --robot-type \"$robot_type\"".format(tool, configure_target), "\"{}\"".format(installer)])
     else:
         raise BuildError(target_id + " must configure system_config or common")
+    # The vendor Robot unit chdirs before ExecStartPre, so its mkdir cannot
+    # create its own missing WorkingDirectory on a freshly provisioned host.
+    if target_id == "orin-humble":
+        lines.append("install -d -m 0755 /var/lib/navi /var/lib/navi/ros /var/log/navi/ros /var/log/navi/robot /var/log/naviai/robot")
     for relpath, installers, environment, contract in extras:
         lines.extend(system_python_contract_check(contract))
         lines.append("dpkg -i \"$root/{}\"".format(relpath))
@@ -730,7 +773,19 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         item, arguments = run[:2]
         start_policy = run[2] if len(run) > 2 else "vendor"
         helper_rel = run[3] if len(run) > 3 else None
-        lines.append(render_run_command(item, arguments, start_policy, helper_rel))
+        remove_packages = run[4] if len(run) > 4 else []
+        for package in remove_packages:
+            lines.extend((
+                "if dpkg-query -W -f='${{db:Status-Status}}' {} 2>/dev/null | grep -Fxq installed; then".format(shlex.quote(package)),
+                "  echo {}".format(shlex.quote(
+                    "Removing retired package {} before installing its replacement.".format(package)
+                )),
+                "  dpkg --remove {}".format(shlex.quote(package)),
+                "fi",
+            ))
+        environment = run[5] if len(run) > 5 else []
+        prefix = "env " + " ".join(environment) + " " if environment else ""
+        lines.append(prefix + render_run_command(item, arguments, start_policy, helper_rel))
         if services:
             lines.append("stop_managed_services")
     for _, launch_rel, service_rel, destination in startup_services:
@@ -750,29 +805,46 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
     if agent_payload:
         agent_base = agent_payload["base"]
         destination = agent_payload["destination"]
+        for retired_service in agent_payload.get("replaces_services", []):
+            lines.extend((
+                "if [[ $(systemctl show -p LoadState --value {}) != not-found ]]; then".format(shlex.quote(retired_service)),
+                "  systemctl disable --now {}".format(shlex.quote(retired_service)),
+                "fi",
+            ))
         lines.extend((
             "install -d -m 0755 {}".format(shlex.quote(destination)),
             "install -m 0755 \"$root/{}/navi_supervisor_agent.py\" {}/navi_supervisor_agent.py".format(agent_base, shlex.quote(destination)),
             "install -m 0644 \"$root/{}/modules.json\" {}/modules.json".format(agent_base, shlex.quote(destination)),
             "install -m 0755 \"$root/{}/initialize_agent_secrets.py\" {}/initialize_agent_secrets.py".format(agent_base, shlex.quote(destination)),
             "python3 {}/initialize_agent_secrets.py".format(shlex.quote(destination)),
+            "install -m 0755 \"$root/{}/configure_native_rpc.py\" {}/configure_native_rpc.py".format(agent_base, shlex.quote(destination)),
             "install -m 0644 \"$root/{}/{}\" /etc/systemd/system/{}".format(agent_base, agent_payload["service"], shlex.quote(agent_payload["service"])),
         ))
     if registrations:
         lines.append("install -d -m 0755 {}".format(shlex.quote(agent_service["agent_modules_directory"])))
         lines.extend("install -m 0644 \"$root/{}\" {}".format(relpath, shlex.quote(destination)) for relpath, destination in registrations)
-    lines.extend(post_install)
+    # Restart declared native units once, in the same final pass as generated
+    # units, after new unit files and shared credentials have been installed.
+    lines.extend(command for command in post_install if not (
+        command.startswith("systemctl restart ") and len(shlex.split(command)) == 3
+    ))
     if services:
         lines.extend([
             "systemctl daemon-reload", "for unit in \"${managed_services[@]}\"; do",
-            "  if [[ -f \"/etc/systemd/system/$unit\" ]]; then", "    systemctl enable \"$unit\"", "    systemctl restart \"$unit\"", "  fi",
-            "done", "install_complete=1", "trap - EXIT",
+            "  echo \"Starting $unit after lower-priority services are active\"",
+            "  systemctl enable \"$unit\"", "  systemctl restart \"$unit\"",
+            "  systemctl is-active --quiet \"$unit\" || { echo \"ERROR: $unit did not become active\" >&2; exit 1; }",
+            "done",
         ])
     if agent_payload:
         lines.extend((
             "systemctl daemon-reload", "systemctl enable {}".format(shlex.quote(agent_payload["service"])),
             "systemctl restart {}".format(shlex.quote(agent_payload["service"])),
         ))
+    if release_tracking:
+        lines.append("navi_release complete")
+    if services or release_tracking:
+        lines.extend(("install_complete=1", "trap - EXIT"))
     return "\n".join(lines) + "\n"
 
 
@@ -842,17 +914,40 @@ def master_install(rows, version):
     return "\n".join(lines)
 
 
-def build(version_file, urls_file, output_dir, dry_run=False):
-    version_data, urls_data = load(version_file), load(urls_file)
+def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=None):
+    if supervisor_file is not None and not supervisor_file.is_file():
+        raise BuildError("Supervisor configuration not found: " + str(supervisor_file))
+    version_data, urls_data = load(version_file), load_delivery(urls_file, supervisor_file)
     if version_data.get("schema_version") != 1 or urls_data.get("schema_version") != 1:
         raise BuildError("schema_version must be 1")
     version = require(version_data.get("version"), "version", safe=True)
     output_name = require(version_data.get("output_name"), "output_name", safe=True)
+    built_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    def git_value(*arguments):
+        try:
+            result = subprocess.run(["git", "-C", str(DEPLOYMENT_ROOT), *arguments],
+                                    capture_output=True, text=True)
+        except FileNotFoundError:
+            return None
+        return result.stdout.strip() if result.returncode == 0 else None
+    release_identity = {
+        "schema_version": 1, "release": version,
+        "build_id": datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:12],
+        "built_at": built_at, "git_commit": git_value("rev-parse", "HEAD"),
+        "git_dirty": bool(git_value("status", "--porcelain")),
+        "version_config_sha256": file_sha256(version_file),
+        "package_config_sha256": file_sha256(urls_file),
+        "supervisor_config_sha256": file_sha256(supervisor_file or urls_file.with_name("supervisor.json"))
+            if (supervisor_file or urls_file.with_name("supervisor.json")).is_file() else None,
+        "builder_sha256": file_sha256(Path(__file__)),
+        "offline_installation": "unverified",
+    }
     raw_targets = urls_data.get("targets")
     if not isinstance(raw_targets, dict):
         raise BuildError("targets must be an object")
     with tempfile.TemporaryDirectory(prefix="navi-one-stop-") as temporary:
         stage, rows, checksums = Path(temporary) / "stage", [], []
+        manifests = {}
         for target_id, target in raw_targets.items():
             target_id = require(target_id, "target id", safe=True)
             common = target.get("common") if isinstance(target, dict) else None
@@ -863,6 +958,20 @@ def build(version_file, urls_file, output_dir, dry_run=False):
             os_version = require(target.get("os_version"), target_id + ".os_version")
             arch = require(target.get("architecture"), target_id + ".architecture", safe=True)
             target_checksums = []
+            artifacts = []
+            def record_artifact(item, relpath, kind, index):
+                if dry_run:
+                    return
+                declared_version = item.get("version")
+                if declared_version is not None:
+                    require(declared_version, target_id + ".artifact.version")
+                artifacts.append({
+                    "name": item.get("name") or "{}-{}".format(kind, index),
+                    "kind": kind, "version": declared_version,
+                    "version_source": "configuration" if declared_version else "unknown",
+                    "url": item["url"], "path": relpath,
+                    "sha256": file_sha256(stage / relpath),
+                })
             system_config_rel = stage_system_config(stage, target_id, target, target_checksums, dry_run)
             common_rel = ""
             if not system_config_rel:
@@ -873,53 +982,58 @@ def build(version_file, urls_file, output_dir, dry_run=False):
                 if expected and not SHA.fullmatch(expected): raise BuildError(target_id + ".common.sha256 is invalid")
                 download(require(common["url"], target_id + ".common.url"), common_path, expected, dry_run)
                 if not dry_run: target_checksums.append((file_sha256(common_path), common_rel))
+                record_artifact(common, common_rel, "common", 0)
             extras, runs = [], []
             configured_services = target.get("managed_services", [])
             if not isinstance(configured_services, list) or any(not isinstance(item, str) or not SERVICE.fullmatch(item) for item in configured_services):
                 raise BuildError(target_id + ".managed_services must be a list of systemd unit names")
             services = list(configured_services)
-            configured_vision_supervisor = vision_supervisor(target_id, target)
-            startup_services = stage_vision_supervisor(
-                stage, target_id, configured_vision_supervisor, target_checksums, dry_run
-            )
-            services.extend(item[0] for item in startup_services)
+            if "vision_supervisor" in target:
+                raise BuildError(target_id + ": use supervisor_modules for Vision; standalone vision_supervisor is no longer supported")
+            startup_services = []
             supervisor_startup, registrations, supervisor_post_install, supervisor_config = stage_supervisor_modules(
                 stage, target_id, target, target_checksums, dry_run
             )
+            service_priorities = supervisor_service_priorities(target_id, target)
             supervisor_agent = stage_supervisor_agent(stage, target_id, supervisor_config, target_checksums, dry_run)
             services.extend(item[0] for item in supervisor_startup)
-            sensor_parent_compatibility = stage_sensor_parent_compatibility(
-                stage, target_id, target, target_checksums, dry_run
-            )
             for index, item in enumerate(target.get("extra_debs", [])):
                 if not isinstance(item, dict) or not item.get("url"): continue
                 relpath = "payloads/{}/extra-{:02d}.deb".format(target_id, index); path = stage / relpath; path.parent.mkdir(parents=True, exist_ok=True)
                 expected = str(item.get("sha256", "")); download(require(item["url"], target_id + ".extra.url"), path, expected, dry_run)
                 if not dry_run: target_checksums.append((file_sha256(path), relpath))
+                record_artifact(item, relpath, "dependency", index)
                 extras.append((
                     relpath,
                     resolve_installers(path, item.get("installers", []), target_id + ".extra.installers", dry_run),
                     resolve_environment(item.get("environment"), target_id + ".extra.environment"),
                     resolve_system_python_contract(item.get("system_python_contract"), target_id + ".extra"),
                 ))
-                if index == 0 and sensor_parent_compatibility:
-                    extras.append((sensor_parent_compatibility, [], [], None))
             requires_no_final_exec_helper = False
             for index, item in enumerate(target.get("runs", [])):
                 if not isinstance(item, dict) or not item.get("url"): continue
                 relpath = "payloads/{}/run-{:02d}.run".format(target_id, index); path = stage / relpath; path.parent.mkdir(parents=True, exist_ok=True)
                 expected = str(item.get("sha256", "")); download(require(item["url"], target_id + ".run.url"), path, expected, dry_run)
+                record_artifact(item, relpath, "module", index)
                 if not dry_run:
                     path.chmod(0o755)
                     target_checksums.append((file_sha256(path), relpath))
                     services.extend(services_from_run(path))
                 start_policy = resolve_run_start_policy(item.get("start_policy"), target_id + ".run")
                 requires_no_final_exec_helper |= start_policy == "supervisor"
+                vision_helper_rel = "targets/{}/helpers/install_vision_preserving_shared.py".format(target_id)
+                if start_policy == "vision-preserve-shared" and not dry_run:
+                    helper = stage / vision_helper_rel
+                    helper.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(Path(__file__).resolve().parent / "install_vision_preserving_shared.py", helper)
+                    target_checksums.append((file_sha256(helper), vision_helper_rel))
                 runs.append((
                     relpath,
                     resolve_run_arguments(item.get("arguments"), target_id + ".run"),
                     start_policy,
-                    "targets/{}/helpers/install_run_without_final_exec.py".format(target_id) if start_policy == "supervisor" else None,
+                    "targets/{}/helpers/install_run_without_final_exec.py".format(target_id) if start_policy == "supervisor" else (vision_helper_rel if start_policy == "vision-preserve-shared" else None),
+                    resolve_run_remove_packages(item.get("remove_packages"), target_id + ".run"),
+                    resolve_environment(item.get("environment"), target_id + ".run.environment"),
                 ))
             if requires_no_final_exec_helper and not dry_run:
                 helper_source = Path(__file__).resolve().parent / "install_run_without_final_exec.py"
@@ -929,12 +1043,33 @@ def build(version_file, urls_file, output_dir, dry_run=False):
                 shutil.copy2(helper_source, helper)
                 helper.chmod(0o755)
                 target_checksums.append((file_sha256(helper), helper_rel))
+            if not dry_run:
+                helper = stage / "release_state.py"
+                shutil.copy2(Path(__file__).with_name("release_state.py"), helper)
+                target_checksums.append((file_sha256(helper), "release_state.py"))
+                modules = {}
+                for artifact in artifacts:
+                    if artifact["kind"] == "module":
+                        if artifact["name"] in modules:
+                            raise BuildError("duplicate module name: " + artifact["name"])
+                        modules[artifact["name"]] = artifact
+                manifest = dict(release_identity, target=target_id, robot_type=None,
+                                platform={"os_id": os_id, "os_version": os_version, "architecture": arch},
+                                modules=modules, artifacts=artifacts,
+                                payload_checksums=dict((path, value) for value, path in target_checksums))
+                manifests[target_id] = manifest
+                manifest_rel = "targets/{}/release-manifest.json".format(target_id)
+                manifest_path = stage / manifest_rel
+                manifest_path.parent.mkdir(parents=True, exist_ok=True)
+                manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+                target_checksums.append((file_sha256(manifest_path), manifest_rel))
             script = stage / "targets" / target_id / "install.sh"; script.parent.mkdir(parents=True, exist_ok=True)
             script.write_text(
                 target_install(
                     target_id, system_config_rel, common_rel, common, extras, runs, sorted(set(services)),
                     startup_services, supervisor_startup, registrations, supervisor_post_install, supervisor_config,
-                    supervisor_agent, (os_id, os_version, arch),
+                    supervisor_agent, (os_id, os_version, arch), release_tracking=True,
+                    service_priorities=service_priorities,
                 ), encoding="utf-8"
             ); script.chmod(0o755)
             pretest = stage / "targets" / target_id / "pretest.sh"
@@ -949,24 +1084,31 @@ def build(version_file, urls_file, output_dir, dry_run=False):
         output = output_dir / (output_name + ".run")
         if dry_run:
             print("Configured targets: " + ", ".join(item[0] for item in rows)); return output
+        (stage / "release-manifest.json").write_text(
+            json.dumps(dict(release_identity, targets=manifests), indent=2) + "\n", encoding="utf-8")
+        checksums.append((file_sha256(stage / "release-manifest.json"), "release-manifest.json"))
         (stage / "payloads.sha256").write_text("".join("{}  {}\n".format(value, path) for value, path in sorted(checksums)), encoding="utf-8")
         install = stage / "install.sh"; install.write_text(master_install(rows, version), encoding="utf-8"); install.chmod(0o755)
-        output_dir.mkdir(parents=True, exist_ok=True); temporary_output = output.with_name("." + output.name + ".tmp")
-        with temporary_output.open("wb") as stream:
-            stream.write(header())
-            with tarfile.open(fileobj=stream, mode="w:gz", format=tarfile.PAX_FORMAT) as archive:
-                for item in sorted(stage.rglob("*")):
-                    if item.is_file(): archive.add(item, arcname=item.relative_to(stage).as_posix(), recursive=False)
-        temporary_output.chmod(0o755); temporary_output.replace(output)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix=".navi-one-stop-output-", dir=output_dir) as output_workspace:
+            temporary_output = Path(output_workspace) / output.name
+            with temporary_output.open("wb") as stream:
+                stream.write(header())
+                with tarfile.open(fileobj=stream, mode="w:gz", format=tarfile.PAX_FORMAT) as archive:
+                    for item in sorted(stage.rglob("*")):
+                        if item.is_file(): archive.add(item, arcname=item.relative_to(stage).as_posix(), recursive=False)
+            temporary_output.chmod(0o755); temporary_output.replace(output)
     print("Built {}".format(output)); return output
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True, type=Path); parser.add_argument("--urls", required=True, type=Path)
+    parser.add_argument("--supervisor", type=Path, help="operations configuration (defaults to supervisor.json beside package URLs)")
     parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parents[2] / "dist"); parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
-    try: build(args.version.resolve(), args.urls.resolve(), args.output_dir.resolve(), args.dry_run)
+    try: build(args.version.resolve(), args.urls.resolve(), args.output_dir.resolve(), args.dry_run,
+               args.supervisor.resolve() if args.supervisor else None)
     except BuildError as error: print("ERROR: {}".format(error), file=sys.stderr); return 1
     return 0
 

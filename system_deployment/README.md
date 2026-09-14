@@ -1,12 +1,13 @@
 # 系统交付
 
-本目录只保留一个面向交付使用者的配置入口和构建入口：
+本目录按分工维护两份配置，保留统一构建入口：
 
 - 配置：[`one_stop/package-urls.json`](one_stop/package-urls.json)
+- 服务配置：`one_stop/supervisor.json`
 - 构建：[`one_stop/build_release.sh`](one_stop/build_release.sh)
 
-`package-urls.json` 统一定义 Orin、Pico 和 RDK 各目标的远程安装包 URL、运行参数、离线依赖和
-Supervisor 服务。不要再为单独平台或模块维护额外 manifest。
+`package-urls.json` 定义各目标的安装包 URL、安装参数、依赖与开发者环境变量；
+`supervisor.json` 定义 Supervisor 服务及安装整合策略。构建时合并两份配置。
 
 构建总安装包：
 

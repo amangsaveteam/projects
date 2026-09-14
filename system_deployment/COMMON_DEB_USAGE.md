@@ -1,6 +1,6 @@
 # Navi Common Deb 使用手册
 
-本手册只说明如何在目标设备上使用已收到的 common deb。
+本手册说明 Common DEB 的独立构建与目标设备安装。
 
 ## 1. 选择正确的 deb
 
@@ -18,7 +18,25 @@
 dpkg-deb -f /tmp/<common-deb>.deb Package Version Architecture
 ```
 
-## 2. 安装 Orin Jazzy 或 Orin Humble 包
+## 2. 独立构建 Orin Humble 与 Pico Humble Common DEB
+
+这两个构建入口只在对应的远程构建设备执行；构建器会校验系统版本和 CPU 架构，避免生成不兼容的离线依赖包。
+
+| 构建目标 | 构建机要求 | 命令 | 产物 |
+| --- | --- | --- | --- |
+| Orin Humble Common | Ubuntu 22.04 arm64 | `./system_deployment/common/build_orin_humble_common_deb.sh` | `dist/common/orin/base/navi_common_dep-2.0.0-release-humble-arm64.deb` |
+| Pico Humble Common | Ubuntu 20.04 amd64 | `./system_deployment/common/build_pico_humble_common_deb.sh` | `dist/common/pico/base/navi_pico_common_dep-2.0.0-release-humble-amd64.deb` |
+
+构建机需要具备目标系统的软件源并安装 `dpkg-dev`（提供 `dpkg-scanpackages`）。构建完成后分别覆盖发布至：
+
+```text
+http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/navi_common_dep-2.0.0-release-humble-arm64.deb
+http://10.51.33.211:10000/chfs/shared/ros2_modules/common/pico/develop/navi_pico_common_dep-2.0.0-release-humble-amd64.deb
+```
+
+一站式包不构建、不嵌入这两个 Common DEB，只从以上云端地址下载，并且仅在对应目标设备上安装。
+
+## 3. 安装 Orin Jazzy 或 Orin Humble 包
 
 以下命令中的文件名和 target 必须二选一匹配。
 
@@ -67,7 +85,7 @@ sudo python3 /usr/lib/navi-common-dep/deploy_common.py validate-config \
 首次配置时 `--robot-type` 必填，示例机型须替换为真实机型。`--robot-name`、`--version`、
 `--ros-domain-id` 均可省略；`ROS_DOMAIN_ID` 默认值为 `72`。
 
-## 3. 安装 Pico Humble 包
+## 4. 安装 Pico Humble 包
 
 ```bash
 sudo dpkg -i /tmp/navi_pico_common_dep-2.0.0-release-humble-amd64.deb
@@ -83,7 +101,7 @@ sudo /usr/sbin/install_pico_common_deps.sh
 Pico 已有有效机型配置时同样可跳过 `configure`。首次配置只要求 `--robot-type`；
 `ROBOT_NAME` 和 `ZJ_VERSION` 可选。
 
-## 4. 安装 Pico Jazzy 环境包
+## 5. 安装 Pico Jazzy 环境包
 
 此版本只安装设备配置、`Middleware.env`、profile 和 Cyclone DDS 配置；不包含、下载或安装
 Pinocchio、TinyXML2 等三方依赖。确认 Pico 环境后，再单独确定可用的 Noble/Jazzy 依赖方案。
@@ -100,7 +118,7 @@ sudo python3 /usr/lib/navi-pico-common-dep/deploy_common.py configure \
 sudo /usr/sbin/configure_pico_jazzy_environment.sh
 ```
 
-## 5. 安装 RDK Jazzy 包
+## 6. 安装 RDK Jazzy 包
 
 ```bash
 sudo dpkg -i /tmp/navi_rdk_common_dep-2.0.0-release-jazzy-arm64.deb
@@ -121,7 +139,7 @@ source /etc/naviai/Middleware.env
 该文件会加载 Jazzy，并导出 `ROSDEP_OS_OVERRIDE=ubuntu:noble` 与
 `ROS_OS_OVERRIDE=ubuntu:noble:noble`。RDK Sensor 功能依赖不在该基础 carrier 中。
 
-## 6. 机器人型号
+## 7. 机器人型号
 
 支持的 `ROBOT_TYPE`：
 
@@ -140,7 +158,7 @@ Orin 与 RDK 会根据机型自动设置 `COMPOSE_PROFILES`，例如 `I3-S → i
 配置保存在 `/etc/zj_humanoid/device.env`。修改机型时再次执行对应的 `configure` 命令即可；
 不需要重新安装 deb。
 
-## 7. 环境自动加载与验证
+## 8. 环境自动加载与验证
 
 安装后，新开启的交互式 Bash 会自动加载环境。当前已经打开的终端不能被安装程序直接修改，
 请执行：
@@ -162,7 +180,7 @@ ros2 topic list
 预期：Orin 24.04、Pico 24.04 与 RDK OS V5.1.0 为 `ZJ_ROS_DISTRO=jazzy`；Orin 22.04
 与 Pico 20.04 为 `ZJ_ROS_DISTRO=humble`。
 
-## 8. CycloneDDS 网络配置
+## 9. CycloneDDS 网络配置
 
 包会安装 `/etc/zj_humanoid/cyclonedds.xml`，默认使用 `192.168.217.0/24` 网段并允许
 SPDP 组播。环境变量自动设置为：
@@ -188,7 +206,7 @@ CYCLONEDDS_URI=file:///path/to/site-cyclonedds.xml
 
 指定的文件必须存在；否则 profile 会告警并回退到包内默认 XML。
 
-## 9. 常见问题
+## 10. 常见问题
 
 | 现象 | 处理 |
 | --- | --- |
@@ -197,7 +215,7 @@ CYCLONEDDS_URI=file:///path/to/site-cyclonedds.xml
 | `ros2 topic list` 找不到接口 | 检查机器人网卡是否已连接并拥有 `192.168.217.x/24` 地址。 |
 | 机型需变更 | 再次执行 `configure` 命令；无需重新安装 deb。 |
 
-## 10. 已安装文件与完整性信息
+## 11. 已安装文件与完整性信息
 
 Orin：
 

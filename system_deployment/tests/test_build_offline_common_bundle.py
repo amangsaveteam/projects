@@ -20,6 +20,27 @@ SPEC.loader.exec_module(common_builder)
 
 
 class OfflineCommonBundleTest(unittest.TestCase):
+    def test_dedicated_build_interfaces_select_their_single_target(self) -> None:
+        expected = {
+            "build_orin_humble_common_deb.sh": "orin-common-humble",
+            "build_pico_humble_common_deb.sh": "pico-common",
+        }
+        for filename, config in expected.items():
+            wrapper = ROOT / "common" / filename
+            self.assertTrue(wrapper.is_file())
+            self.assertTrue(wrapper.stat().st_mode & 0o111)
+            self.assertIn(f"--config {config}", wrapper.read_text(encoding="utf-8"))
+
+    def test_orin_humble_common_owns_the_sensor_legacy_verifier(self) -> None:
+        config = (ROOT / "common/configs/orin-common-humble.json").read_text(encoding="utf-8")
+        self.assertIn("usr/lib/orin-common-deb/install_deps.sh", config)
+        verifier = ROOT / "common/files/usr/lib/orin-common-deb/install_deps.sh"
+        self.assertTrue(verifier.is_file())
+        self.assertTrue(verifier.stat().st_mode & 0o111)
+        contents = verifier.read_text(encoding="utf-8")
+        self.assertIn("--verify-only", contents)
+        self.assertIn("/usr/sbin/install_common_deps.sh", contents)
+
     def test_installer_skips_higher_top_level_version_and_never_forces_archives(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             staging = Path(temporary)

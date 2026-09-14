@@ -51,6 +51,11 @@
       "mode": "0755"
     },
     {
+      "source": "common/files/usr/lib/orin-common-deb/install_deps.sh",
+      "destination": "usr/lib/orin-common-deb/install_deps.sh",
+      "mode": "0755"
+    },
+    {
       "source": "common/configs/targets.json",
       "destination": "usr/lib/navi-common-dep/configs/targets.json",
       "mode": "0644"

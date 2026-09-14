@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Create persistent secrets shared by the device Agent and module RPCs."""
+"""Set the fixed RPC password shared by the device Agent and modules."""
 
 import os
-import secrets
 import subprocess
 from pathlib import Path
 
@@ -10,13 +9,12 @@ from pathlib import Path
 def ensure_secret(path):
     target = Path(path)
     target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    try:
-        descriptor = os.open(str(target), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    except FileExistsError:
-        os.chmod(str(target), 0o600)
-        return
+    descriptor = os.open(str(target), os.O_WRONLY | os.O_CREAT, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8") as output:
-        output.write(secrets.token_hex(32) + "\n")
+        os.fchmod(output.fileno(), 0o600)
+        output.truncate(0)
+        output.write("1\n")
+    return "1"
 
 
 def main():

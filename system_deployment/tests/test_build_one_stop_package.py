@@ -2,10 +2,12 @@
 import importlib.util
 import io
 import json
+import os
 import subprocess
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 
@@ -14,11 +16,126 @@ SPEC = importlib.util.spec_from_file_location("build_one_stop_package", ROOT / "
 builder = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(builder)
+HELPER_SPEC = importlib.util.spec_from_file_location(
+    "install_run_without_final_exec", ROOT / "one_stop/install_run_without_final_exec.py"
+)
+audio_install_helper = importlib.util.module_from_spec(HELPER_SPEC)
+assert HELPER_SPEC.loader is not None
+HELPER_SPEC.loader.exec_module(audio_install_helper)
 
 
 class OneStopPackageTest(unittest.TestCase):
+    def test_archive_wrapper_cleans_extraction_on_success_and_failure(self):
+        for status in (0, 17):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                payload = io.BytesIO()
+                script = ('#!/bin/sh\nexit %d\n' % status).encode()
+                with tarfile.open(fileobj=payload, mode='w:gz') as archive:
+                    member = tarfile.TarInfo('install.sh')
+                    member.mode = 0o755
+                    member.size = len(script)
+                    archive.addfile(member, io.BytesIO(script))
+                run = root / 'test.run'
+                run.write_bytes(builder.header() + payload.getvalue())
+                result = subprocess.run(['sh', str(run)], env={**os.environ, 'TMPDIR': str(root)})
+                self.assertEqual(result.returncode, status)
+                self.assertEqual(list(root.iterdir()), [run])
+
+    def test_failed_archive_write_leaves_no_partial_output(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            version = root / 'version.json'
+            urls = root / 'urls.json'
+            version.write_text(json.dumps({'schema_version': 1, 'version': '2.0.0', 'output_name': 'test'}))
+            urls.write_text(json.dumps({'schema_version': 1, 'targets': {'pico-jazzy': {
+                'os_id': 'ubuntu', 'os_version': '24.04', 'architecture': 'amd64',
+                'system_config': {'configure_target': 'pico-jazzy', 'base_image_contract': 'pico-jazzy'},
+                'extra_debs': [], 'runs': [],
+            }}}))
+            output = root / 'out'
+            output.mkdir()
+            previous = output / 'test.run'
+            previous.write_bytes(b'previous release')
+            with patch.object(builder.tarfile, 'open', side_effect=OSError('disk full')):
+                with self.assertRaisesRegex(OSError, 'disk full'):
+                    builder.build(version, urls, output)
+            self.assertEqual(list(output.iterdir()), [previous])
+            self.assertEqual(previous.read_bytes(), b'previous release')
+
+    def test_robot_working_directory_exists_before_vendor_installer(self):
+        script = builder.target_install('orin-humble', 'system-config', '', None, [],
+                                        [('payloads/robot.run', [])], [])
+        self.assertLess(script.index('install -d -m 0755 /var/lib/navi'), script.index('"$root/payloads/robot.run"'))
+
+    def test_audio_helper_suppresses_vendor_launch_line_variants(self) -> None:
+        for launch in (
+            'exec ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO_LAUNCH_ARGS[@]}"',
+            'exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO_LAUNCH_ARGS[@]}"',
+            'ros2 launch navi_audio_pkg audio_bringup.launch.py selected_camera:=auto',
+        ):
+            installer = "prepare_dependencies\n{}\n".format(launch)
+            rewritten = audio_install_helper.suppress_final_audio_launch(installer)
+            self.assertIn(audio_install_helper.REPLACEMENT, rewritten)
+            self.assertNotIn("audio_bringup.launch.py", rewritten)
+
+    def test_audio_helper_keeps_install_steps_without_running_runtime_user_launch(self) -> None:
+        installer = '''#!/bin/bash
+set -eu
+exec_as_runtime_user() { echo UNEXPECTED_LAUNCH; exit 99; }
+echo INSTALL
+echo VERIFY
+AUDIO_LAUNCH_ARGS=()
+exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO_LAUNCH_ARGS[@]}"
+'''
+        result = subprocess.run(
+            ["bash", "-c", audio_install_helper.suppress_final_audio_launch(installer)],
+            check=True, capture_output=True, text=True,
+        )
+        self.assertEqual(result.stdout.splitlines(), [
+            "INSTALL", "VERIFY",
+            "Audio installed; startup is managed by navi-orin-audio-supervisor.service",
+        ])
+
+    def test_audio_helper_rejects_ambiguous_or_missing_vendor_launch(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "found 0"):
+            audio_install_helper.suppress_final_audio_launch("echo no launch\n")
+        with self.assertRaisesRegex(RuntimeError, "found 2"):
+            audio_install_helper.suppress_final_audio_launch(
+                "ros2 launch navi_audio_pkg audio_bringup.launch.py\n"
+                "ros2 launch navi_audio_pkg audio_bringup.launch.py\n"
+            )
+
+    def test_audio_helper_fallback_guard_only_suppresses_the_audio_launch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            marker = directory / "unexpected-launch"
+            installer = directory / "install.sh"
+            installer.write_text(
+                "ros2() { touch \"$1\"; }\n"
+                "exec ros2 launch navi_audio_pkg audio_bringup.launch.py\n",
+                encoding="utf-8",
+            )
+            audio_install_helper.run_with_audio_launch_guard(installer, [str(marker)], directory)
+            self.assertFalse(marker.exists())
+
+    def test_common_debs_are_downloaded_from_the_artifact_server_not_built_in_one_stop(self) -> None:
+        targets = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]
+        self.assertEqual(
+            targets["orin-humble"]["extra_debs"][0]["url"],
+            "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/"
+            "navi_common_dep-2.0.0-release-humble-arm64.deb",
+        )
+        self.assertEqual(
+            targets["pico-humble"]["extra_debs"][0]["url"],
+            "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/pico/develop/"
+            "navi_pico_common_dep-2.0.0-release-humble-amd64.deb",
+        )
+        self.assertNotIn("common_builds", targets["orin-humble"])
+        self.assertNotIn("common_builds", targets["pico-humble"])
+
     def test_pico_common_is_downloaded_before_module_dependencies(self) -> None:
-        target = builder.load(ROOT / "one_stop/package-urls.json")["targets"]["pico-humble"]
+        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["pico-humble"]
         extras = target["extra_debs"]
         self.assertEqual([item["name"] for item in extras[:3]], ["pico-common", "upperlimb-common", "robot"])
         self.assertEqual(
@@ -66,7 +183,7 @@ class OneStopPackageTest(unittest.TestCase):
         )
 
     def test_orin_run_arguments_match_each_embedded_installer_interface(self) -> None:
-        config = builder.load(ROOT / "one_stop/package-urls.json")
+        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
         for target_name in ("orin-humble", "orin-jazzy"):
             runs = {
                 item["name"]: item["arguments"]
@@ -76,7 +193,27 @@ class OneStopPackageTest(unittest.TestCase):
             self.assertEqual(runs["sensor"], ["--", "--robot-type", "{robot_type}"])
             self.assertEqual(runs["robot"], [])
             self.assertEqual(runs["audio"], [])
-            self.assertEqual(runs["vision"], [])
+            if target_name == "orin-jazzy":
+                self.assertEqual(runs["vision"], [])
+            else:
+                self.assertEqual(runs["vision"], [])
+
+    def test_orin_humble_robot_migrates_the_retired_monolithic_package_before_install(self) -> None:
+        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
+        robot = next(item for item in target["runs"] if item["name"] == "robot")
+        self.assertEqual(robot["remove_packages"], ["navi-robot-state"])
+        install = builder.target_install(
+            "orin-humble", "payloads/orin-humble/system-config", "", None, [],
+            [("payloads/orin-humble/run-02.run", [], "vendor", None, ["navi-robot-state"])], [],
+        )
+        self.assertLess(
+            install.index("dpkg --remove navi-robot-state"),
+            install.index('/bin/bash "$root/payloads/orin-humble/run-02.run"'),
+        )
+
+    def test_run_package_removal_list_rejects_unsafe_package_names(self) -> None:
+        with self.assertRaises(builder.BuildError):
+            builder.resolve_run_remove_packages(["navi-robot-state; rm -rf /"], "test.run")
 
     def test_extra_installer_environment_is_scoped_to_that_installer(self) -> None:
         script = builder.target_install(
@@ -101,7 +238,7 @@ class OneStopPackageTest(unittest.TestCase):
                 builder.resolve_installers(payload, ["auto"], "extra.installers", False)
 
     def test_orin_humble_audio_is_installed_only_by_its_vendor_run_package(self) -> None:
-        config = builder.load(ROOT / "one_stop/package-urls.json")
+        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
         humble = config["targets"]["orin-humble"]
         self.assertNotIn("audio", {item["name"] for item in humble["extra_debs"]})
         self.assertNotIn("audio-module", {item["name"] for item in humble["extra_debs"]})
@@ -113,55 +250,38 @@ class OneStopPackageTest(unittest.TestCase):
             "navi_audio_installer-2.0.0-release-humble-arm64.run",
         )
 
-    def test_orin_humble_installs_sensor_parent_bundle_first(self) -> None:
-        target = builder.load(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
+    def test_orin_humble_installs_cloud_common_before_sensor_without_building_a_compat_deb(self) -> None:
+        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
         extras = target["extra_debs"]
         self.assertEqual([item["name"] for item in extras[:3]], ["orin-common", "sensor", "robot"])
-        self.assertTrue(target["sensor_parent_compatibility"])
+        self.assertNotIn("sensor_parent_compatibility", target)
         self.assertEqual(
             extras[0]["url"],
             "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/"
             "navi_common_dep-2.0.0-release-humble-arm64.deb",
         )
-        with tempfile.TemporaryDirectory() as temporary:
-            stage = Path(temporary)
-            checksums = []
-            compatibility = builder.stage_sensor_parent_compatibility(
-                stage, "orin-humble", target, checksums, False
-            )
-            compatibility_deb = stage / compatibility
-            self.assertEqual(
-                subprocess.check_output(["dpkg-deb", "-f", str(compatibility_deb), "Package"], text=True).strip(),
-                "orin-common-deb",
-            )
-            unpacked = stage / "unpacked"
-            subprocess.run(["dpkg-deb", "-x", str(compatibility_deb), str(unpacked)], check=True)
-            wrapper = (unpacked / "usr/lib/orin-common-deb/install_deps.sh").read_text(encoding="utf-8")
-            self.assertIn("/usr/sbin/install_common_deps.sh", wrapper)
-            self.assertIn("--verify-only", wrapper)
         install = builder.target_install(
             "orin-humble", "payloads/orin-humble/system-config", "", None,
             [
-                ("payloads/orin-humble/extra-00.deb", ["/usr/lib/orin-common-deb/install_deps.sh"], [], None),
-                ("payloads/orin-humble/orin-common-deb-compat.deb", [], [], None),
+                ("payloads/orin-humble/extra-00.deb", ["/usr/sbin/install_common_deps.sh"], [], None),
                 ("payloads/orin-humble/extra-01.deb", ["/usr/lib/orin-sensor-common-deb/install_deps.sh"], [], None),
             ], [], [],
         )
         self.assertLess(
-            install.index('/usr/lib/orin-common-deb/install_deps.sh'),
+            install.index('/usr/sbin/install_common_deps.sh'),
             install.index('/usr/lib/orin-sensor-common-deb/install_deps.sh'),
         )
-        self.assertLess(
-            install.index('orin-common-deb-compat.deb'),
-            install.index('/usr/lib/orin-sensor-common-deb/install_deps.sh'),
-        )
+        self.assertNotIn("orin-common-deb-compat.deb", install)
 
-    def test_vision_is_installed_only_by_its_vendor_run_package(self) -> None:
-        config = builder.load(ROOT / "one_stop/package-urls.json")
-        for target_name in ("orin-humble", "orin-jazzy"):
-            target = config["targets"][target_name]
-            self.assertNotIn("vision", {item["name"] for item in target["extra_debs"]})
-            self.assertIn("vision", {item["name"] for item in target["runs"]})
+    def test_vision_is_installed_only_by_its_vendor_run_package_when_available(self) -> None:
+        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
+        humble = config["targets"]["orin-humble"]
+        jazzy = config["targets"]["orin-jazzy"]
+        self.assertNotIn("vision", {item["name"] for item in humble["extra_debs"]})
+        self.assertIn("vision", {item["name"] for item in humble["runs"]})
+        self.assertIn("vision", {item["id"] for item in humble["supervisor_modules"]})
+        self.assertNotIn("vision", {item["name"] for item in jazzy["extra_debs"]})
+        self.assertIn("vision", {item["name"] for item in jazzy["runs"]})
 
     def test_system_python_contract_is_checked_before_deb_install(self) -> None:
         contract = builder.resolve_system_python_contract({
@@ -184,7 +304,7 @@ class OneStopPackageTest(unittest.TestCase):
             directory = Path(temporary)
             version = directory / "version.json"
             urls = directory / "urls.json"
-            version.write_text(json.dumps({"schema_version": 1, "version": "2.0.0", "output_name": "navi_one_stop_installer-2.0.0"}), encoding="utf-8")
+            version.write_text(json.dumps({"schema_version": 1, "version": "2.0.0-1", "output_name": "navi_one_stop_installer-2.0.0-1"}), encoding="utf-8")
             urls.write_text(json.dumps({
                 "schema_version": 1,
                 "targets": {
@@ -199,6 +319,8 @@ class OneStopPackageTest(unittest.TestCase):
             output = builder.build(version, urls, directory / "out")
             with tarfile.open(fileobj=io.BytesIO(output.read_bytes().split(b"\n", 9)[9]), mode="r:gz") as archive:
                 names = archive.getnames()
+                release = json.load(archive.extractfile("release-manifest.json"))
+                target_release = json.load(archive.extractfile("targets/pico-jazzy/release-manifest.json"))
                 install = archive.extractfile("targets/pico-jazzy/install.sh").read().decode("utf-8")
                 pretest = archive.extractfile("targets/pico-jazzy/pretest.sh").read().decode("utf-8")
                 system_install = archive.extractfile("targets/pico-jazzy/install-system-config.sh").read().decode("utf-8")
@@ -206,6 +328,14 @@ class OneStopPackageTest(unittest.TestCase):
                 target_manifest = archive.extractfile("targets/pico-jazzy/payloads.sha256").read().decode("utf-8")
 
         self.assertIn("payloads/pico-jazzy/system-config/deploy_common.py", names)
+        self.assertEqual(release["release"], "2.0.0-1")
+        self.assertEqual(release["targets"]["pico-jazzy"], target_release)
+        self.assertEqual(target_release["offline_installation"], "unverified")
+        self.assertIn("release_state.py", target_release["payload_checksums"])
+        self.assertIn("release-manifest.json", target_manifest)
+        self.assertIn("navi_release fail", install)
+        self.assertLess(install.index("navi_release begin"), install.index('/bin/bash "$root/targets/'))
+        self.assertLess(install.index("navi_release complete"), install.index("install_complete=1"))
         self.assertIn("payloads/pico-jazzy/system-config/configs/robot-types.json", names)
         self.assertNotIn("payloads/pico-jazzy/common.deb", names)
         self.assertIn("install-system-config.sh", install)
@@ -228,7 +358,7 @@ class OneStopPackageTest(unittest.TestCase):
             run.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
             version = directory / "version.json"
             urls = directory / "urls.json"
-            version.write_text(json.dumps({"schema_version": 1, "version": "2.0.0", "output_name": "navi_one_stop_installer-2.0.0"}), encoding="utf-8")
+            version.write_text(json.dumps({"schema_version": 1, "version": "2.0.0-1", "output_name": "navi_one_stop_installer-2.0.0-1"}), encoding="utf-8")
             urls.write_text(json.dumps({
                 "schema_version": 1,
                 "targets": {
@@ -241,7 +371,7 @@ class OneStopPackageTest(unittest.TestCase):
                             "installer": "/usr/sbin/configure_pico_jazzy_environment.sh",
                         },
                         "extra_debs": [],
-                        "runs": [{"name": "upperlimb", "url": run.as_uri(), "sha256": builder.file_sha256(run)}],
+                        "runs": [{"name": "upperlimb", "version": "2.0.0-2", "url": run.as_uri(), "sha256": builder.file_sha256(run)}],
                     }
                 },
             }), encoding="utf-8")
@@ -249,8 +379,13 @@ class OneStopPackageTest(unittest.TestCase):
             output = builder.build(version, urls, directory / "out")
             info = subprocess.run([str(output), "--", "--info"], text=True, capture_output=True, check=True)
             verification = subprocess.run([str(output), "--", "--verify"], text=True, capture_output=True, check=True)
+            with tarfile.open(fileobj=io.BytesIO(output.read_bytes().split(b"\n", 9)[9]), mode="r:gz") as archive:
+                release = json.load(archive.extractfile("targets/pico-jazzy/release-manifest.json"))
+            self.assertEqual(release["modules"]["upperlimb"]["version"], "2.0.0-2")
+            self.assertEqual(release["modules"]["upperlimb"]["sha256"], builder.file_sha256(run))
+            self.assertEqual(release["modules"]["upperlimb"]["url"], run.as_uri())
 
-        self.assertIn("Version: 2.0.0", info.stdout)
+        self.assertIn("Version: 2.0.0-1", info.stdout)
         self.assertIn("pico-jazzy", info.stdout)
         self.assertIn("payloads/pico-jazzy/common.deb", verification.stdout)
 
@@ -259,7 +394,7 @@ class OneStopPackageTest(unittest.TestCase):
             directory = Path(temporary)
             version = directory / "version.json"
             urls = directory / "urls.json"
-            version.write_text(json.dumps({"schema_version": 1, "version": "2.0.0", "output_name": "navi_one_stop_installer-2.0.0"}), encoding="utf-8")
+            version.write_text(json.dumps({"schema_version": 1, "version": "2.0.0-1", "output_name": "navi_one_stop_installer-2.0.0-1"}), encoding="utf-8")
             urls.write_text(json.dumps({
                 "schema_version": 1,
                 "targets": {
@@ -281,40 +416,48 @@ class OneStopPackageTest(unittest.TestCase):
         self.assertLess(install.index("install-system-config.sh"), install.index("systemctl restart \"$unit\""))
         self.assertIn("managed services are being kept stopped", install)
 
-    def test_vision_supervisor_uses_the_documented_isolated_dds_environment(self) -> None:
+    def test_vision_supervisor_uses_the_documented_isolated_dds_environment(self):
+        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-jazzy"]
         with tempfile.TemporaryDirectory() as temporary:
             stage = Path(temporary)
-            checksums = []
-            startup = builder.stage_vision_supervisor(
-                stage,
-                "orin-jazzy",
-                builder.vision_supervisor("orin-jazzy", {
-                    "device": "ORIN",
-                    "vision_supervisor": {
-                        "service": "navi-vision-supervisor.service",
-                        "ros_distro": "jazzy",
-                    },
-                }),
-                checksums,
-                False,
-            )
-            launch = (stage / startup[0][1]).read_text(encoding="utf-8")
-            service = (stage / startup[0][2]).read_text(encoding="utf-8")
-            install = builder.target_install(
-                "orin-jazzy", "payloads/orin-jazzy/system-config", "", None,
-                [], [("payloads/orin-jazzy/run-04.run", [])],
-                ["navi-vision-supervisor.service"], startup,
-            )
+            startup, registrations, _, paths = builder.stage_supervisor_modules(
+                stage, "orin-jazzy", target, [], False)
+            launch = (stage / startup[0][1]).read_text()
+            entrypoint = (stage / startup[0][2]).read_text()
+            service = (stage / startup[0][3]).read_text()
+            self.assertIn("vision.json", registrations[0][0])
+            self.assertIn("supervisor-entrypoint.sh", service)
+            self.assertIn("exec /usr/bin/supervisord", entrypoint)
+            self.assertIn("192.168.217.100:19005", entrypoint)
+            self.assertIn("source /opt/ros/jazzy/setup.bash", launch)
+            self.assertIn("source /opt/naviai/venvs/vision/bin/activate", launch)
+            self.assertIn("ROS_DOMAIN_ID=72", launch)
+            self.assertIn("unset CYCLONEDDS_URI", launch)
+            self.assertIn("navi-vision-supervisor.service", startup[0][0])
 
-        self.assertIn("source /opt/ros/jazzy/setup.bash", launch)
-        self.assertIn("source /opt/naviai/venvs/vision/bin/activate", launch)
-        self.assertIn("export ROS_DOMAIN_ID=72", launch)
-        self.assertIn("unset CYCLONEDDS_URI", launch)
-        self.assertIn("selected_camera:=auto camera_auto_timeout_sec:=8.0", launch)
-        self.assertIn("ExecStart=/bin/bash /usr/local/lib/navi-vision/navi-vision-supervisor-launch.sh", service)
-        self.assertIn('"$root/payloads/orin-jazzy/run-04.run"', install)
-        self.assertNotIn('run-04.run" -- --robot-type', install)
-        self.assertIn("/etc/systemd/system/navi-vision-supervisor.service", install)
+    def test_humble_vision_repairs_parent_log_permissions_before_dropping_user(self):
+        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
+        module = next(item for item in target["supervisor_modules"] if item["id"] == "vision")
+        script = builder.supervisor_launch_script(module)
+        self.assertLess(script.index("install -d -o naviai -g naviai -m 0750 /var/log/naviai/vision"),
+                        script.index("exec runuser -u naviai"))
+        # Reproduce the root-owned 0750 parent in a temporary directory, then
+        # execute the actual prelude with local user/group names.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            import pwd
+            import grp
+            user = pwd.getpwuid(os.getuid()).pw_name
+            group = grp.getgrgid(os.getgid()).gr_name
+            parent = root / "var/log/naviai/vision"
+            parent.mkdir(parents=True, mode=0o750)
+            commands = "\n".join(module["prelude"]).replace(
+                "-o naviai -g naviai", "-o {} -g {}".format(user, group)).replace("/var/", str(root / "var") + "/")
+            subprocess.run(["bash", "-ec", commands], check=True)
+            self.assertEqual(parent.stat().st_mode & 0o777, 0o750)
+            self.assertEqual(parent.stat().st_uid, os.getuid())
+            self.assertEqual((parent / "ros").stat().st_uid, os.getuid())
+            (parent / "ros/test.log").write_text("ok")
 
     def test_launcher_preserves_environment_and_virtualenv(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -336,7 +479,7 @@ class OneStopPackageTest(unittest.TestCase):
             self.assertNotIn("/bin/bash -c", script)
 
     def test_orin_supervisor_modules_are_generated_from_the_only_delivery_config(self) -> None:
-        config = builder.load(ROOT / "one_stop/package-urls.json")
+        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
         target = config["targets"]["orin-humble"]
         with tempfile.TemporaryDirectory() as temporary:
             stage = Path(temporary)
@@ -356,6 +499,7 @@ class OneStopPackageTest(unittest.TestCase):
             robot_unit = (stage / "targets/orin-humble/supervisor/robot/navi-orin-robot-supervisor.service").read_text(encoding="utf-8")
             robot_registration = (stage / "targets/orin-humble/supervisor/modules/robot.json").read_text(encoding="utf-8")
             agent_unit_exists = (stage / "targets/orin-humble/supervisor-agent/navi-orin-supervisor-agent.service").is_file()
+            agent_unit = (stage / "targets/orin-humble/supervisor-agent/navi-orin-supervisor-agent.service").read_text()
 
         self.assertEqual(
             {item[0] for item in startup},
@@ -363,7 +507,7 @@ class OneStopPackageTest(unittest.TestCase):
                 "navi-orin-chassis.service",
                 "navi-orin-robot-supervisor.service",
                 "navi-orin-audio-supervisor.service",
-                "navi-vision-supervisor.service",
+                "navi-orin-vision-supervisor.service",
             },
         )
         self.assertIn("port=192.168.217.100:19002", robot_entrypoint)
@@ -377,15 +521,71 @@ class OneStopPackageTest(unittest.TestCase):
         self.assertIn("http://192.168.217.100:19002/RPC2", robot_registration)
         self.assertIn("/etc/naviai/supervisor-agent/modules.d/robot.json", script)
         self.assertNotIn("configure_sensor_rpc.py", script)
-        self.assertIn("systemctl restart navi-sensor-host.service", script)
+        self.assertIn('"navi-sensor-host.service"', script)
+        self.assertNotIn('[[ -f "/etc/systemd/system/$unit" ]]', script)
         self.assertIn("systemctl restart navi-orin-supervisor-agent.service", script)
         self.assertTrue(agent_unit_exists)
+        self.assertIn("Conflicts=navi-supervisor-agent.service", agent_unit)
+        self.assertIn("ExecStartPost=/usr/bin/python3", agent_unit)
+        self.assertIn("--wait-ready", agent_unit)
+        self.assertIn("systemctl disable --now navi-supervisor-agent.service", script)
+        self.assertLess(script.index("systemctl disable --now navi-supervisor-agent.service"),
+                        script.index("systemctl restart navi-orin-supervisor-agent.service"))
         self.assertIn("/etc/naviai/supervisor-agent/modules.d/vision.json", script)
+        self.assertIn("configure_native_rpc.py /etc/naviai/navi-sensor-host-supervisor.conf", script)
         self.assertNotIn("/bin/bash -lc", audio_launch)
         self.assertIn("exec ros2 launch navi_audio_pkg audio_bringup.launch.py", audio_launch)
 
+    def test_chassis_preserves_native_namespace(self) -> None:
+        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
+        chassis = next(module for module in target["supervisor_modules"] if module["id"] == "chassis")
+        self.assertIn("namespace:=zj_humanoid", builder.supervisor_launch_script(chassis))
+
+    def test_native_services_restart_once_and_agent_failure_keeps_cleanup_active(self) -> None:
+        for agent_status in (0, 7):
+            with self.subTest(agent_status=agent_status), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                target = root / "targets/test"
+                target.mkdir(parents=True)
+                bin_dir = root / "bin"
+                bin_dir.mkdir()
+                log = root / "calls"
+                stubs = {
+                    "sha256sum": "exit 0\n",
+                    "install": "exit 0\n",
+                    "python3": "exit 0\n",
+                    "systemctl": (
+                        'echo "$*" >> "$CALL_LOG"\n'
+                        'if [[ "$*" == "restart test-agent.service" ]]; then exit "$AGENT_STATUS"; fi\n'
+                        'exit 0\n'
+                    ),
+                }
+                for name, body in stubs.items():
+                    executable = bin_dir / name
+                    executable.write_text("#!/bin/bash\n" + body)
+                    executable.chmod(0o755)
+                (target / "install-system-config.sh").write_text("exit 0\n")
+                script = target / "install.sh"
+                script.write_text(builder.target_install(
+                    "test", "payloads/system-config", "", None, [], [], ["native.service"],
+                    post_install=["systemctl restart native.service", "systemctl restart sensor.service"],
+                    agent_payload={"base": "agent", "destination": str(root / "agent"), "service": "test-agent.service"},
+                ))
+                result = subprocess.run(
+                    ["bash", str(script), "WA1"], capture_output=True, text=True,
+                    env={**os.environ, "PATH": str(bin_dir) + ":" + os.environ["PATH"],
+                         "CALL_LOG": str(log), "AGENT_STATUS": str(agent_status)},
+                )
+                self.assertEqual(result.returncode, agent_status, result.stderr)
+                calls = log.read_text().splitlines()
+                for service in ("native.service", "sensor.service"):
+                    self.assertEqual(calls.count("restart " + service), 1)
+                    self.assertEqual(calls.count("stop " + service), 1 if agent_status == 0 else 2)
+                if agent_status:
+                    self.assertIn("managed services are being kept stopped", result.stderr)
+
     def test_pico_native_supervisor_modules_are_registered_without_config_injection(self) -> None:
-        config = builder.load(ROOT / "one_stop/package-urls.json")
+        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
         target = config["targets"]["pico-humble"]
         with tempfile.TemporaryDirectory() as temporary:
             stage = Path(temporary)
@@ -416,6 +616,21 @@ class OneStopPackageTest(unittest.TestCase):
         self.assertIn("/etc/nav01/supervisor-agent/modules.d/robot.json", script)
         self.assertIn("/etc/nav01/supervisor-agent/modules.d/upperlimb.json", script)
         self.assertNotIn("configure_sensor_rpc.py", script)
+
+    def test_pico_startup_priority_waits_for_each_service_to_be_active(self) -> None:
+        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["pico-humble"]
+        priorities = builder.supervisor_service_priorities("pico-humble", target)
+        script = builder.target_install(
+            "pico-humble", "payloads/pico-humble/system-config", "", None, [], [],
+            target["managed_services"], service_priorities=priorities,
+        )
+        robot = "navi-pico-robot-supervisor.service"
+        upperlimb = "navi-pico-upperlimb.service"
+        self.assertEqual(priorities[robot], 10)
+        self.assertEqual(priorities[upperlimb], 20)
+        self.assertLess(script.index('"{}"'.format(robot)),
+                        script.index('"{}"'.format(upperlimb)))
+        self.assertIn('systemctl is-active --quiet "$unit"', script)
 
 
 if __name__ == "__main__":
