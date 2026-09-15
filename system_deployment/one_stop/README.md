@@ -125,7 +125,9 @@ Orin Humble 在执行模块安装器前创建 Robot 的 `/var/lib/navi` 工作�
 
 Pico Humble 的 `display` 使用 `managed` 模式，RPC 为 `192.168.217.66:19004`，服务为 `navi-pico-display-supervisor.service`。启动优先级为 1，早于 Robot（10）和上肢（20）；此顺序用于总包安装收尾启动，不保证开机时不同 systemd 服务的启动顺序。`autorestart: "true"`、`startsecs: 0` 使已创建的进程正常或异常退出后持续重启，避免快速退出耗尽启动重试。人工停止仍有效，进程卡住或子节点退出但 launch 存活时不会自动恢复画面。启动时先加载公共 `/etc/nav01/Middleware.env`，再依次加载 `/opt/ros/humble/setup.bash` 和 `/opt/navi_display/ros/setup.bash`，执行 `ros2 launch media_play media_play.launch.py`；通过 Agent `:9080` 查看及启停。安装器暂按无参数调用配置；图形会话所需的环境变量若有额外要求，需由模块方提供。
 
-Orin Humble 新增 `manip` RUN（不传安装参数），其四个功能分别由 Supervisor 管理：
+Orin Humble 的 `manip` RUN 使用 `--force` 安装参数。厂商安装器在发现其内嵌的
+`ros-humble-navi-manip-msgs` 已安装时会拒绝默认重装；`--force` 允许在相同发布基线或经确认的升级
+场景覆盖其内嵌 Manipulation DEB。其四个功能分别由 Supervisor 管理：
 
 | 模块 ID | RPC 端口 | 启动脚本（位于 `/opt/naviai/manip/functions/bin/`） |
 | --- | --- | --- |
@@ -192,8 +194,11 @@ Vision `.run` 已内嵌其 `*_dep.deb`、模型与运行时；总包不会再单
 厂商安装器把重复预装状态判定为不安全的 legacy takeover。
 
 Orin Humble 的云端 Orin common DEB 提供 Sensor 旧版依赖校验入口
-`/usr/lib/orin-common-deb/install_deps.sh`。总包只按 `Orin common → Sensor common → Sensor .run` 的顺序
-安装云端工件，不在构建阶段生成兼容 DEB。其余 target 的公共运行依赖仍由对应母盘提供；母盘制作矩阵见
+`/usr/lib/orin-common-deb/install_deps.sh`。部分旧版 Robot 安装器还会用 `dpkg-query` 检查真实包名
+`orin-common-deb`，而不识别 Debian `Provides`。因此 Common 构建会同时产出无文件的过渡 DEB
+`orin_common_deb_2.0.0-release-humble-arm64.deb`；它依赖真实基础包 `navi-common-dep`，总包固定按
+`Orin common → Orin common compatibility → Sensor common → Robot common → 模块 RUN` 的顺序安装。两份
+Common DEB 必须一同发布到制品服务器。其余 target 的公共运行依赖仍由对应母盘提供；母盘制作矩阵见
 [../golden_image/TARGET_MATRIX.md](../golden_image/TARGET_MATRIX.md)。
 
 聚合界面的日志显示在对应进程下的独立面板中，服务状态刷新不会关闭面板；可手动刷新或关闭日志。

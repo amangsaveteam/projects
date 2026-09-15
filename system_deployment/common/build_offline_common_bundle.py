@@ -138,6 +138,71 @@ def copy_extra_files(staging: Path, config: dict[str, object]) -> None:
         (staging / "DEBIAN/conffiles").write_text("".join(f"{entry}\n" for entry in conffiles), encoding="utf-8")
 
 
+def build_compatibility_debs(
+    config: dict[str, object], output_dir: Path, target: dict[str, object]
+) -> list[Path]:
+    """Build empty transitional packages for vendor installers checking legacy names.
+
+    A Debian ``Provides`` entry is sufficient for normal package dependency
+    resolution, but some vendor RUN installers use ``dpkg-query`` and require
+    the legacy package name to be installed literally.  These packages retain
+    that status entry while making the new global Common package authoritative.
+    """
+    entries = config.get("compatibility_debs", [])
+    if not isinstance(entries, list):
+        raise ValueError("compatibility_debs must be a list")
+
+    def value(entry: dict[str, object], key: str, description: str) -> str:
+        item = entry.get(key)
+        if not isinstance(item, str) or not item.strip() or "\n" in item:
+            raise ValueError(f"compatibility_debs {description} must be a non-empty single-line string")
+        return item
+
+    artifacts: list[Path] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("compatibility_debs entries must be objects")
+        package_name = value(entry, "package_name", "package_name")
+        artifact_name = configured_path(
+            value(entry, "artifact_filename", "artifact_filename"),
+            description="compatibility Debian artifact filename",
+        )
+        depends = entry.get("depends", [])
+        if not isinstance(depends, list) or not all(
+            isinstance(item, str) and item.strip() and "\n" not in item for item in depends
+        ):
+            raise ValueError("compatibility_debs depends must be a list of non-empty Debian dependencies")
+        description = value(entry, "description", "description")
+        version = str(entry.get("version", config["release_version"]))
+        if not version or "\n" in version:
+            raise ValueError("compatibility_debs version must be a non-empty single-line string")
+
+        artifact = output_dir / artifact_name
+        with tempfile.TemporaryDirectory(prefix="navi-common-compat-") as temporary_directory:
+            staging = Path(temporary_directory) / "staging"
+            (staging / "DEBIAN").mkdir(parents=True)
+            dependency_field = f"Depends: {', '.join(depends)}\n" if depends else ""
+            (staging / "DEBIAN/control").write_text(
+                f"Package: {package_name}\n"
+                f"Version: {version}\n"
+                "Section: misc\nPriority: optional\n"
+                f"Architecture: {target['architecture']}\n"
+                "Maintainer: Navi <navi@localhost>\n"
+                f"{dependency_field}"
+                f"Description: {description}\n"
+                " Transitional compatibility package; do not add runtime files here.\n",
+                encoding="utf-8",
+            )
+            temporary_artifact = output_dir / f".{artifact.name}.tmp"
+            subprocess.run(
+                ["dpkg-deb", "--root-owner-group", "--build", str(staging), str(temporary_artifact)],
+                check=True,
+            )
+            temporary_artifact.replace(artifact)
+        artifacts.append(artifact)
+    return artifacts
+
+
 def write_installer(staging: Path, package_name: str, aliases: list[str], device_config_target: str, *, environment_only: bool = False) -> None:
     payload_directory = f"/usr/lib/{package_name}/payload"
     config_tool = f"/usr/lib/{package_name}/deploy_common.py"
@@ -447,12 +512,6 @@ def build(config_path: Path) -> Path:
         )
 
         dependencies = ", ".join(str(item) for item in config.get("deb_depends", []))
-        provides = config.get("provides", [])
-        if not isinstance(provides, list) or not all(
-            isinstance(item, str) and item.strip() and "\n" not in item for item in provides
-        ):
-            raise ValueError("provides must be a list of non-empty Debian package names")
-        provides_field = f"Provides: {', '.join(provides)}\n" if provides else ""
         carrier_description = (
             " Environment configuration only; this package does not contain dependency payloads.\n"
             if environment_only
@@ -465,7 +524,6 @@ def build(config_path: Path) -> Path:
             f"Architecture: {target['architecture']}\n"
             "Maintainer: Navi <navi@localhost>\n"
             f"Depends: {dependencies}\n"
-            f"{provides_field}"
             f"Description: {config['description']}\n"
             f"{carrier_description}"
         )
@@ -483,7 +541,11 @@ def build(config_path: Path) -> Path:
         subprocess.run(["dpkg-deb", "--root-owner-group", "--build", str(staging), str(temporary_artifact)], check=True)
         temporary_artifact.replace(artifact)
 
+    compatibility_artifacts = build_compatibility_debs(config, output_dir, target)
+
     print(f"Built {artifact}")
+    for compatibility_artifact in compatibility_artifacts:
+        print(f"Built compatibility package {compatibility_artifact}")
     print(f"Offline payload count: {len(payloads)}")
     print(f"Install carrier with: sudo dpkg -i {artifact.name}")
     if environment_only:

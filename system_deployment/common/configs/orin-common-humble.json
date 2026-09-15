@@ -17,7 +17,14 @@
   "output_dir": "../dist/common/orin/base",
   "artifact_filename": "navi_common_dep-2.0.0-release-humble-arm64.deb",
   "deb_depends": ["bash (>= 5.1)", "coreutils (>= 8.32)", "dpkg (>= 1.21.1ubuntu2)", "apt (>= 2.4.5)"],
-  "provides": ["orin-common-deb"],
+  "compatibility_debs": [
+    {
+      "package_name": "orin-common-deb",
+      "artifact_filename": "orin_common_deb_2.0.0-release-humble-arm64.deb",
+      "depends": ["navi-common-dep (= 2.0.0~humble+21)"],
+      "description": "Compatibility identity for legacy Orin Sensor and Robot installers"
+    }
+  ],
   "parent_packages": [],
   "installer_aliases": ["install_common_deps.sh"],
   "exact_packages": [],

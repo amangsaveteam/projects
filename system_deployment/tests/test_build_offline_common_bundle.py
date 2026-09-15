@@ -41,9 +41,28 @@ class OfflineCommonBundleTest(unittest.TestCase):
         self.assertIn("--verify-only", contents)
         self.assertIn("/usr/sbin/install_common_deps.sh", contents)
 
-    def test_orin_humble_common_provides_the_legacy_robot_dependency_name(self) -> None:
-        config = (ROOT / "common/configs/orin-common-humble.json").read_text(encoding="utf-8")
-        self.assertIn('"provides": ["orin-common-deb"]', config)
+    def test_compatibility_deb_installs_the_legacy_robot_package_name(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            artifacts = common_builder.build_compatibility_debs(
+                {
+                    "release_version": "2.0.0~humble+21",
+                    "compatibility_debs": [{
+                        "package_name": "orin-common-deb",
+                        "artifact_filename": "orin_common_deb.deb",
+                        "depends": ["navi-common-dep (= 2.0.0~humble+21)"],
+                        "description": "legacy compatibility identity",
+                    }],
+                },
+                output,
+                {"architecture": "arm64"},
+            )
+            self.assertEqual(artifacts, [output / "orin_common_deb.deb"])
+            self.assertEqual(common_builder.deb_field(artifacts[0], "Package"), "orin-common-deb")
+            self.assertEqual(
+                common_builder.deb_field(artifacts[0], "Depends"),
+                "navi-common-dep (= 2.0.0~humble+21)",
+            )
 
     def test_installer_skips_higher_top_level_version_and_never_forces_archives(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

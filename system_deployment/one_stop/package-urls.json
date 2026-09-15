@@ -28,6 +28,12 @@
           ]
         },
         {
+          "name": "orin-common-compat",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/orin_common_deb_2.0.0-release-humble-arm64.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
           "name": "sensor-common-dep",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/sensor/navi_sensor_dep-2.0.0-release-humble-arm64.deb",
           "sha256": "",
@@ -199,7 +205,7 @@
           "name": "manip",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/manipulation/develop/navi_manip_installer-2.0.0-release-humble-arm64.run",
           "sha256": "",
-          "arguments": []
+          "arguments": ["--", "--force"]
         },
         {
           "name": "sensor",

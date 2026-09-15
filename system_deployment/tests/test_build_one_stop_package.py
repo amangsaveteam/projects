@@ -193,6 +193,8 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
                 self.assertEqual(runs["chassis"], ["--", "--robot-type", "{robot_type}"])
             else:
                 self.assertNotIn("chassis", runs)
+            if target_name == "orin-humble":
+                self.assertEqual(runs["manip"], ["--", "--force"])
             self.assertEqual(runs["sensor"], ["--", "--robot-type", "{robot_type}"])
             self.assertEqual(runs["robot"], [])
             self.assertEqual(runs["audio"], [])
@@ -253,28 +255,40 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             "navi_audio_installer-2.0.0-release-humble-arm64.run",
         )
 
-    def test_orin_humble_installs_cloud_common_before_sensor_without_building_a_compat_deb(self) -> None:
+    def test_orin_humble_installs_cloud_common_and_legacy_identity_before_sensor(self) -> None:
         target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
         extras = target["extra_debs"]
-        self.assertEqual([item["name"] for item in extras[:3]], ["orin-common", "sensor-common-dep", "robot-common-dep"])
+        self.assertEqual(
+            [item["name"] for item in extras[:4]],
+            ["orin-common", "orin-common-compat", "sensor-common-dep", "robot-common-dep"],
+        )
         self.assertNotIn("sensor_parent_compatibility", target)
         self.assertEqual(
             extras[0]["url"],
             "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/"
             "navi_common_dep-2.0.0-release-humble-arm64.deb",
         )
+        self.assertEqual(
+            extras[1]["url"],
+            "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/"
+            "orin_common_deb_2.0.0-release-humble-arm64.deb",
+        )
         install = builder.target_install(
             "orin-humble", "payloads/orin-humble/system-config", "", None,
             [
                 ("payloads/orin-humble/extra-00.deb", ["/usr/sbin/install_common_deps.sh"], [], None),
-                ("payloads/orin-humble/extra-01.deb", ["/usr/lib/orin-sensor-common-deb/install_deps.sh"], [], None),
+                ("payloads/orin-humble/extra-01.deb", [], [], None),
+                ("payloads/orin-humble/extra-02.deb", ["/usr/lib/orin-sensor-common-deb/install_deps.sh"], [], None),
             ], [], [],
         )
         self.assertLess(
             install.index('/usr/sbin/install_common_deps.sh'),
             install.index('/usr/lib/orin-sensor-common-deb/install_deps.sh'),
         )
-        self.assertNotIn("orin-common-deb-compat.deb", install)
+        self.assertLess(
+            install.index('dpkg -i "$root/payloads/orin-humble/extra-01.deb"'),
+            install.index('/usr/lib/orin-sensor-common-deb/install_deps.sh'),
+        )
 
     def test_vision_is_installed_only_by_its_vendor_run_package_when_available(self) -> None:
         config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
