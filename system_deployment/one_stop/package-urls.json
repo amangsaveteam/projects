@@ -28,7 +28,7 @@
           ]
         },
         {
-          "name": "sensor",
+          "name": "sensor-common-dep",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/sensor/navi_sensor_dep-2.0.0-release-humble-arm64.deb",
           "sha256": "",
           "installers": [
@@ -36,7 +36,7 @@
           ]
         },
         {
-          "name": "robot",
+          "name": "robot-common-dep",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/develop/navi_robot_dep-2.0.0-release-humble-arm64.deb",
           "sha256": "",
           "installers": [
@@ -329,7 +329,7 @@
           ]
         },
         {
-          "name": "robot",
+          "name": "robot-common-dep",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/robot/develop/navi_pico_robot_dep-2.0.0-release-humble-amd64.deb",
           "sha256": "",
           "installers": [
