@@ -1,0 +1,16 @@
+event:
+  name: 防撞条触发
+
+  rule:
+    field: agv_collision
+    op: boolean_true
+
+  alarm:
+    major_code: "40"
+    minor_code: "002"
+    name: "防撞条触发"
+    severity: 3
+    description: "前方/后方防撞条触发"
+    recovery: "检查机器人前方是否有障碍物"
+    use_tts: false
+    audio_path: ""

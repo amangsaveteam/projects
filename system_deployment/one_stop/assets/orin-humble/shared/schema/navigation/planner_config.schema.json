@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "导航规划配置",
+  "type": "object",
+  "role": ["admin", "engineer"],
+  "properties": {
+    "strategy": {
+      "title": "strategy",
+      "type": "object",
+      "properties": {
+        "arrive_angle": {"title": "arrive_angle", "description": "到达角度阈值", "type": "number", "minimum": 0, "unit": "deg"},
+        "arrive_distance": {"title": "arrive_distance", "description": "到达距离阈值", "type": "number", "minimum": 0, "unit": "m"},
+        "switch_target_distance": {"title": "switch_target_distance", "description": "目标切换距离", "type": "number", "minimum": 0, "unit": "m"},
+        "stop_distance_thold": {"title": "stop_distance_thold", "description": "停止重规划距离阈值", "type": "number", "minimum": 0, "unit": "m"}
+      },
+      "required": ["arrive_angle", "arrive_distance", "switch_target_distance", "stop_distance_thold"],
+      "additionalProperties": false
+    },
+    "fault_diagnosis": {
+      "title": "fault_diagnosis",
+      "type": "object",
+      "properties": {
+        "enable_fault_diagnosis": {"title": "enable_fault_diagnosis", "description": "启用故障诊断", "type": "boolean"},
+        "enable_no_glob_map_input_error": {"title": "enable_no_glob_map_input_error", "description": "全局地图输入缺失错误", "type": "boolean"},
+        "enable_no_loc_map_input_error": {"title": "enable_no_loc_map_input_error", "description": "局部地图输入缺失错误", "type": "boolean"},
+        "enable_no_odom_input_error": {"title": "enable_no_odom_input_error", "description": "里程计输入缺失错误", "type": "boolean"},
+        "enable_odom_timeout_error": {"title": "enable_odom_timeout_error", "description": "里程计超时错误", "type": "boolean"},
+        "odom_timeout_sec": {"title": "odom_timeout_sec", "description": "里程计超时时间", "type": "number", "minimum": 0, "unit": "s"},
+        "enable_odom_delay_warning": {"title": "enable_odom_delay_warning", "description": "里程计延迟告警", "type": "boolean"},
+        "odom_delay_sec": {"title": "odom_delay_sec", "description": "里程计延迟阈值", "type": "number", "minimum": 0, "unit": "s"},
+        "enable_loc_map_timeout_error": {"title": "enable_loc_map_timeout_error", "description": "局部地图超时错误", "type": "boolean"},
+        "loc_map_timeout_sec": {"title": "loc_map_timeout_sec", "description": "局部地图超时时间", "type": "number", "minimum": 0, "unit": "s"},
+        "enable_loc_map_delay_warning": {"title": "enable_loc_map_delay_warning", "description": "局部地图延迟告警", "type": "boolean"},
+        "loc_map_delay_sec": {"title": "loc_map_delay_sec", "description": "局部地图延迟阈值", "type": "number", "minimum": 0, "unit": "s"},
+        "enable_invalid_goal_error": {"title": "enable_invalid_goal_error", "description": "无效目标错误", "type": "boolean"},
+        "enable_unsafe_goal_pose_error": {"title": "enable_unsafe_goal_pose_error", "description": "目标位姿不安全错误", "type": "boolean"},
+        "enable_unsafe_init_pose_error": {"title": "enable_unsafe_init_pose_error", "description": "初始位姿不安全错误", "type": "boolean"},
+        "enable_arrival_accuracy_error": {"title": "enable_arrival_accuracy_error", "description": "到点精度超出阈值", "type": "boolean"},
+        "max_planning_times": {"title": "max_planning_times", "description": "最大规划次数", "type": "integer", "minimum": 1},
+        "enable_planning_failed_error": {"title": "enable_planning_failed_error", "description": "规划失败错误", "type": "boolean"},
+        "enable_blocked_by_obstacle_warning": {"title": "enable_blocked_by_obstacle_warning", "description": "障碍物阻塞告警", "type": "boolean"}
+      },
+      "required": ["enable_fault_diagnosis", "enable_no_glob_map_input_error", "enable_no_loc_map_input_error", "enable_no_odom_input_error", "enable_odom_timeout_error", "odom_timeout_sec", "enable_odom_delay_warning", "odom_delay_sec", "enable_loc_map_timeout_error", "loc_map_timeout_sec", "enable_loc_map_delay_warning", "loc_map_delay_sec", "enable_invalid_goal_error", "enable_unsafe_goal_pose_error", "enable_unsafe_init_pose_error", "enable_arrival_accuracy_error", "max_planning_times", "enable_planning_failed_error", "enable_blocked_by_obstacle_warning"],
+      "additionalProperties": false
+    },
+    "esdf_map": {
+      "title": "esdf_map",
+      "type": "object",
+      "properties": {
+        "order": {"title": "order", "description": "ESDF阶数", "type": "integer", "minimum": 0},
+        "update_range": {"title": "update_range", "description": "地图更新范围", "type": "number", "minimum": 0, "unit": "m"},
+        "perception_range": {"title": "perception_range", "description": "障碍物感知范围", "type": "number", "minimum": 0, "unit": "m"}
+      },
+      "required": ["order", "update_range", "perception_range"],
+      "additionalProperties": false
+    },
+    "global_planner": {
+      "title": "global_planner",
+      "type": "object",
+      "properties": {
+        "penalty": {
+          "title": "penalty",
+          "type": "object",
+          "properties": {
+            "k_reverse": {"title": "k_reverse", "description": "倒车代价", "type": "number", "minimum": 0},
+            "k_rotation": {"title": "k_rotation", "description": "旋转代价", "type": "number", "minimum": 0},
+            "k_curvature": {"title": "k_curvature", "description": "曲率代价", "type": "number", "minimum": 0},
+            "k_curvature_switch": {"title": "k_curvature_switch", "description": "曲率切换代价", "type": "number", "minimum": 0},
+            "k_gear_switch": {"title": "k_gear_switch", "description": "档位切换代价", "type": "number", "minimum": 0}
+          },
+          "required": ["k_reverse", "k_rotation", "k_curvature", "k_curvature_switch", "k_gear_switch"],
+          "additionalProperties": false
+        },
+        "search": {
+          "title": "search",
+          "type": "object",
+          "properties": {
+            "step_length": {"title": "step_length", "type": "number", "exclusiveMinimum": 0, "description": "搜索步长", "unit": "m"},
+            "length_res": {"title": "length_res", "type": "number", "exclusiveMinimum": 0, "description": "长度分辨率", "unit": "m"},
+            "step_angle": {"title": "step_angle", "type": "number", "exclusiveMinimum": 0, "description": "搜索步进角", "unit": "deg"},
+            "angle_res": {"title": "angle_res", "type": "number", "exclusiveMinimum": 0, "description": "角度分辨率", "unit": "deg"},
+            "min_connect_times": {"title": "min_connect_times", "type": "integer", "minimum": 1, "description": "最小连接次数"}
+          },
+          "required": ["step_length", "length_res", "step_angle", "angle_res", "min_connect_times"],
+          "additionalProperties": false
+        },
+        "heuristic": {
+          "title": "heuristic",
+          "type": "object",
+          "properties": {
+            "grid_length_res": {"title": "grid_length_res", "type": "number", "exclusiveMinimum": 0, "description": "网格长度分辨率", "unit": "m"},
+            "grid_angle_res": {"title": "grid_angle_res", "type": "number", "exclusiveMinimum": 0, "description": "网格角度分辨率", "unit": "deg"},
+            "grid_radius_offset": {"title": "grid_radius_offset", "type": "number", "minimum": 0, "description": "网格半径偏移", "unit": "m"},
+            "safe_buffer": {"title": "safe_buffer", "type": "number", "minimum": 0, "description": "安全膨胀距离", "unit": "m"}
+          },
+          "required": ["grid_length_res", "grid_angle_res", "grid_radius_offset", "safe_buffer"],
+          "additionalProperties": false
+        },
+        "terminal": {
+          "title": "terminal",
+          "type": "object",
+          "properties": {
+            "mandatory_straight_line": {"title": "mandatory_straight_line", "type": "boolean", "description": "强制直线到达"},
+            "straight_line_length": {"title": "straight_line_length", "type": "number", "minimum": 0, "description": "直线段长度", "unit": "m"}
+          },
+          "required": ["mandatory_straight_line", "straight_line_length"],
+          "additionalProperties": false
+        },
+        "approach": {
+          "type": "object",
+          "title": "approach",
+          "properties": {
+            "enable": {"type": "boolean", "title": "enable", "description": "启用接近策略"},
+            "angle_res": {"type": "number", "title": "angle_res", "exclusiveMinimum": 0, "description": "角度分辨率", "unit": "deg"},
+            "max_range": {"type": "number", "title": "max_range", "minimum": 0, "description": "最大接近距离", "unit": "m"},
+            "clearance_buffer": {"type": "number", "title": "clearance_buffer", "minimum": 0, "description": "安全间隙", "unit": "m"}
+          },
+          "required": ["enable", "angle_res", "max_range", "clearance_buffer"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["penalty", "search", "heuristic", "terminal", "approach"],
+      "additionalProperties": false
+    },
+    "lbfgs_optimizer": {
+      "title": "lbfgs_optimizer",
+      "type": "object",
+      "properties": {
+        "safe_distance": {"title": "safe_distance", "type": "number", "minimum": 0, "description": "安全距离", "unit": "m"},
+        "max_kappa": {"title": "max_kappa", "type": "number", "exclusiveMinimum": 0, "description": "最大曲率"},
+        "smooth_weight": {"title": "smooth_weight", "type": "number", "minimum": 0, "description": "平滑代价权重"},
+        "curvature_weight": {"title": "curvature_weight", "type": "number", "minimum": 0, "description": "曲率代价权重"},
+        "obstacle_weight": {"title": "obstacle_weight", "type": "number", "minimum": 0, "description": "障碍物代价权重"},
+        "lbfgs_mem_size": {"title": "lbfgs_mem_size", "type": "integer", "minimum": 1, "description": "LBFGS记忆长度"},
+        "lbfgs_past": {"title": "lbfgs_past", "type": "integer", "minimum": 0, "description": "LBFGS历史步数"},
+        "lbfgs_min_step": {"title": "lbfgs_min_step", "type": "number", "minimum": 0, "description": "LBFGS最小步长"},
+        "lbfgs_g_epsilon": {"title": "lbfgs_g_epsilon", "type": "number", "minimum": 0, "description": "LBFGS梯度收敛阈值"},
+        "lbfgs_delta": {"title": "lbfgs_delta", "type": "number", "minimum": 0, "description": "LBFGS函数变化阈值"},
+        "lbfgs_max_iterations": {"title": "lbfgs_max_iterations", "type": "integer", "minimum": 1, "description": "LBFGS最大迭代次数"}
+      },
+      "required": ["safe_distance", "max_kappa", "smooth_weight", "curvature_weight", "obstacle_weight", "lbfgs_mem_size", "lbfgs_past", "lbfgs_min_step", "lbfgs_g_epsilon", "lbfgs_delta", "lbfgs_max_iterations"],
+      "additionalProperties": false
+    },
+    "actuator_adapter": {
+      "title": "actuator_adapter",
+      "type": "object",
+      "properties": {
+        "mpc_horizon": {"title": "mpc_horizon", "type": "integer", "minimum": 1, "description": "MPC预测时域"},
+        "mpc_time_step": {"title": "mpc_time_step", "type": "number", "exclusiveMinimum": 0, "description": "MPC时间步长", "unit": "s"},
+        "control_index": {"title": "control_index", "type": "integer", "minimum": 0, "description": "控制输出索引"},
+        "use_local_frame": {"title": "use_local_frame", "type": "boolean", "description": "使用局部坐标系"},
+        "extand_num": {"title": "extand_num", "type": "integer", "minimum": 0, "description": "轨迹扩展数量"},
+        "extand_step": {"title": "extand_step", "type": "number", "minimum": 0, "description": "轨迹扩展步长", "unit": "s"},
+        "q_x": {"title": "q_x", "type": "number", "minimum": 0, "description": "位置X代价权重"},
+        "q_y": {"title": "q_y", "type": "number", "minimum": 0, "description": "位置Y代价权重"},
+        "q_phi": {"title": "q_phi", "type": "number", "minimum": 0, "description": "航向角代价权重"},
+        "q_u": {"title": "q_u", "type": "number", "minimum": 0, "description": "线速度U代价权重"},
+        "q_v": {"title": "q_v", "type": "number", "minimum": 0, "description": "线速度V代价权重"},
+        "q_r": {"title": "q_r", "type": "number", "minimum": 0, "description": "角速度R代价权重"},
+        "q_x_n": {"title": "q_x_n", "type": "number", "minimum": 0, "description": "终端X位置代价权重"},
+        "q_y_n": {"title": "q_y_n", "type": "number", "minimum": 0, "description": "终端Y位置代价权重"},
+        "q_phi_n": {"title": "q_phi_n", "type": "number", "minimum": 0, "description": "终端航向角代价权重"},
+        "q_u_n": {"title": "q_u_n", "type": "number", "minimum": 0, "description": "终端U速度代价权重"},
+        "q_v_n": {"title": "q_v_n", "type": "number", "minimum": 0, "description": "终端V速度代价权重"},
+        "q_r_n": {"title": "q_r_n", "type": "number", "minimum": 0, "description": "终端R角速度代价权重"},
+        "r_ax": {"title": "r_ax", "type": "number", "minimum": 0, "description": "X方向控制量代价权重"},
+        "r_ay": {"title": "r_ay", "type": "number", "minimum": 0, "description": "Y方向控制量代价权重"},
+        "r_alpha": {"title": "r_alpha", "type": "number", "minimum": 0, "description": "角速度控制量代价权重"}
+      },
+      "required": ["mpc_horizon", "mpc_time_step", "control_index", "use_local_frame", "extand_num", "extand_step", "q_x", "q_y", "q_phi", "q_u", "q_v", "q_r", "q_x_n", "q_y_n", "q_phi_n", "q_u_n", "q_v_n", "q_r_n", "r_ax", "r_ay", "r_alpha"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["strategy", "fault_diagnosis", "esdf_map", "global_planner", "lbfgs_optimizer", "actuator_adapter"],
+  "additionalProperties": false
+}
+

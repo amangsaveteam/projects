@@ -1,0 +1,585 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "激光里程定位配置",
+  "description": "激光里程定位V2.0.0~V2.1.0完整配置。",
+  "type": "object",
+  "role": ["admin", "engineer"],
+  "properties": {
+    "common": {
+      "title": "通用配置",
+      "description": "激光里程定位通用配置",
+      "type": "object",
+      "properties": {
+        "lid_topic": {
+          "title": "激光点云话题",
+          "description": "激光雷达点云话题名称",
+          "type": "string",
+          "role": ["admin"]
+        },
+        "imu_topic": {
+          "title": "IMU话题",
+          "description": "IMU数据话题名称",
+          "type": "string",
+          "role": ["admin"]
+        },
+        "wheel_topic": {
+          "title": "轮速计话题",
+          "description": "轮速计里程计话题名称",
+          "type": "string",
+          "role": ["admin"]
+        },
+        "lio_pos_log_enable": {
+          "title": "是否记录位置日志",
+          "description": "是否在日志中输出里程定位轨迹信息",
+          "type": "boolean",
+          "role": ["admin"]
+        },
+        "pcd_save_en": {
+          "title": "是否保存PCD",
+          "description": "是否保存点云PCD文件",
+          "type": "boolean",
+          "role": ["admin"]
+        },
+        "online_reloc_en": {
+          "title": "是否启用在线重定位",
+          "description": "是否启用在线自动重定位功能",
+          "type": "boolean",
+          "role": ["admin"]
+        },
+        "use_parallel": {
+          "title": "是否使用并行计算",
+          "description": "是否开启并行计算加速",
+          "type": "boolean",
+          "role": ["admin"]
+        },
+        "use_wheel": {
+          "title": "是否使用轮速计",
+          "description": "默认情况下启用",
+          "type": "boolean",
+          "role": ["admin", "engineer"]
+        }
+      },
+      "additionalProperties": false,
+      "role": ["admin", "engineer"]
+    },
+    "preprocess": {
+      "title": "点云预处理",
+      "description": "激光点云预处理相关配置，包括点云筛选、降采样及畸变矫正参数",
+      "type": "object",
+      "properties": {
+        "lidar_type": {
+          "title": "激光雷达类型",
+          "description": "1为Livox系列，2为Velodyne，3为Ouster",
+          "type": "integer",
+          "enum": [1, 2, 3],
+          "role": ["admin"]
+        },
+        "scan_line": {
+          "title": "扫描线数",
+          "description": "激光雷达扫描线数",
+          "type": "integer",
+          "minimum": 1,
+          "role": ["admin"]
+        },
+        "strict_tag_en": {
+          "title": "是否启用严格的tag字段筛选",
+          "description": "是否启用严格的tag字段筛选",
+          "type": "boolean",
+          "role": ["admin"]
+        },
+        "min_range": {
+          "title": "最小距离",
+          "description": "用于筛选点云的最小距离阈值，单位m",
+          "type": "number",
+          "minimum": 0,
+          "role": ["admin", "engineer"]
+        },
+        "max_range": {
+          "title": "最大距离",
+          "description": "用于筛选点云的最大距离阈值，单位m",
+          "type": "number",
+          "minimum": 0,
+          "role": ["admin", "engineer"]
+        },
+        "min_intensity": {
+          "title": "最小强度",
+          "description": "用于筛选点云的最小强度阈值",
+          "type": "integer",
+          "minimum": 0,
+          "role": ["admin"]
+        },
+        "max_intensity": {
+          "title": "最大强度",
+          "description": "用于筛选点云的最大强度阈值",
+          "type": "integer",
+          "minimum": 0,
+          "role": ["admin"]
+        },
+        "filter_size_surf": {
+          "title": "降采样分辨率",
+          "description": "点云降采样分辨率，单位m，越大降采样力度越高",
+          "type": "number",
+          "minimum": 0.1,
+          "role": ["admin", "engineer"]
+        },
+        "filter_size_map": {
+          "title": "地图降采样分辨率",
+          "description": "用于地图点云降采样，单位m",
+          "type": "number",
+          "minimum": 0.1,
+          "role": ["admin"]
+        },
+        "point_filter_num": {
+          "title": "降采样参数",
+          "description": "用于降采样，1~scan_line之间，数值越大降采样力度越高，计算量越小",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "role": ["admin"]
+        },
+        "time_scale": {
+          "title": "时间戳比例",
+          "description": "点云时间戳的时间比例因子",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "role": ["admin"]
+        },
+        "min_eigval": {
+          "title": "最小特征值",
+          "description": "用于判断场景退化的最小特征值阈值",
+          "type": "number",
+          "minimum": 0,
+          "role": ["admin"]
+        },
+        "use_outlier_removal": {
+          "title": "是否去除离群点",
+          "description": "是否启用统计滤波器去除离群点，耗时较高",
+          "type": "boolean",
+          "role": ["admin"]
+        }
+      },
+      "additionalProperties": false,
+      "role": ["admin", "engineer"]
+    },
+    "lio": {
+      "title": "滤波器参数",
+      "description": "滤波器及外参相关配置",
+      "type": "object",
+      "properties": {
+        "acc_cov": {
+          "title": "加速度方差",
+          "description": "加速度计测量噪声方差",
+          "type": "number",
+          "minimum": 0,
+          "role": ["admin"]
+        },
+        "gyr_cov": {
+          "title": "角速度方差",
+          "description": "陀螺仪测量噪声方差",
+          "type": "number",
+          "minimum": 0,
+          "role": ["admin"]
+        },
+        "b_acc_cov": {
+          "title": "加速度零偏方差",
+          "description": "加速度计零偏随机游走方差",
+          "type": "number",
+          "minimum": 0,
+          "role": ["admin"]
+        },
+        "b_gyr_cov": {
+          "title": "角速度零偏方差",
+          "description": "陀螺仪零偏随机游走方差",
+          "type": "number",
+          "minimum": 0,
+          "role": ["admin"]
+        },
+        "use_aa": {
+          "title": "是否启用Anderson加速",
+          "description": "是否启用Anderson加速",
+          "type": "boolean",
+          "role": ["admin"]
+        },
+        "extrinsic_est_en": {
+          "title": "是否在线估计外参",
+          "description": "是否在线估计IMU-激光雷达外参",
+          "type": "boolean",
+          "role": ["admin"]
+        },
+        "extrinsic_T": {
+          "title": "外参平移",
+          "description": "IMU到激光雷达的外参平移，单位m",
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 3,
+          "maxItems": 3,
+          "role": ["admin"]
+        },
+        "extrinsic_R": {
+          "title": "外参旋转",
+          "description": "IMU到激光雷达的外参旋转矩阵，按行展开的9个元素",
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 9,
+          "maxItems": 9,
+          "role": ["admin"]
+        },
+        "T_bi": {
+          "title": "IMU与机体的平移外参",
+          "description": "IMU坐标系到机体坐标系平移，单位m",
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 3,
+          "maxItems": 3,
+          "role": ["admin"]
+        },
+        "R_bi": {
+          "title": "IMU与机体的旋转外参",
+          "description": "IMU坐标系到机体坐标系旋转矩阵，按行展开的9个元素",
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 9,
+          "maxItems": 9,
+          "role": ["admin"]
+        },
+        "pos_cov_thres": {
+          "title": "位置方差阈值",
+          "description": "里程计位置方差超过阈值，错误码上报",
+          "type": "number",
+          "minimum": 0,
+          "role": ["admin"]
+        },
+        "orient_cov_thres": {
+          "title": "姿态方差阈值",
+          "description": "里程计姿态方差超过阈值，错误码上报",
+          "type": "number",
+          "minimum": 0,
+          "role": ["admin"]
+        },
+        "vel_cov_thres": {
+          "title": "速度方差阈值",
+          "description": "里程计速度方差超过阈值，错误码上报",
+          "type": "number",
+          "minimum": 0,
+          "role": ["admin"]
+        },
+        "ref_cov": {
+          "title": "参考方差",
+          "description": "参考方差值，认为位置方差低于该值为可靠",
+          "type": "number",
+          "minimum": 0,
+          "role": ["admin"]
+        },
+        "max_iteration": {
+          "title": "最大迭代次数",
+          "description": "滤波器最大迭代次数",
+          "type": "integer",
+          "minimum": 1,
+          "role": ["admin"]
+        }
+      },
+      "additionalProperties": false,
+      "role": ["admin"]
+    },
+    "hash_map": {
+      "title": "哈希地图",
+      "description": "哈希地图相关配置",
+      "type": "object",
+      "properties": {
+        "hash_capacity": {
+          "title": "地图容量",
+          "description": "哈希体素地图的容量大小",
+          "type": "integer",
+          "minimum": 1,
+          "role": ["admin"]
+        },
+        "vox_resolution": {
+          "title": "体素地图分辨率",
+          "description": "哈希地图体素分辨率，单位m",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "role": ["admin"]
+        }
+      },
+      "additionalProperties": false,
+      "role": ["admin"]
+    },
+    "publish": {
+      "title": "消息发布配置",
+      "description": "ROS消息发布开关配置",
+      "type": "object",
+      "properties": {
+        "path_en": {
+          "title": "是否发布轨迹",
+          "description": "是否发布里程计轨迹",
+          "type": "boolean",
+          "role": ["admin"]
+        },
+        "scan_publish_en": {
+          "title": "是否发布点云",
+          "description": "false为关闭所有点云输出",
+          "type": "boolean",
+          "role": ["admin"]
+        },
+        "dense_publish_en": {
+          "title": "是否发布稠密点云",
+          "description": "false为降低全局坐标系点云输出点数",
+          "type": "boolean",
+          "role": ["admin"]
+        },
+        "scan_bodyframe_pub_en": {
+          "title": "是否发布机体坐标系点云",
+          "description": "true为输出IMU机体坐标系下的点云",
+          "type": "boolean",
+          "role": ["admin"]
+        }
+      },
+      "additionalProperties": false,
+      "role": ["admin"]
+    },
+    "reloc": {
+      "title": "重定位",
+      "description": "重定位相关配置",
+      "type": "object",
+      "properties": {
+        "win_size": {
+          "title": "窗口大小",
+          "description": "重定位滑动窗口大小",
+          "type": "integer",
+          "minimum": 1,
+          "role": ["admin"]
+        },
+        "map_path": {
+          "title": "地图路径",
+          "description": "重定位使用的地图存放路径",
+          "type": "string",
+          "role": ["admin"]
+        },
+        "reloc_method": {
+          "title": "重定位方法",
+          "description": "自动重定位使用的方法",
+          "type": "string",
+          "enum": ["KISS_MATCHER", "BTC", "INITPOSE"],
+          "role": ["admin"]
+        },
+        "refine_method": {
+          "title": "精配准方法",
+          "description": "重定位后的精配准方法",
+          "type": "string",
+          "enum": ["ICP", "GICP"],
+          "role": ["admin"]
+        },
+        "icp": {
+          "title": "ICP参数",
+          "description": "ICP具体参数配置",
+          "type": "object",
+          "properties": {
+            "icp_voxel_size": {
+              "title": "ICP体素大小",
+              "description": "室内环境建议0.1，室外环境建议0.25，单位m",
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "role": ["admin"]
+            },
+            "thread_number": {
+              "title": "线程数",
+              "description": "ICP配准线程数，0为使用最大核心数",
+              "type": "integer",
+              "minimum": 0,
+              "role": ["admin"]
+            },
+            "icp_score_threshold": {
+              "title": "ICP分数阈值",
+              "description": "地图-扫描匹配分数阈值，越低越精确",
+              "type": "number",
+              "minimum": 0,
+              "role": ["admin"]
+            },
+            "correspondences_number": {
+              "title": "对应点数",
+              "description": "ICP配准使用的最小对应点数",
+              "type": "integer",
+              "minimum": 1,
+              "role": ["admin"]
+            },
+            "max_correspondence_distance": {
+              "title": "最大对应距离",
+              "description": "匹配点对最大对应距离阈值，单位m",
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 1.0,
+              "role": ["admin", "engineer"]
+            },
+            "max_iter": {
+              "title": "最大迭代次数",
+              "description": "ICP配准最大迭代次数",
+              "type": "integer",
+              "minimum": 1,
+              "role": ["admin"]
+            },
+            "transformation_epsilon": {
+              "title": "变换矩阵收敛阈值",
+              "description": "ICP变换矩阵收敛阈值",
+              "type": "number",
+              "minimum": 0,
+              "role": ["admin"]
+            },
+            "euclidean_fitness_epsilon": {
+              "title": "欧氏距离收敛阈值",
+              "description": "ICP欧氏距离收敛阈值",
+              "type": "number",
+              "minimum": 0,
+              "role": ["admin"]
+            },
+            "inlier_ratio": {
+              "title": "内点比例阈值",
+              "description": "内点比例阈值，越高越严格",
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 1.0,
+              "role": ["admin", "engineer"]
+            },
+            "ransac": {
+              "title": "RANSAC参数",
+              "description": "RANSAC配准相关参数",
+              "type": "object",
+              "properties": {
+                "max_iter": {
+                  "title": "最大迭代次数",
+                  "description": "RANSAC最大迭代次数，0表示禁用",
+                  "type": "integer",
+                  "minimum": 0,
+                  "role": ["admin"]
+                },
+                "outlier_rejection_threshold": {
+                  "title": "离群点剔除阈值",
+                  "description": "RANSAC离群点剔除阈值，单位m",
+                  "type": "number",
+                  "minimum": 0,
+                  "role": ["admin"]
+                }
+              },
+              "additionalProperties": false,
+              "role": ["admin"]
+            }
+          },
+          "additionalProperties": false,
+          "role": ["admin", "engineer"]
+        },
+        "BTC": {
+          "title": "BTC参数",
+          "description": "BTC重定位相关参数",
+          "type": "object",
+          "properties": {
+            "sessions": {
+              "title": "会话配置",
+              "description": "地图会话配置，格式如\"map:0.25\"",
+              "type": "string",
+              "role": ["admin"]
+            },
+            "if_outdoor": {
+              "title": "是否室外",
+              "description": "0为室内，1为室外",
+              "type": "integer",
+              "enum": [0, 1],
+              "role": ["admin"]
+            },
+            "voxel_size": {
+              "title": "体素大小",
+              "description": "体素大小，单位m",
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "role": ["admin"]
+            },
+            "acsize": {
+              "title": "子地图大小",
+              "description": "acsize帧关键帧组成子图，仅在加载历史帧时使用",
+              "type": "integer",
+              "minimum": 1,
+              "role": ["admin"]
+            },
+            "mgsize": {
+              "title": "子地图滑动大小",
+              "description": "每次滑动mgsize帧关键帧",
+              "type": "integer",
+              "minimum": 1,
+              "role": ["admin"]
+            },
+            "dept_err": {
+              "title": "测距误差",
+              "description": "点云测距误差，单位m",
+              "type": "number",
+              "minimum": 0,
+              "role": ["admin"]
+            },
+            "beam_err": {
+              "title": "测向误差",
+              "description": "点云测向误差，单位rad",
+              "type": "number",
+              "minimum": 0,
+              "role": ["admin"]
+            },
+            "icp_eigval": {
+              "title": "ICP特征值",
+              "description": "ICP特征值阈值",
+              "type": "number",
+              "minimum": 0,
+              "role": ["admin"]
+            }
+          },
+          "additionalProperties": false,
+          "role": ["admin"]
+        },
+        "KISS_MATCHER": {
+          "title": "KISS_MATCHER参数",
+          "description": "KISS_MATCHER重定位相关参数",
+          "type": "object",
+          "properties": {
+            "voxel_size": {
+              "title": "体素大小",
+              "description": "体素大小，单位m，小场景建议0.2，大场景建议0.3",
+              "type": "number",
+              "minimum": 0.1,
+              "role": ["admin", "engineer"]
+            },
+            "crop_distance": {
+              "title": "裁剪距离",
+              "description": "点云裁剪距离，在初值附近裁剪，减少计算，单位m",
+              "type": "number",
+              "minimum": 0,
+              "role": ["admin"]
+            },
+            "inlier_threshold": {
+              "title": "内点阈值",
+              "description": "匹配内点数量阈值",
+              "type": "integer",
+              "minimum": 1,
+              "role": ["admin"]
+            }
+          },
+          "additionalProperties": false,
+          "role": ["admin", "engineer"]
+        },
+        "INITPOSE": {
+          "title": "INITPOSE参数",
+          "description": "初始位姿搜索相关参数",
+          "type": "object",
+          "properties": {
+            "near_frame_range": {
+              "title": "邻近帧范围",
+              "description": "取邻近帧点云的范围，单位m",
+              "type": "number",
+              "minimum": 0,
+              "role": ["admin"]
+            }
+          },
+          "additionalProperties": false,
+          "role": ["admin"]
+        }
+      },
+      "additionalProperties": false,
+      "role": ["admin", "engineer"]
+    }
+  },
+  "additionalProperties": false
+}

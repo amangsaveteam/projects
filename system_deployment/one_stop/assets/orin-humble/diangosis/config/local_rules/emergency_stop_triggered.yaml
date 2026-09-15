@@ -1,0 +1,16 @@
+event:
+  name: 急停触发
+
+  rule:
+    field: agv_emergency
+    op: boolean_true
+
+  alarm:
+    major_code: "40"
+    minor_code: "001"
+    name: "急停触发"
+    severity: 4
+    description: "急停按钮已触发"
+    recovery: "若需恢复，请旋钮复位急停按钮"
+    use_tts: true
+    audio_path: ""

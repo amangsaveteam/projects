@@ -1,0 +1,65 @@
+General:
+  lid_topic: "/livox/lidar"
+  imu_topic: "/livox/imu"
+  save_path: "/home/naviai/.zj_humanoid/datasets"
+  previous_map: "#D1:0.25,
+                 #D2:0.25"
+                
+  session_name: "map"
+  lidar_type: 1
+  scan_line: 4
+  strict_tag_en: true
+  min_range: 0.5
+  max_range: 100.0
+  min_intensity: 0
+  max_intensity: 255
+  point_filter_num: 1
+  extrinsic_tran: [-0.011, -0.02329, 0.04412]
+  extrinsic_rota: [1, 0, 0,
+                   0, 1, 0,
+                   0, 0, 1]
+  is_save_map: true
+
+Odometry:
+  max_init: 30
+  cov_gyr: 0.1
+  cov_acc: 1
+  rdw_gyr: 0.0001
+  rdw_acc: 0.0001
+  # down_size: 0.5
+  down_size: 0.1
+  dept_err: 0.02 # 两个error应该就是voxel map中对测距和测向的方差建模
+  beam_err: 0.05
+  # voxel_size: 4
+  voxel_size: 1
+  min_eigen_value: 0.0025
+  degrade_bound: 10
+  point_notime: 0
+
+LocalBA:
+  win_size: 10 # local map的滑窗大小
+  max_layer: 2
+  cov_gyr: 0.01
+  cov_acc: 2
+  rdw_gyr: 0.0001
+  rdw_acc: 0.0001
+  min_ba_point: 1
+  plane_eigen_value_thre: [4.0, 4.0, 4.0, 4.0]
+  imu_coef: 0.0002
+  thread_num: 5
+
+Loop:
+  jud_default: 0.45 # 判断回环的分数阈值
+  icp_eigval: 9 # 判断ICP是否成功的阈值
+  ratio_drift: 0.01
+  rot_drift: 8
+  curr_halt: 10
+  prev_halt: 10
+  acsize: 10
+  mgsize: 5
+
+GBA:
+  voxel_size: 2 # 全局地图中根体素大小
+  min_eigen_value: 0.01
+  eigen_value_array: [4.0, 4.0, 4.0, 4.0]
+  total_max_iter: 6

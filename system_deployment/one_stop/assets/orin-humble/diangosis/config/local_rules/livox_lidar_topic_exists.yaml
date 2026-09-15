@@ -1,0 +1,16 @@
+event:
+  name: Livox 雷达在线检测
+
+  rule:
+    field: lidar_online
+    op: boolean_false
+
+  alarm:
+    major_code: "99"
+    minor_code: "001"
+    name: "Livox 雷达离线"
+    severity: 4
+    description: "未检测到激光雷达话题"
+    recovery: "请检查雷达驱动和链路"
+    use_tts: true
+    audio_path: ""

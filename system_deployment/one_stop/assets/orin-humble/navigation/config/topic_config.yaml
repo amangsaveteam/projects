@@ -1,0 +1,12 @@
+action: navigation/navigation
+input_topics:
+  map: navigation/map
+  odometry: navigation/odom_info
+  obstacle: navigation/local_map
+output_topics:
+  module_status: navigation/navigation_code
+  control_command: cmd_vel/calib
+  path: navigation/path
+  trajectory: navigation/trajectory
+  mpc_trajectory: navigation/mpc_trajectory
+  navigation_debug: navigation/navigation_debug

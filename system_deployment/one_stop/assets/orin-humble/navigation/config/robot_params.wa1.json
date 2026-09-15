@@ -1,0 +1,56 @@
+{
+  "robot_name": "WA1",
+  "robot_type": "Diff", 
+  "geom_params": {
+    "length": 0.824,
+    "width": 0.534,
+    "height": 0.253,
+    "rear_overhang": 0.412
+  },
+  "dyn_params": {
+    "max_speed": 1.0,
+    "min_speed": 0.2,
+    "max_accel": 0.5,
+    "max_decel": 1.0,
+    "comfort_accel": 0.5,
+    "comfort_decel": 0.1,
+    "emergency_decel": 1.5,
+
+    "max_yaw_rate": 2.0,
+    "min_yaw_rate": 0.2,
+    "max_yaw_accel": 1.0,
+    "max_yaw_decel": 1.0,
+    "comfort_yaw_accel": 0.5,
+    "comfort_yaw_decel": 0.5,
+    "emergency_yaw_decel": 1.5,
+
+    "u_lb": -1.0,
+    "u_ub": 1.0,
+    "v_lb": 0.0,
+    "v_ub": 0.0,
+    "r_lb": -3.0,
+    "r_ub": 3.0,
+    "ax_lb": -1.0,
+    "ax_ub": 1.0,
+    "ay_lb": 0.0,
+    "ay_ub": 0.0,
+    "alpha_lb": -2.0,
+    "alpha_ub": 2.0,
+
+    "brake_distance": 0.01,
+    "brake_angle_deg": 3.0,
+    "min_safe_distance": 0.5,
+    "min_safe_angle_deg": 8.0,
+
+    "min_turn_radius": 0.5,
+
+    "gear_min_time": 800,
+    "static_min_time": 200,
+    "static_max_speed": 0.05,
+    "static_max_yaw_rate": 1.0,
+
+    "rotatable": true,
+    "reversible": true,
+    "omni_wheeled": false
+  }
+}

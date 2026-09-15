@@ -216,12 +216,29 @@ def resolve_run_arguments(values, field):
     return values
 
 
+def resolve_install_group(value, field):
+    """Return an optional contiguous dpkg transaction name."""
+    if value is None:
+        return None
+    return require(value, field + ".install_group", safe=True)
+
+
+def resolve_wait_packages(values, field):
+    """Return Debian packages which must be installed before services start."""
+    if values is None:
+        return []
+    if not isinstance(values, list) or not all(isinstance(value, str) and TOKEN.fullmatch(value) for value in values):
+        raise BuildError(field + ".wait_for_packages must be a Debian package-name list")
+    return values
+
+
 def load_delivery(urls_file, supervisor_file=None):
     """Join package and operations contracts by target and module identifier."""
     packages = load(urls_file)
     supervisor_file = supervisor_file or urls_file.with_name("supervisor.json")
     if not supervisor_file.exists():
-        if any(p.get("runtime") for t in packages.get("targets", {}).values() for p in t.get("runs", [])):
+        if any(p.get("runtime") for t in packages.get("targets", {}).values()
+               for p in t.get("runs", []) + t.get("extra_debs", [])):
             raise BuildError("runtime requires supervisor.json")
         return packages
     operations = load(supervisor_file)
@@ -239,21 +256,33 @@ def load_delivery(urls_file, supervisor_file=None):
                 raise BuildError("duplicate configuration in package and supervisor files: " + key)
         target.update(settings)
         runs = {item["name"]: item for item in target.get("runs", [])}
-        if len(runs) != len(target.get("runs", [])):
+        debs = {item["name"]: item for item in target.get("extra_debs", [])}
+        module_packages = dict(debs)
+        module_packages.update(runs)
+        if len(runs) != len(target.get("runs", [])) or len(debs) != len(target.get("extra_debs", [])):
             raise BuildError("duplicate package name in " + target_id)
         ports = set()
         matched = set()
         for module in target.get("supervisor_modules", []):
+            explicit_package = "package" in module
             name = module.get("package", module["id"])
-            if name not in runs:
+            if name not in module_packages:
                 raise BuildError("Supervisor module references unknown package: " + name)
+            if explicit_package and name in runs and name in debs:
+                raise BuildError("Supervisor module package is ambiguous; use a distinct DEB name: " + name)
             matched.add(name)
-            if module["port"] in ports:
-                raise BuildError("duplicate Supervisor port in " + target_id)
-            ports.add(module["port"])
-            package = runs[name]
+            # Keep the resolved package identity for the release manifest.
+            # ``package`` itself belongs only to the source Supervisor file.
+            module["_package_name"] = name
+            if module.get("mode") != "systemd":
+                if module["port"] in ports:
+                    raise BuildError("duplicate Supervisor port in " + target_id)
+                ports.add(module["port"])
+            package = module_packages[name]
             for key in ("start_policy", "remove_packages"):
                 if key in module:
+                    if name not in runs:
+                        raise BuildError(key + " is supported only for RUN package: " + name)
                     if key in package:
                         raise BuildError("duplicate install policy for " + name)
                     package[key] = module.pop(key)
@@ -278,11 +307,13 @@ def load_delivery(urls_file, supervisor_file=None):
                 setup += ["source " + shlex.quote(v) for v in runtime.get("source_files", [])]
                 setup += ["export " + v for v in resolve_environment(runtime.get("environment"), name + ".runtime.environment")]
                 module["prelude"] = setup + module.get("prelude", [])
-        for package in runs.values():
+        for package in module_packages.values():
             if package.get("runtime") and package["name"] not in matched:
                 raise BuildError("runtime has no Supervisor module: " + package["name"])
     for target_id, target in result.get("targets", {}).items():
-        if target_id not in operations.get("targets", {}) and any(p.get("runtime") for p in target.get("runs", [])):
+        if target_id not in operations.get("targets", {}) and any(
+            p.get("runtime") for p in target.get("runs", []) + target.get("extra_debs", [])
+        ):
             raise BuildError(target_id + ": runtime requires Supervisor configuration")
     return result
 
@@ -346,10 +377,10 @@ def supervisor_module(target_id, index, value):
     if not isinstance(value, dict):
         raise BuildError(field + " must be an object")
     allowed = {
-        "id", "description", "mode", "port", "register", "service_name", "restart_service", "command",
+        "id", "description", "mode", "port", "register", "service_name", "restart_service", "systemd_service", "command", "_package_name",
         "working_directory", "source_files", "unset_environment", "environment", "prelude",
         "autorestart", "exitcodes", "startsecs", "startretries", "timeout_stop_seconds",
-        "after_services", "part_of_services", "log_maxbytes", "log_backups", "native_rpc_config",
+        "after_services", "part_of_services", "disable_services", "log_maxbytes", "log_backups", "native_rpc_config",
         "startup_priority",
     }
     unknown = set(value) - allowed
@@ -364,9 +395,14 @@ def supervisor_module(target_id, index, value):
         if result.get("mode") != "external" or not isinstance(result["native_rpc_config"], str) or not result["native_rpc_config"].startswith("/"):
             raise BuildError(field + ".native_rpc_config requires an external module and absolute path")
     result["description"] = require(result.get("description"), field + ".description")
-    if result.get("mode") not in {"managed", "external"}:
-        raise BuildError(field + ".mode must be managed or external")
-    if not isinstance(result.get("port"), int) or not 1 <= result["port"] <= 65535:
+    if result.get("mode") not in {"managed", "external", "systemd"}:
+        raise BuildError(field + ".mode must be managed, external or systemd")
+    if result["mode"] == "systemd":
+        if not isinstance(result.get("systemd_service"), str) or not SERVICE.fullmatch(result["systemd_service"]):
+            raise BuildError(field + ".systemd_service must be a systemd unit name")
+        if any(key in result for key in ("port", "restart_service", "native_rpc_config", "command", "working_directory")):
+            raise BuildError(field + ".systemd must not define RPC or managed-process fields")
+    elif not isinstance(result.get("port"), int) or not 1 <= result["port"] <= 65535:
         raise BuildError(field + ".port must be a TCP port")
     if "startup_priority" in result and (
         not isinstance(result["startup_priority"], int) or isinstance(result["startup_priority"], bool)
@@ -381,9 +417,13 @@ def supervisor_module(target_id, index, value):
             raise BuildError(field + ".restart_service is only valid for an external module")
         if not isinstance(result["restart_service"], str) or not SERVICE.fullmatch(result["restart_service"]):
             raise BuildError(field + ".restart_service is invalid")
-    for key in ("source_files", "unset_environment", "prelude", "after_services", "part_of_services"):
+    for key in ("source_files", "unset_environment", "prelude", "after_services", "part_of_services", "disable_services"):
         if key in result and (not isinstance(result[key], list) or not all(isinstance(item, str) and item for item in result[key])):
             raise BuildError(field + ".{} must be a non-empty string list".format(key))
+    if result.get("disable_services") and result["mode"] != "managed":
+        raise BuildError(field + ".disable_services is only valid for a managed module")
+    if "disable_services" in result and any(not SERVICE.fullmatch(item) for item in result["disable_services"]):
+        raise BuildError(field + ".disable_services must contain systemd unit names")
     if "environment" in result and (not isinstance(result["environment"], dict) or not all(
         isinstance(name, str) and ENVIRONMENT_KEY.fullmatch(name) and isinstance(item, str)
         for name, item in result["environment"].items()
@@ -494,7 +534,10 @@ def stage_supervisor_modules(stage, target_id, target, checksums, dry_run):
             if not dry_run:
                 destination = stage / relpath
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                destination.write_text(json.dumps({"modules": {identifier: {"endpoint": "http://{}:{}/RPC2".format(paths["internal_ip"], module["port"])}}}, indent=2) + "\n", encoding="utf-8")
+                specification = ({"type": "systemd", "service": module["systemd_service"]}
+                                 if module["mode"] == "systemd" else
+                                 {"endpoint": "http://{}:{}/RPC2".format(paths["internal_ip"], module["port"])})
+                destination.write_text(json.dumps({"modules": {identifier: specification}}, indent=2) + "\n", encoding="utf-8")
                 checksums.append((file_sha256(destination), relpath))
             registrations.append((relpath, "{}/{}.json".format(paths["agent_modules_directory"], identifier)))
         if module["mode"] != "managed":
@@ -534,12 +577,28 @@ def supervisor_service_priorities(target_id, target):
     priorities = {}
     for index, value in enumerate(target.get("supervisor_modules", [])):
         module = supervisor_module(target_id, index, value)
-        service = module.get("service_name") if module["mode"] == "managed" else module.get("restart_service")
+        service = (module.get("service_name") if module["mode"] == "managed"
+                   else module.get("restart_service") if module["mode"] == "external"
+                   else module.get("systemd_service"))
         if service:
             if service in priorities and priorities[service] != module["startup_priority"]:
                 raise BuildError(target_id + ": one service has conflicting startup priorities")
             priorities[service] = module["startup_priority"]
     return priorities
+
+
+def supervisor_systemd_services(target_id, target):
+    """Return native systemd units exposed through the local Agent."""
+    return sorted({supervisor_module(target_id, index, value)["systemd_service"]
+                   for index, value in enumerate(target.get("supervisor_modules", []))
+                   if supervisor_module(target_id, index, value)["mode"] == "systemd"})
+
+
+def supervisor_disabled_services(target_id, target):
+    """Return vendor systemd units retired in favour of managed Supervisors."""
+    return sorted({service
+                   for index, value in enumerate(target.get("supervisor_modules", []))
+                   for service in supervisor_module(target_id, index, value).get("disable_services", [])})
 
 
 def stage_supervisor_agent(stage, target_id, paths, checksums, dry_run):
@@ -650,7 +709,68 @@ def system_config_installer(target_id, configure_target, config_rel):
     return "\n".join(lines) + "\n"
 
 
+def stage_config_files(stage, target_id, target, checksums, dry_run):
+    """Bundle repository directories; deploy after module installers, preserving backups."""
+    lines = ["#!/bin/bash", "set -euo pipefail",
+             'root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"']
+    for index, item in enumerate(target.get("config_files", [])):
+        field = "{}.config_files[{}]".format(target_id, index)
+        if not isinstance(item, dict) or set(item) - {"source", "destination", "owner", "group", "overwrite"}:
+            raise BuildError(field + " contains unsupported fields")
+        source_value = item.get("source")
+        destination_value = item.get("destination")
+        if not isinstance(source_value, str) or not isinstance(destination_value, str):
+            raise BuildError(field + ".source and destination must be strings")
+        overwrite = item.get("overwrite", True)
+        if not isinstance(overwrite, bool):
+            raise BuildError(field + ".overwrite must be true or false")
+        source = (DEPLOYMENT_ROOT.parent / source_value).resolve()
+        destination = Path(destination_value)
+        if not source.is_dir() or DEPLOYMENT_ROOT.parent.resolve() not in source.parents:
+            raise BuildError("config_files source must be a repository directory: " + str(source))
+        if not destination.is_absolute() or ".." in destination.parts or len(destination.parts) < 4:
+            raise BuildError("config_files destination must be a specific absolute directory")
+        owner = item.get("owner", "root")
+        group = item.get("group", owner)
+        if not TOKEN.fullmatch(owner) or not TOKEN.fullmatch(group):
+            raise BuildError("invalid config_files owner/group")
+        for file in sorted(source.rglob("*")):
+            if file.is_symlink():
+                raise BuildError("config_files does not accept symlinks: " + str(file))
+            if not file.is_file():
+                continue
+            relative = file.relative_to(source)
+            payload = Path("payloads") / target_id / "config-files" / str(index) / relative
+            dst = destination / relative
+            if not dry_run:
+                output = stage / payload
+                output.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(file, output)
+                checksums.append((file_sha256(output), payload.as_posix()))
+            lines.append("install -d -o {} -g {} -m 0755 {}".format(
+                owner, group, shlex.quote(str(dst.parent))))
+            if overwrite:
+                lines += [
+                    "cp --backup=numbered -- \"$root/{}\" {}".format(payload.as_posix(), shlex.quote(str(dst))),
+                    "chown {}:{} -- {}".format(owner, group, shlex.quote(str(dst))),
+                ]
+            else:
+                lines += [
+                    "if [[ ! -e {} ]]; then".format(shlex.quote(str(dst))),
+                    "  install -o {} -g {} -m 0644 \"$root/{}\" {}".format(
+                        owner, group, payload.as_posix(), shlex.quote(str(dst))),
+                    "else",
+                    "  echo \"Keeping local configuration: {}\"".format(dst),
+                    "fi",
+                ]
+    if not dry_run:
+        script = stage / "targets" / target_id / "install-config-files.sh"
+        script.parent.mkdir(parents=True, exist_ok=True)
+        script.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def stage_system_config(stage, target_id, target, checksums, dry_run):
+    stage_config_files(stage, target_id, target, checksums, dry_run)
     system_config = target.get("system_config") if isinstance(target, dict) else None
     if not isinstance(system_config, dict):
         return None
@@ -692,7 +812,8 @@ def stage_system_config(stage, target_id, target, checksums, dry_run):
 
 def target_install(target_id, system_config_rel, common_rel, common, extras, runs, services,
                    startup_services=(), supervisor_startup=(), registrations=(), post_install=(), agent_service=None,
-                   agent_payload=None, target_platform=None, release_tracking=False, service_priorities=None):
+                   agent_payload=None, target_platform=None, release_tracking=False, service_priorities=None,
+                   disabled_services=()):
     # Native modules are also part of the installation lifecycle, even when
     # their units come from a DEB instead of a Middleware-format run archive.
     native_services = [
@@ -764,11 +885,59 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
     # create its own missing WorkingDirectory on a freshly provisioned host.
     if target_id == "orin-humble":
         lines.append("install -d -m 0755 /var/lib/navi /var/lib/navi/ros /var/log/navi/ros /var/log/navi/robot /var/log/naviai/robot")
-    for relpath, installers, environment, contract in extras:
-        lines.extend(system_python_contract_check(contract))
-        lines.append("dpkg -i \"$root/{}\"".format(relpath))
+    if disabled_services:
+        lines.extend([
+            "for unit in " + " ".join(shlex.quote(unit) for unit in sorted(set(disabled_services))) + "; do",
+            "  if [[ $(systemctl show -p LoadState --value \"$unit\") != not-found ]]; then",
+            "    echo \"Disabling vendor service replaced by Supervisor: $unit\"",
+            "    systemctl disable --now \"$unit\"",
+            "  fi",
+            "done",
+        ])
+    if any(len(extra) > 5 and extra[5] for extra in extras):
+        lines.extend([
+            "wait_for_debian_package() {",
+            "  local package=$1 retries=120",
+            "  while (( retries > 0 )); do",
+            "    if dpkg-query -W -f='${db:Status-Status}' \"$package\" 2>/dev/null | grep -Fxq installed; then return 0; fi",
+            "    sleep 1",
+            "    retries=$((retries - 1))",
+            "  done",
+            "  echo \"ERROR: timed out waiting for Debian package $package\" >&2",
+            "  return 1",
+            "}",
+        ])
+    extra_groups, seen_groups = [], set()
+    for extra in extras:
+        relpath, installers, environment, contract = extra[:4]
+        group = extra[4] if len(extra) > 4 else None
+        wait_packages = extra[5] if len(extra) > 5 else []
+        # An omitted group preserves the historical one-DEB-at-a-time
+        # behaviour.  Only a named group forms a shared dpkg transaction.
+        if group is None:
+            extra_groups.append((None, [(relpath, installers, environment, contract, wait_packages)]))
+            continue
+        if group and group in seen_groups and (not extra_groups or extra_groups[-1][0] != group):
+            raise BuildError(target_id + ": install_group entries must be contiguous: " + group)
+        if not extra_groups or extra_groups[-1][0] != group:
+            extra_groups.append((group, []))
+        extra_groups[-1][1].append((relpath, installers, environment, contract, wait_packages))
+        if group:
+            seen_groups.add(group)
+    for group, items in extra_groups:
+        environments = {tuple(item[2]) for item in items}
+        if len(environments) != 1:
+            raise BuildError(target_id + ": install_group must use one installation environment: " + str(group))
+        environment = items[0][2]
         prefix = "env " + " ".join(environment) + " " if environment else ""
-        lines.extend(prefix + "\"{}\"".format(item) for item in installers)
+        for _, _, _, contract, _ in items:
+            lines.extend(system_python_contract_check(contract))
+        paths = " ".join('\"$root/{}\"'.format(item[0]) for item in items)
+        lines.append(prefix + "dpkg -i " + paths)
+        for _, installers, _, _, _ in items:
+            lines.extend(prefix + "\"{}\"".format(item) for item in installers)
+        for package in sorted({package for _, _, _, _, packages in items for package in packages}):
+            lines.append("wait_for_debian_package {}".format(shlex.quote(package)))
     for run in runs:
         item, arguments = run[:2]
         start_policy = run[2] if len(run) > 2 else "vendor"
@@ -788,6 +957,7 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         lines.append(prefix + render_run_command(item, arguments, start_policy, helper_rel))
         if services:
             lines.append("stop_managed_services")
+    lines.append('if [[ -f "$root/targets/{0}/install-config-files.sh" ]]; then bash "$root/targets/{0}/install-config-files.sh"; fi'.format(target_id))
     for _, launch_rel, service_rel, destination in startup_services:
         lines.extend((
             "install -d -m 0755 {}".format(shlex.quote(str(Path(destination).parent))),
@@ -874,7 +1044,8 @@ def target_pretest(target_id, system_config_rel, common_rel, extras, runs):
         lines.append("echo 'System configuration: deploy/update'")
     elif common_rel:
         lines.append("pretest_deb \"$root/{}\"".format(common_rel))
-    for relpath, _, _, contract in extras:
+    for extra in extras:
+        relpath, _, _, contract = extra[:4]
         if contract:
             lines.append("echo 'Required system Python: {} {} / CUDA {}'".format(contract["module"], contract["version"], contract["cuda"]))
         lines.append("pretest_deb \"$root/{}\"".format(relpath))
@@ -994,7 +1165,13 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
             supervisor_startup, registrations, supervisor_post_install, supervisor_config = stage_supervisor_modules(
                 stage, target_id, target, target_checksums, dry_run
             )
+            supervisor_package_names = {
+                module.get("_package_name", module["id"])
+                for module in target.get("supervisor_modules", [])
+            }
             service_priorities = supervisor_service_priorities(target_id, target)
+            services.extend(supervisor_systemd_services(target_id, target))
+            disabled_services = supervisor_disabled_services(target_id, target)
             supervisor_agent = stage_supervisor_agent(stage, target_id, supervisor_config, target_checksums, dry_run)
             services.extend(item[0] for item in supervisor_startup)
             for index, item in enumerate(target.get("extra_debs", [])):
@@ -1002,12 +1179,15 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                 relpath = "payloads/{}/extra-{:02d}.deb".format(target_id, index); path = stage / relpath; path.parent.mkdir(parents=True, exist_ok=True)
                 expected = str(item.get("sha256", "")); download(require(item["url"], target_id + ".extra.url"), path, expected, dry_run)
                 if not dry_run: target_checksums.append((file_sha256(path), relpath))
-                record_artifact(item, relpath, "dependency", index)
+                record_artifact(item, relpath,
+                                "module" if item.get("name") in supervisor_package_names else "dependency", index)
                 extras.append((
                     relpath,
                     resolve_installers(path, item.get("installers", []), target_id + ".extra.installers", dry_run),
                     resolve_environment(item.get("environment"), target_id + ".extra.environment"),
                     resolve_system_python_contract(item.get("system_python_contract"), target_id + ".extra"),
+                    resolve_install_group(item.get("install_group"), target_id + ".extra"),
+                    resolve_wait_packages(item.get("wait_for_packages"), target_id + ".extra"),
                 ))
             requires_no_final_exec_helper = False
             for index, item in enumerate(target.get("runs", [])):
@@ -1069,7 +1249,7 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                     target_id, system_config_rel, common_rel, common, extras, runs, sorted(set(services)),
                     startup_services, supervisor_startup, registrations, supervisor_post_install, supervisor_config,
                     supervisor_agent, (os_id, os_version, arch), release_tracking=True,
-                    service_priorities=service_priorities,
+                    service_priorities=service_priorities, disabled_services=disabled_services,
                 ), encoding="utf-8"
             ); script.chmod(0o755)
             pretest = stage / "targets" / target_id / "pretest.sh"

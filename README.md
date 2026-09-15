@@ -52,7 +52,7 @@ ZYD、ZYD_V1、JK、JK2_V1
 | `package-urls.json` | 开发者维护模块 URL、版本、安装 `arguments` / `environment` 及运行 `runtime`；平台字段由交付维护者维护 |
 | `supervisor.json` | 交付维护者维护 Agent、服务、端口、启动命令、`start_policy` 和旧包迁移策略 |
 
-两份文件按 target 和模块名关联，默认 `runs.name = supervisor_modules.id`；不一致时在 Supervisor 条目中设置 `"package": "实际runs.name"`。构建会校验关联关系及同设备端口冲突，发布清单记录 `supervisor_config_sha256`。
+两份文件按 target 和模块名关联，默认 `runs.name = supervisor_modules.id`；不一致时在 Supervisor 条目中设置 `"package": "实际工件 name"`。工件可以是 RUN 或 DEB。构建会校验关联关系及 XML-RPC 端口冲突，发布清单记录 `supervisor_config_sha256`。
 
 开发者可在自己的 `runs` 条目里配置：
 
@@ -80,7 +80,7 @@ ZYD、ZYD_V1、JK、JK2_V1
 
 ### 1. 配置模块安装包
 
-更新模块时修改 `runs` 中对应项；新增模块时追加一项。以 Sensor 为例，替换下面的 URL 和版本；摘要可留空自动计算：
+模块可以以 RUN 或 DEB 交付。RUN 放在 `runs`；DEB 放在 `extra_debs`。两者均可在 `supervisor.json` 关联为受管模块；`runs` 按数组顺序在 DEB 之后安装。以 RUN 形式的 Sensor 为例，替换下面的 URL 和版本；摘要可留空自动计算：
 
 ```json
 {
@@ -94,11 +94,47 @@ ZYD、ZYD_V1、JK、JK2_V1
 
 `sha256` 留空时构建自动计算；可选填写已知摘要用于锁定下载内容。`arguments` 必须与模块安装器接口一致：支持机型参数时使用上述写法，完全不接收参数时写 `[]`；省略该字段默认传入机型参数。`{robot_type}` 在设备安装时替换为实际机型。
 
-`runs` 按数组顺序安装；目标中已有的 `extra_debs` 依赖先执行。仅修改下载地址不会自动添加服务管理，新增模块还需完成下一步。
+DEB 模块配置示例：
+
+```json
+{
+  "name": "robot-deb",
+  "version": "2.0.0-2",
+  "url": "http://<制品服务器>/<实际路径>/robot.deb",
+  "sha256": "",
+  "installers": ["/usr/lib/naviai/robot/configure.sh"],
+  "environment": {
+    "ROBOT_INSTALL_CONFIG": "/etc/naviai/robot/config.yaml"
+  },
+  "runtime": {
+    "source_files": ["/etc/naviai/robot/robot.env"],
+    "environment": {
+      "ROBOT_CONFIG_FILE": "/etc/naviai/robot/config.yaml"
+    }
+  }
+}
+```
+
+构建时先执行 `env ... dpkg -i robot.deb`，再执行 `installers` 中的绝对路径脚本；`environment` 会传给 DEB 的 maintainer scripts 和这些安装脚本。`installers: ["auto"]` 会从 DEB 中识别唯一的依赖安装脚本；不需要后处理脚本时写 `[]`。DEB 没有 `arguments`，需要的安装配置应通过 DEB 自身的默认配置、`environment` 或其安装脚本读取。
+
+`runtime` 的行为与 RUN 模块相同，但只适用于由总包 `managed` 的模块。随后在 `supervisor.json` 指定实际工件名称：
+
+```json
+{
+  "id": "robot",
+  "package": "robot-deb",
+  "mode": "managed",
+  "port": 19002,
+  "working_directory": "/var/lib/naviai/robot",
+  "command": "/opt/naviai/robot/bin/start.sh"
+}
+```
+
+`package` 可省略，省略时默认等于 `id`。现有目标允许同名依赖 DEB 和 RUN，默认关联同名 RUN 以保持兼容；要让 Supervisor 接管 DEB，DEB 的 `name` 必须使用独立名称，例如 `robot-deb`。仅修改下载地址不会自动添加服务管理，新增模块还需完成下一步。
 
 ### 2. 配置模块启动方式
 
-在 `supervisor.json` 同一目标的 `supervisor_modules` 中配置，`id` 和本机 `port` 应唯一。
+在 `supervisor.json` 同一目标的 `supervisor_modules` 中配置。`id` 必须唯一；只有 `managed` 与 `external` 使用且要求本机 `port` 唯一。
 
 **模块已有 Supervisor：使用 external。** Sensor 当前配置如下：
 
@@ -139,6 +175,19 @@ sudo sed -n '1,160p' /etc/naviai/navi-sensor-host-supervisor.conf
 ```
 
 总包生成 systemd 服务、supervisord 配置及 Agent 注册；模块包需提供命令使用的软件和环境脚本，并避免原服务重复启动同一业务进程。需要非 root 运行时，参考现有 Vision 条目配置运行用户及目录权限；环境变量用法见“中间件环境配置”。
+
+**模块包已提供 systemd 服务：可使用 systemd。** 这是保留厂商 unit 的兼容模式；它不是 supervisord，因此不配置 `port`、`command` 或 `runtime`。若要求业务进程统一由 supervisord 守护，则不要安装提供厂商 unit 的 DEB，或在 `managed` 模块中通过 `disable_services` 停用其原服务后配置真实启动命令。
+
+```json
+{
+  "id": "example-native-service",
+  "description": "保留厂商 systemd 服务的示例",
+  "mode": "systemd",
+  "systemd_service": "vendor-example.service"
+}
+```
+
+Orin Humble 当前的导航、底盘与工具 DEB 会分别注册为 8 个 `managed` 模块：`chassis`、`vanjee-lidar`、`livox-lidar`、`naviai-nav2`、`navigation`、`naviai-nav2-rawdata`、`diagnosis-system`、`web-rviz`。它们不是一个 chassis 模块。总包不安装 `zj-humanoid-services`，并会停用已存在的同名厂商 unit；随后生成 8 个独立的 supervisord 服务和 XML-RPC 端口。Nav2 DEB 的后台安装通过 `wait_for_packages` 等待最多 120 秒，确认 `zj-humanoid-ros-humble-naviai-nav2-bringup` 已安装后才开始所有受管服务。这些相互依赖的 DEB 通过 `install_group: "navigation-chassis-services"` 放进同一次 `dpkg -i`。
 
 两种模式均需目标具有 `supervisor` 配置。已有 Orin / PICO 配置可复用；新增时需设置设备实际 `internal_ip`、`agent_service`、`agent_modules_directory`、`agent_password_file`、`module_root`、`runtime_root`、`log_root`，路径均为目标设备路径，不是构建机路径。
 
@@ -297,34 +346,49 @@ source /etc/naviai/Middleware.env  # Orin / RDK
 
 ## 运行架构与观测
 
-systemd 管理服务生命周期；Humble 已接入的模块由 supervisord 管理业务进程，Agent 提供聚合观测与控制：
+systemd 管理服务生命周期；Agent 统一聚合总包生成的 `managed` supervisord、模块包原生的 `external` supervisord，以及可选的模块包原生 `systemd` 服务：
 
 ```text
 systemd
 ├── Supervisor Agent :9080
-└── 模块服务 → supervisord → 业务进程
+├── managed 模块 → supervisord → 业务进程
+├── external 模块 → 模块原生 supervisord → 业务进程
+└── 可选 systemd 模块 → 原生 systemd 服务
 
-Web → Orin Agent :9080 → 本机模块 XML-RPC :19001～19005
+Web → Orin Agent :9080 → Orin XML-RPC 模块 :19001～19012
                       → PICO Agent :9080 → PICO 模块 XML-RPC
 ```
 
-`managed` 模块的 supervisord 和 systemd 配置由总包生成；`external` 模块复用模块包自己的 Supervisor。Humble 和 Jazzy Vision 均采用 systemd → supervisord → Vision，Jazzy 保留原服务名 `navi-vision-supervisor.service`，通过 19005 接入本机 Agent。
+`managed` 模块的 supervisord 和 systemd 配置由总包生成；`external` 模块复用模块包自己的 Supervisor；`systemd` 模块保留 DEB 的原生服务，由 Agent 通过 systemctl/journald 观测和控制。Humble 和 Jazzy Vision 均采用 systemd → supervisord → Vision，Jazzy 保留原服务名 `navi-vision-supervisor.service`，通过 19005 接入本机 Agent。
 
-后续新增模块必须通过 `supervisor_modules` 接入统一管理和观测：由总包托管或注册模块原生 Supervisor，不再新增绕过 supervisord 的直接启动路径。其他尚未接入的目标模块仍需逐项迁移，不代表目前所有目标已统一完成。
+后续新增模块必须通过 `supervisor_modules` 接入统一管理和观测：由总包托管为 `managed`、注册模块原生 Supervisor 为 `external`，或注册模块包原生 systemd 服务为 `systemd`。不再新增未被 Agent 注册的直接启动路径。其他尚未接入的目标模块仍需逐项迁移，不代表目前所有目标已统一完成。
 
 Humble 当前支持聚合与模块独立观测，均可查看状态、日志及启停进程。
+
+Orin Humble 导航、底盘与工具服务映射如下。每项都由独立 supervisord 管理，并通过 `:9080` 统一展示；供应商原 systemd 服务只作为迁移时停用的兼容项。
+
+| Agent 模块 | Supervisor 服务 / 端口 | 供应商原 systemd 服务（停用） |
+| --- | --- | --- |
+| `navigation` | `navi-orin-navigation-supervisor.service` / 19009 | `zj-humanoid-navigation.service` |
+| `chassis` | `navi-orin-chassis-supervisor.service` / 19004 | `zj-humanoid-chassis.service` |
+| `vanjee-lidar` | `navi-orin-vanjee-lidar-supervisor.service` / 19006 | `zj-humanoid-vanjee-lidar.service` |
+| `livox-lidar` | `navi-orin-livox-lidar-supervisor.service` / 19007 | `zj-humanoid-livox-lidar.service` |
+| `naviai-nav2` | `navi-orin-naviai-nav2-supervisor.service` / 19008 | `zj-humanoid-naviai-nav2.service` |
+| `naviai-nav2-rawdata` | `navi-orin-naviai-nav2-rawdata-supervisor.service` / 19010 | `zj-humanoid-naviai-nav2-rawdata.service` |
+| `diagnosis-system` | `navi-orin-diagnosis-system-supervisor.service` / 19011 | `zj-humanoid-diagnosis-system.service` |
+| `web-rviz` | `navi-orin-web-rviz-supervisor.service` / 19012 | `zj-humanoid-web-rviz-ros2.service` |
 
 Jazzy 本次接入 Vision；其 Agent 当前仅注册本机 Vision，不套用 Humble 的其他模块及 PICO 聚合配置。
 
 - **聚合页面**：`http://<Orin设备IP>:9080` 查看 Orin 和 PICO 模块；`http://192.168.217.66:9080` 查看 PICO 本机模块。无需账号密码，仅用于可信内网。
-- **模块页面**：访问下表 IP 和端口，用户名为 `agent`，固定密码为 `1`。
+- **模块 RPC 页面**：访问下表端口，用户名为 `agent`，固定密码为 `1`；测试和运维仍优先使用 `:9080`。
 
 | 设备 IP | 模块端口 |
 | --- | --- |
-| Orin：`192.168.217.100` | sensor 19001、robot 19002、audio 19003、chassis 19004、vision 19005 |
-| PICO：`192.168.217.66` | robot 19002、upperlimb 19003 |
+| Orin：`192.168.217.100` | sensor 19001、robot 19002、audio 19003、chassis 19004、vision 19005、vanjee 19006、livox 19007、nav2 19008、navigation 19009、rawdata 19010、diagnosis 19011、web-rviz 19012 |
+| PICO：`192.168.217.66` | robot 19002、upperlimb 19003、display 19004 |
 
-浏览器打开 `http://192.168.217.100:19004`（Orin chassis 示例），输入用户名 `agent`、密码 `1`。浏览器所在机器需能访问该设备内网 IP。已有设备重新安装新版总包后，旧密码会更新为 `1`。
+浏览器可打开 `http://192.168.217.100:19002`（Orin Robot 示例），输入用户名 `agent`、密码 `1`。浏览器所在机器需能访问该设备内网 IP。已有设备重新安装新版总包后，旧密码会更新为 `1`。
 
 测试与运维优先使用 `:9080`；`19001～` 为模块 RPC / 研发调试入口。后续可限制这些端口仅允许 Agent 访问，当前尚未实施该访问限制。
 

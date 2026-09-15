@@ -1,0 +1,23 @@
+name: imu_info
+# 中文名称: IMU信息
+
+sources:
+  imu_monitor:
+    tool: topic_monitor
+    params:
+      topic: /zj_humanoid/lowerlimb/imu
+
+fields:
+  imu_online:
+    source: imu_monitor
+    field: has_msg
+    description: IMU消息状态
+    type: bool
+    default: false
+
+  imu_hz:
+    source: imu_monitor
+    field: hz
+    description: IMU频率
+    type: double
+    default: 0.0

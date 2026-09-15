@@ -1,0 +1,34 @@
+name: agv_state
+# 中文名称: 小车状态
+
+sources:
+  agv_state_raw:
+    tool: topic_message
+    params:
+      topic: /zj_humanoid/chassis/agv_state
+      output_fields:
+        state: state
+        emergency: emergency
+        collision: collision
+
+fields:
+  agv_state_code:
+    source: agv_state_raw
+    field: state
+    description: 底盘状态码
+    type: int
+    default: 0
+
+  agv_emergency:
+    source: agv_state_raw
+    field: emergency
+    description: 急停状态
+    type: bool
+    default: false
+
+  agv_collision:
+    source: agv_state_raw
+    field: collision
+    description: 防撞条状态
+    type: bool
+    default: false

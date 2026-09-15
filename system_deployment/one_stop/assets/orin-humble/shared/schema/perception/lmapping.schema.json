@@ -1,0 +1,381 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "激光建图配置",
+  "description": "激光建图V2.0.0~V2.0.1完整配置",
+  "type": "object",
+  "role": ["engineer", "admin"],
+  "properties": {
+    "General": {
+      "title": "通用配置",
+      "description": "激光建图通用配置",
+      "type": "object",
+      "properties": {
+        "lid_topic": {
+          "title": "激光点云话题",
+          "description": "激光雷达点云话题名",
+          "type": "string",
+          "role": ["admin"]
+        },
+        "imu_topic": {
+          "title": "IMU话题",
+          "description": "IMU话题名",
+          "type": "string",
+          "role": ["admin"]
+        },
+        "save_path": {
+          "title": "保存路径",
+          "description": "地图保存路径",
+          "type": "string",
+          "role": ["admin"]
+        },
+        "previous_map": {
+          "title": "先验地图",
+          "description": "先验地图，格式为#D1:回环阈值,#D2:回环阈值",
+          "type": "string",
+          "role": ["admin"]
+        },
+        "session_name": {
+          "title": "会话名称",
+          "description": "本次建图会话名称",
+          "type": "string",
+          "role": ["admin"]
+        },
+        "lidar_type": {
+          "title": "雷达类型",
+          "description": "雷达型号类型，1为livox激光雷达",
+          "type": "integer",
+          "role": ["admin"]
+        },
+        "scan_line": {
+          "title": "扫描线数",
+          "description": "雷达扫描线数",
+          "type": "integer",
+          "role": ["admin"]
+        },
+        "strict_tag_en": {
+          "title": "严格标签开关",
+          "description": "是否开启严格标签过滤",
+          "type": "boolean",
+          "role": ["admin"]
+        },
+        "min_range": {
+          "title": "最小距离",
+          "description": "用于筛选点云的最小距离阈值，单位",
+          "type": "number",
+          "minimum": 0.1,
+          "role": ["admin"]
+        },
+        "max_range": {
+          "title": "最大距离",
+          "description": "用于筛选点云的最大距离阈值，单位m",
+          "type": "number",
+          "minimum": 30.0,
+          "role": ["admin"]
+        },
+        "min_intensity": {
+          "title": "最小强度",
+          "description": "用于筛选点云的最小反射强度阈值",
+          "type": "integer",
+          "role": ["admin"]
+        },
+        "max_intensity": {
+          "title": "最大强度",
+          "description": "用于筛选点云的最大反射强度阈值",
+          "type": "integer",
+          "role": ["admin"]
+        },
+        "point_filter_num": {
+          "title": "降采样参数",
+          "description": "用于降采样，1~scan_line之间，数值越大降采力度样越大，计算量越小",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "role": ["admin"]
+        },
+        "extrinsic_tran": {
+          "title": "外参平移",
+          "description": "IMU到激光雷达的外参平移，单位m",
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "role": ["admin"]
+        },
+        "extrinsic_rota": {
+          "title": "外参旋转",
+          "description": "IMU到激光雷达的外参旋转矩阵",
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "role": ["admin"]
+        },
+        "is_save_map": {
+          "title": "保存地图开关",
+          "description": "是否保存建图结果",
+          "type": "boolean",
+          "role": ["admin"]
+        }
+      },
+      "additionalProperties": false,
+      "role": ["admin", "engineer"]
+    },
+    "Odometry": {
+      "title": "里程计",
+      "description": "里程计相关配置",
+      "type": "object",
+      "properties": {
+        "max_init": {
+          "title": "最大初始化次数",
+          "description": "初始化阶段最大迭代次数",
+          "type": "integer",
+          "role": ["admin"]
+        },
+        "cov_gyr": {
+          "title": "陀螺仪噪声方差",
+          "description": "陀螺仪测量噪声方差",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "cov_acc": {
+          "title": "加速度计噪声方差",
+          "description": "加速度计测量噪声方差",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "rdw_gyr": {
+          "title": "陀螺仪随机游走",
+          "description": "陀螺仪随机游走噪声",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "rdw_acc": {
+          "title": "加速度计随机游走",
+          "description": "加速度计随机游走噪声",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "down_size": {
+          "title": "降采样体素分辨率",
+          "description": "里程计点云降采样体素分辨率，单位m",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "dept_err": {
+          "title": "测距方差",
+          "description": "对测距误差建模的方差",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "beam_err": {
+          "title": "测向方差",
+          "description": "对测向误差建模的方差",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "voxel_size": {
+          "title": "体素分辨率",
+          "description": "里程计局部地图体素分辨率，单位m",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "min_eigen_value": {
+          "title": "最小特征值",
+          "description": "平面检查1最小特征值阈值",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "degrade_bound": {
+          "title": "最大退化检测次数",
+          "description": "最大退化检测次数。长走廊等场景需要增大，否则必不成功",
+          "type": "integer",
+          "minimum": 10,
+          "role": ["admin"]
+        },
+        "point_notime": {
+          "title": "点云无时间戳",
+          "description": "点云是否无时间戳，1为无时间戳",
+          "type": "integer",
+          "role": ["admin"]
+        }
+      },
+      "additionalProperties": false,
+      "role": ["admin", "engineer"]
+    },
+    "LocalBA": {
+      "title": "局部优化",
+      "description": "局部BA优化相关配置",
+      "type": "object",
+      "properties": {
+        "win_size": {
+          "title": "滑窗大小",
+          "description": "local map的滑窗大小",
+          "type": "integer",
+          "role": ["admin"]
+        },
+        "max_layer": {
+          "title": "最大层数",
+          "description": "多分辨率地图最大层数",
+          "type": "integer",
+          "role": ["admin"]
+        },
+        "cov_gyr": {
+          "title": "陀螺仪噪声方差",
+          "description": "局部优化中陀螺仪测量噪声方差",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "cov_acc": {
+          "title": "加速度计噪声方差",
+          "description": "局部优化中加速度计测量噪声方差",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "rdw_gyr": {
+          "title": "陀螺仪随机游走",
+          "description": "局部优化中陀螺仪随机游走噪声",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "rdw_acc": {
+          "title": "加速度计随机游走",
+          "description": "局部优化中加速度计随机游走噪声",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "min_ba_point": {
+          "title": "最小BA点数",
+          "description": "参与BA优化的最小点数",
+          "type": "integer",
+          "role": ["admin"]
+        },
+        "plane_eigen_value_thre": {
+          "title": "平面特征值阈值",
+          "description": "不同层级的平面特征值阈值数组，用于检测平面点",
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "role": ["admin"]
+        },
+        "imu_coef": {
+          "title": "IMU权重",
+          "description": "IMU约束权重系数",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "thread_num": {
+          "title": "线程数",
+          "description": "局部优化使用的线程数",
+          "type": "integer",
+          "role": ["admin"]
+        }
+      },
+      "additionalProperties": false,
+      "role": ["admin", "engineer"]
+    },
+    "Loop": {
+      "title": "回环检测",
+      "description": "回环检测相关配置",
+      "type": "object",
+      "properties": {
+        "jud_default": {
+          "title": "回环分数阈值",
+          "description": "判断回环的分数阈值0~1之间，越低回环检测越容易，但也越容易导致地图变形",
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 1.0,
+          "role": ["admin", "engineer"]
+        },
+        "icp_eigval": {
+          "title": "ICP特征值阈值",
+          "description": "判断ICP是否成功的特征值阈值",
+          "type": "integer",
+          "role": ["admin"]
+        },
+        "ratio_drift": {
+          "title": "位置漂移比例",
+          "description": "判断回环是否正确的位置漂移比例，越小越严格",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "role": ["admin", "engineer"]
+        },
+        "rot_drift": {
+          "title": "姿态漂移角度",
+          "description": "判断回环是否正确的姿态漂移角度，越小越严格",
+          "type": "number",
+          "minimum": 0.0,
+          "role": ["admin", "engineer"]
+        },
+        "curr_halt": {
+          "title": "当前帧停滞阈值",
+          "description": "当前帧回环停滞次数阈值",
+          "type": "integer",
+          "role": ["admin"]
+        },
+        "prev_halt": {
+          "title": "历史帧停滞阈值",
+          "description": "历史帧回环停滞次数阈值",
+          "type": "integer",
+          "role": ["admin"]
+        },
+        "acsize": {
+          "title": "局部子地图大小",
+          "description": "大场景处理时间太长，需要增加，acsize大于mgsize",
+          "type": "integer",
+          "minimum": 10,
+          "role": ["admin", "engineer"]
+        },
+        "mgsize": {
+          "title": "单次子地图滑动量",
+          "description": "大场景处理时间太长，需要增加，mgsize小于acsize",
+          "type": "integer",
+          "minimum": 5,
+          "role": ["admin", "engineer"]
+        }
+      },
+      "additionalProperties": false,
+      "role": ["admin", "engineer"]
+    },
+    "GBA": {
+      "title": "全局优化",
+      "description": "全局BA优化相关配置",
+      "type": "object",
+      "properties": {
+        "voxel_size": {
+          "title": "根体素尺寸",
+          "description": "全局地图中根体素大小，单位m",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "min_eigen_value": {
+          "title": "最小特征值",
+          "description": "全局优化中平面检测最小特征值阈值",
+          "type": "number",
+          "role": ["admin"]
+        },
+        "eigen_value_array": {
+          "title": "特征值阈值数组",
+          "description": "全局优化中不同层级的平面检测特征值阈值数组",
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "role": ["admin"]
+        },
+        "total_max_iter": {
+          "title": "最大迭代次数",
+          "description": "全局优化总最大迭代次数",
+          "type": "integer",
+          "role": ["admin"]
+        }
+      },
+      "additionalProperties": false,
+      "role": ["admin", "engineer"]
+    }
+  },
+  "additionalProperties": false
+}

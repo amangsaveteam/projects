@@ -31,18 +31,85 @@ sudo ./navi_one_stop_installer-<version>.run -- --robot-type WA1
 
 ## 安装顺序
 
+### 附加配置目录与环境接口
+
+`package-urls.json → targets.orin-humble.config_files` 配置目录复制；`source` 相对仓库根目录，复制目录内的内容到 `destination`，`owner` 指定设备上的属主（组名默认相同）。这个接口也用于随总包部署只读辅助脚本，例如 Livox 自动识别脚本。示例：
+
+```json
+{"source": "system_deployment/one_stop/assets/orin-humble/perception/config", "destination": "/home/naviai/navi_project/config/perception", "owner": "naviai"}
+```
+
+源文件统一放在 `one_stop/assets/<target>/<module>/`。当前目录如下，根目录原来的三个文件夹已迁移，设备安装位置不变：
+
+```text
+assets/orin-humble/
+├── navigation/config/  → /home/naviai/navi_project/config/navigation/config
+├── perception/config/  → /home/naviai/navi_project/config/perception
+├── shared/schema/      → /home/naviai/navi_project/schema
+└── diangosis/config/   → /home/naviai/navi_project/tool/diangosis
+```
+
+导航配置已包含 6 个文件：`explicit_config.json`、`planner_config.json`、`robot_params.rx.json`、`robot_params.wa1.json`、`robot_params.wa2.json`、`topic_config.yaml`。安装时同名文件始终覆盖，不会因目标文件已存在而跳过，旧内容保留编号备份。
+
+后续可添加 `assets/pico-humble/display/config/`，然后在对应 target 的 `config_files` 增加映射。同名 `config` 通过平台和模块目录区分；每项须指定正确的设备目标目录，避免多个来源覆盖同一个目标文件。
+
+构建内嵌文件并记录 SHA-256；在模块安装后、服务启动前覆盖部署，原文件保留 `.~1~` 等编号备份，不删除目标目录的其他文件。设备须已存在对应用户/组；源目录不接受符号链接。
+
+配置编辑注册表是 `assets/orin-humble/shared/schema/version.json` 的 `ORIN.config`，不是总包版本文件 `one_stop/version.json`。已有 11 项配置；重启命令已映射为 `navi-orin-navigation-supervisor.service` 和 `navi-orin-naviai-nav2-supervisor.service`。当前该 schema 目录缺少 `navigation/topic_config.schema.json`，导航运行配置文件需由导航包提供；注册表不会自动生成这些文件。可用 `sudo python3 check_installation.py` 检查安装后的模板、目标文件及依赖包。
+
+安装器环境使用包条目的 `environment`；模块运行环境使用包条目的 `runtime` 或 `supervisor.json` 中的 `source_files`、`environment`、`prelude`。导航环境首装时由 `environment-defaults/orin-humble/navigation.env` 创建为设备上的 `/etc/naviai/navigation/navigation.env`，并由 Humble `Middleware.env` 加载。该文件后续安装保留不覆盖，可直接手动修改。
+
+- `ROBOT_TYPE`、`ROBOT_NAME`、`COMPOSE_PROFILES` 来自设备配置；`WA2_LS` 映射 `wa2`。
+- `ROS_DOMAIN_ID` 默认 72，`RMW_IMPLEMENTATION` 默认 CycloneDDS。
+- `NAVIGATION_ROBOT_MODEL` 默认取 `COMPOSE_PROFILES`，再回退 `wa2`；`NAVIGATION_CONFIG_PATH` 默认 `/home/naviai/navi_project/config/navigation`。
+- Livox 服务启动前会调用 `/usr/lib/naviai/detect_livox_model.py`，使用已安装的 Livox SDK 和 `LIVOX_LIDAR_IP` 识别 `MID360` / `MID360S`，成功后写入 `/etc/naviai/navigation/lidar.auto.env`。默认雷达 IP 为 `192.168.217.17`；如果传感器网络调整，在 `navigation.env` 修改 `LIVOX_LIDAR_IP`。SDK 的无配置广播发现模式在当前 SDK 包中会段错误，已禁用。`Middleware.env` 在没有手动值时加载此自动结果；探测失败保留上次结果，不会阻止 Livox 服务启动。
+- 如果网络拓扑不允许广播发现，或需要固定型号，在 `/etc/naviai/navigation/navigation.env` 中手动设置 `export LIDAR_3D_TYPE=MID360` 或 `MID360S`。手动值优先，服务启动时不再探测；不要直接修改 `lidar.auto.env`，它会在下一次成功探测时更新。
+- `ROS_LOG_DIR` 按模块启动配置设置；当前导航为 `/var/log/naviai/navigation/ros`，公共交互 shell 不保证设置该值。
+
+设备身份变量通过 Common 的配置工具修改，例如：
+
+```bash
+sudo python3 /usr/lib/navi-common-dep/deploy_common.py configure \
+  --target orin-humble --robot-type WA2_LS \
+  --robot-name zj_humanoid --ros-domain-id 72 --compose-profiles wa2
+```
+
+导航本地覆盖文件编辑后重启对应受管模块：
+
+```bash
+sudoedit /etc/naviai/navigation/navigation.env
+sudo systemctl restart navi-orin-navigation-supervisor.service
+sudo systemctl restart navi-orin-naviai-nav2-supervisor.service
+```
+
+修改 `LIDAR_3D_TYPE` 后还应重启 Livox 服务：
+
+```bash
+sudo systemctl restart navi-orin-livox-lidar-supervisor.service
+```
+
+查看自动识别结果：
+
+```bash
+sudo cat /etc/naviai/navigation/lidar.auto.env
+```
+
+查看通用环境时可执行 `source /etc/naviai/Middleware.env`，再查看 `ROBOT_TYPE`、`ROBOT_NAME`、`ROS_DOMAIN_ID`、`RMW_IMPLEMENTATION`、`COMPOSE_PROFILES`、`NAVIGATION_ROBOT_MODEL`、`NAVIGATION_CONFIG_PATH`、`LIDAR_3D_TYPE`。`ROS_LOG_DIR` 只在具体模块启动命令中设置。
+
+Orin Humble Common 依赖清单位于 `common/manifests/orin-humble/apt-packages.tsv`，已补充 Octomap、PCL、MCAP、SDL、FastAPI 等本次要求的依赖，ROS 包固定为 `ros-humble-*`。必须在 Ubuntu 22.04 arm64 构建机重新构建、发布 Common DEB，再重建总包；仅改清单不会更新云端旧 DEB。新增项最小版本为 0，具体可用版本和依赖闭包由构建机 APT 解析，需经目标母盘验证。
+
 ```text
 1. 自动识别 OS、OS 版本和 CPU 架构（或使用 --target 指定）
 2. 内嵌 system-config：写入 profile、Middleware、CycloneDDS 和设备身份
-3. extra_debs：使用构建阶段已下载并内嵌的工件，按 package-urls.json 的顺序 dpkg -i、执行安装器
+3. extra_debs：使用构建阶段已下载并内嵌的工件；同一 `install_group` 的 DEB 在一次 dpkg 事务中安装，再执行安装器
 4. runs：按 package-urls.json 的顺序执行；仅明确声明支持该参数的包接收 `--robot-type`
 5. supervisor：安装由 supervisor.json 定义的模块注册、`supervisord` 启动脚本和 systemd 服务
 ```
 
 ```text
-Orin Humble：chassis → sensor → robot → audio → vision
+Orin Humble：公共依赖 → 导航/底盘/工具 DEB 组 → sensor → robot → audio → vision
 Orin Jazzy ：chassis → sensor → robot → audio → vision
-Pico Humble：Pico common → upperlimb common → robot → upperlimb
+Pico Humble：Pico common → upperlimb common → robot → upperlimb → display
 Pico Jazzy ：upperlimb
 RDK Jazzy  ：当前仅 common / sensor 依赖
 ```
@@ -56,13 +123,27 @@ Orin Humble 在执行模块安装器前创建 Robot 的 `/var/lib/navi` 工作�
 
 ## Supervisor 服务
 
+Pico Humble 的 `display` 使用 `managed` 模式，RPC 为 `192.168.217.66:19004`，服务为 `navi-pico-display-supervisor.service`。启动优先级为 1，早于 Robot（10）和上肢（20）；此顺序用于总包安装收尾启动，不保证开机时不同 systemd 服务的启动顺序。`autorestart: "true"`、`startsecs: 0` 使已创建的进程正常或异常退出后持续重启，避免快速退出耗尽启动重试。人工停止仍有效，进程卡住或子节点退出但 launch 存活时不会自动恢复画面。启动时先加载公共 `/etc/nav01/Middleware.env`，再依次加载 `/opt/ros/humble/setup.bash` 和 `/opt/navi_display/ros/setup.bash`，执行 `ros2 launch media_play media_play.launch.py`；通过 Agent `:9080` 查看及启停。安装器暂按无参数调用配置；图形会话所需的环境变量若有额外要求，需由模块方提供。
+
+Orin Humble 新增 `manip` RUN（不传安装参数），其四个功能分别由 Supervisor 管理：
+
+| 模块 ID | RPC 端口 | 启动脚本（位于 `/opt/naviai/manip/functions/bin/`） |
+| --- | --- | --- |
+| `manip-segmentation` | 19013 | `start-segmentation.sh` |
+| `manip-sam6d` | 19014 | `start-sam6d.sh` |
+| `manip-lingbot` | 19015 | `start-lingbot.sh` |
+| `manip-hand-detect` | 19016 | `start-hand-detect.sh` |
+
+四项以 root 执行，均传入 `ROS_DOMAIN_ID=72`、`RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`、`ROS_LOCALHOST_ONLY=0`，通过 Agent `:9080` 查看和启停。脚本需保持前台运行并保留这些环境变量；若安装器另行启用原生服务，需确认服务名后停用，避免重复启动。
+
 不要再维护独立的 `supervised_stack` manifest。`supervisor.json` 的 target 内：
 
 - `supervisor` 是 Supervisor Agent 的 RPC、密码、运行目录和模块目录约定；
 - `supervisor_modules` 定义模块端点和受管服务；`external` 仅注册既有服务的 RPC，`managed` 会生成
-  `supervisord`、对应 systemd 单元及 Agent 的模块 JSON。
+  `supervisord`、对应 systemd 单元及 Agent 的模块 JSON，`systemd` 仅用于保留 DEB 已提供的原生 systemd 服务。
 
-Orin Humble 注册 chassis、sensor、robot、audio、vision。Orin 的 robot 由总包生成
+Orin Humble 注册 chassis、两个雷达、导航、Nav2、原始数据、诊断、Web RViz、sensor、robot、audio、vision。导航、底盘与工具
+DEB 组的八项业务服务以 `managed` 模式接入：总包生成独立 supervisord、Agent RPC 及 systemd 外层服务。总包不安装 `zj-humanoid-services`；若旧设备已有其 unit，会停用这些供应商原服务以避免重复启动。Orin 的 robot 由总包生成
 `navi-orin-robot-supervisor.service` 并使用 `19002`；Sensor 已由自身安装包原生维护
 Supervisor。总包在共享凭据就绪后，备份原配置并补齐 Sensor 的认证 TCP RPC（仅监听内网 19001），
 保留原生相机程序配置，再重启 `navi-sensor-host.service`；重复安装也会重新应用该配置。
@@ -117,7 +198,6 @@ Orin Humble 的云端 Orin common DEB 提供 Sensor 旧版依赖校验入口
 
 聚合界面的日志显示在对应进程下的独立面板中，服务状态刷新不会关闭面板；可手动刷新或关闭日志。
 受管模块使用非登录 shell 执行命令，以保留启动脚本设置的虚拟环境和 ROS 日志路径。
-Agent 密码初始化后会重启已安装的 chassis 服务（包括当前未运行的服务），使其重新生成 RPC 监听配置。
+Agent 密码初始化只写入固定凭据。安装收尾阶段会按 `startup_priority` 启用、重启并检查所有纳入管理的 Supervisor 服务。
 
-Chassis 使用原 `navi-orin-chassis.service` 接入 Supervisor（19004），替换厂商直接启动 ROS 的方式，避免并行启动重复节点。
-启动参数保留原生服务的 `namespace:=zj_humanoid`。
+Chassis、导航及工具 DEB 的业务命令由生成的 supervisord 启动，均拥有独立 RPC 端口；使用 `:9080` 统一查看和控制它们。

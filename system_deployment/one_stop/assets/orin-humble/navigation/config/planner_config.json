@@ -1,0 +1,103 @@
+ {
+  "strategy": {
+    "arrive_angle": 2.0,
+    "arrive_distance": 0.1,
+    "switch_target_distance": 0.5,
+    "stop_distance_thold": 1.0
+  },
+  "fault_diagnosis": {
+    "enable_fault_diagnosis": true,
+    "enable_no_glob_map_input_error": true,
+    "enable_no_loc_map_input_error": true,
+    "enable_no_odom_input_error": true,
+    "enable_odom_timeout_error": true,
+    "odom_timeout_sec": 2,
+    "enable_odom_delay_warning": true,
+    "odom_delay_sec": 1,
+    "enable_loc_map_timeout_error": true,
+    "loc_map_timeout_sec": 2,
+    "enable_loc_map_delay_warning": true,
+    "loc_map_delay_sec": 1,
+    "enable_invalid_goal_error": true,
+    "enable_unsafe_goal_pose_error": true,
+    "enable_unsafe_init_pose_error": true,
+    "enable_arrival_accuracy_error": true,
+    "max_planning_times": 5,
+    "enable_planning_failed_error": true,
+    "enable_blocked_by_obstacle_warning": true
+  },
+  "esdf_map": {
+    "order": 1,
+    "update_range": 10.0,
+    "perception_range": 10.0
+  },
+  "global_planner": {
+    "penalty": {
+      "k_reverse": 0.02,
+      "k_rotation": 0.03,
+      "k_curvature": 0.1,
+      "k_curvature_switch": 0.05,
+      "k_gear_switch": 0.1
+    },
+    "search": {
+      "step_length": 0.3,
+      "length_res": 0.05,
+      "step_angle": 30.0,
+      "angle_res": 5.0,
+      "min_connect_times": 20
+    },
+    "heuristic": {
+      "grid_length_res": 0.2,
+      "grid_angle_res": 15.0,
+      "grid_radius_offset": 3.0,
+      "safe_buffer":0.0
+    },
+    "terminal": {
+      "mandatory_straight_line": true,
+      "straight_line_length": 0.3
+    },
+    "approach": {
+      "enable": true,
+      "angle_res": 5.0,
+      "max_range": 0.5,
+      "clearance_buffer": 0.1
+    }
+  },
+  "lbfgs_optimizer": {
+    "safe_distance": 0.8,
+    "max_kappa": 0.5,
+    "smooth_weight": 100.0,
+    "curvature_weight": 0.0,
+    "obstacle_weight": 20.0,
+    "lbfgs_mem_size": 8,
+    "lbfgs_past": 3,
+    "lbfgs_min_step": 1.0e-32,
+    "lbfgs_g_epsilon":0.0,
+    "lbfgs_delta":5.0e-4,
+    "lbfgs_max_iterations":1000
+  },
+  "actuator_adapter": {
+    "mpc_horizon": 20,
+    "mpc_time_step": 0.1,
+    "control_index": 1,
+    "use_local_frame": true,
+    "extand_num": 4,
+    "extand_step": 0.5,
+    "q_x": 100.0,
+    "q_y": 100.0,
+    "q_phi": 200.0,
+    "q_u": 10.0,
+    "q_v": 10.0,
+    "q_r": 10.0,
+    "q_x_n": 100.0,
+    "q_y_n": 100.0,
+    "q_phi_n": 500.0,
+    "q_u_n": 10.0,
+    "q_v_n": 10.0,
+    "q_r_n": 10.0,
+    "r_ax": 0.5,
+    "r_ay": 0.5,
+    "r_alpha": 0.5
+  }
+
+}

@@ -1,0 +1,20 @@
+event:
+  name: CPU过载
+
+  enabled: true
+
+  rule:
+    field: cpu_usage_percent
+    op: greater_than
+    value: 95
+    for_seconds: 10
+
+  alarm:
+    major_code: "10"
+    minor_code: "001"
+    name: "CPU过载"
+    severity: 4
+    description: "主控CPU负载高于95%"
+    recovery: "请检查是否有异常进程占用资源"
+    use_tts: false
+    audio_path: ""

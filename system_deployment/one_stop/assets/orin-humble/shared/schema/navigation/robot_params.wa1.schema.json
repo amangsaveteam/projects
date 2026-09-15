@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WA1机器人参数配置",
+  "type": "object",
+  "role": ["admin", "engineer"],
+  "properties": {
+    "robot_name": {"type": "string", "title": "robot_name", "description": "机器人名称"},
+    "robot_type": {"type": "string", "title": "robot_type", "description": "机器人类型"},
+    "geom_params": {
+      "type": "object",
+      "title": "geom_params",
+      "properties": {
+        "length": {"type": "number", "title": "length", "minimum": 0, "description": "机器人长度", "unit": "m"},
+        "width": {"type": "number", "title": "width", "minimum": 0, "description": "机器人宽度", "unit": "m"},
+        "height": {"type": "number", "title": "height", "minimum": 0, "description": "机器人高度", "unit": "m"},
+        "rear_overhang": {"type": "number", "title": "rear_overhang", "minimum": 0, "description": "后悬长度", "unit": "m"}
+      },
+      "required": ["length", "width", "height", "rear_overhang"],
+      "additionalProperties": false
+    },
+    "dyn_params": {
+      "type": "object",
+      "title": "dyn_params",
+      "properties": {
+        "max_speed": {"type": "number", "title": "max_speed", "minimum": 0, "description": "最大速度", "unit": "m/s"},
+        "min_speed": {"type": "number", "title": "min_speed", "minimum": 0, "description": "最小速度", "unit": "m/s"},
+        "max_accel": {"type": "number", "title": "max_accel", "minimum": 0, "description": "最大加速度", "unit": "m/s²"},
+        "max_decel": {"type": "number", "title": "max_decel", "minimum": 0, "description": "最大减速度", "unit": "m/s²"},
+        "comfort_accel": {"type": "number", "title": "comfort_accel", "minimum": 0, "description": "舒适加速度", "unit": "m/s²"},
+        "comfort_decel": {"type": "number", "title": "comfort_decel", "minimum": 0, "description": "舒适减速度", "unit": "m/s²"},
+        "emergency_decel": {"type": "number", "title": "emergency_decel", "minimum": 0, "description": "紧急减速度", "unit": "m/s²"},
+        "max_yaw_rate": {"type": "number", "title": "max_yaw_rate", "minimum": 0, "description": "最大角速度", "unit": "rad/s"},
+        "min_yaw_rate": {"type": "number", "title": "min_yaw_rate", "minimum": 0, "description": "最小角速度", "unit": "rad/s"},
+        "max_yaw_accel": {"type": "number", "title": "max_yaw_accel", "minimum": 0, "description": "最大角加速度", "unit": "rad/s²"},
+        "max_yaw_decel": {"type": "number", "title": "max_yaw_decel", "minimum": 0, "description": "最大角减速度", "unit": "rad/s²"},
+        "comfort_yaw_accel": {"type": "number", "title": "comfort_yaw_accel", "minimum": 0, "description": "舒适角加速度", "unit": "rad/s²"},
+        "comfort_yaw_decel": {"type": "number", "title": "comfort_yaw_decel", "minimum": 0, "description": "舒适角减速度", "unit": "rad/s²"},
+        "emergency_yaw_decel": {"type": "number", "title": "emergency_yaw_decel", "minimum": 0, "description": "紧急角减速度", "unit": "rad/s²"},
+        "u_lb": {"type": "number", "title": "u_lb", "description": "纵向速度下限", "unit": "m/s"},
+        "u_ub": {"type": "number", "title": "u_ub", "description": "纵向速度上限", "unit": "m/s"},
+        "v_lb": {"type": "number", "title": "v_lb", "description": "横向速度下限", "unit": "m/s"},
+        "v_ub": {"type": "number", "title": "v_ub", "description": "横向速度上限", "unit": "m/s"},
+        "r_lb": {"type": "number", "title": "r_lb", "description": "角速度下限", "unit": "rad/s"},
+        "r_ub": {"type": "number", "title": "r_ub", "description": "角速度上限", "unit": "rad/s"},
+        "ax_lb": {"type": "number", "title": "ax_lb", "description": "纵向加速度下限", "unit": "m/s²"},
+        "ax_ub": {"type": "number", "title": "ax_ub", "description": "纵向加速度上限", "unit": "m/s²"},
+        "ay_lb": {"type": "number", "title": "ay_lb", "description": "横向加速度下限", "unit": "m/s²"},
+        "ay_ub": {"type": "number", "title": "ay_ub", "description": "横向加速度上限", "unit": "m/s²"},
+        "alpha_lb": {"type": "number", "title": "alpha_lb", "description": "角加速度下限", "unit": "rad/s²"},
+        "alpha_ub": {"type": "number", "title": "alpha_ub", "description": "角加速度上限", "unit": "rad/s²"},
+        "brake_distance": {"type": "number", "title": "brake_distance", "minimum": 0, "description": "制动距离", "unit": "m"},
+        "brake_angle_deg": {"type": "number", "title": "brake_angle_deg", "minimum": 0, "description": "制动角度阈值", "unit": "deg"},
+        "min_safe_distance": {"type": "number", "title": "min_safe_distance", "minimum": 0, "description": "最小安全距离", "unit": "m"},
+        "min_safe_angle_deg": {"type": "number", "title": "min_safe_angle_deg", "minimum": 0, "description": "最小安全角度", "unit": "deg"},
+        "min_turn_radius": {"type": "number", "title": "min_turn_radius", "minimum": 0, "description": "最小转弯半径", "unit": "m"},
+        "gear_min_time": {"type": "integer", "title": "gear_min_time", "minimum": 0, "description": "最小换挡时间", "unit": "ms"},
+        "static_min_time": {"type": "integer", "title": "static_min_time", "minimum": 0, "description": "最小静止时间", "unit": "ms"},
+        "static_max_speed": {"type": "number", "title": "static_max_speed", "minimum": 0, "description": "静止状态最大速度", "unit": "m/s"},
+        "static_max_yaw_rate": {"type": "number", "title": "static_max_yaw_rate", "minimum": 0, "description": "静止状态最大角速度", "unit": "rad/s"},
+        "rotatable": {"type": "boolean", "title": "rotatable", "description": "是否支持原地旋转"},
+        "reversible": {"type": "boolean", "title": "reversible", "description": "是否支持前后运动"},
+        "omni_wheeled": {"type": "boolean", "title": "omni_wheeled", "description": "是否为全向轮机器人"}
+      },
+      "required": ["max_speed", "min_speed", "max_accel", "max_decel", "comfort_accel", "comfort_decel", "emergency_decel", "max_yaw_rate", "min_yaw_rate", "max_yaw_accel", "max_yaw_decel", "comfort_yaw_accel", "comfort_yaw_decel", "emergency_yaw_decel", "u_lb", "u_ub", "v_lb", "v_ub", "r_lb", "r_ub", "ax_lb", "ax_ub", "ay_lb", "ay_ub", "alpha_lb", "alpha_ub", "brake_distance", "brake_angle_deg", "min_safe_distance", "min_safe_angle_deg", "min_turn_radius", "gear_min_time", "static_min_time", "static_max_speed", "static_max_yaw_rate", "rotatable", "reversible", "omni_wheeled"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["robot_name", "robot_type", "geom_params", "dyn_params"],
+  "additionalProperties": false
+}

@@ -2,6 +2,14 @@
   "schema_version": 1,
   "targets": {
     "orin-humble": {
+      "config_files": [
+        {"source": "system_deployment/one_stop/assets/orin-humble/navigation/config", "destination": "/home/naviai/navi_project/config/navigation/config", "owner": "naviai"},
+        {"source": "system_deployment/one_stop/environment-defaults/orin-humble", "destination": "/etc/naviai/navigation", "owner": "root", "overwrite": false},
+        {"source": "system_deployment/one_stop/tools/orin-humble", "destination": "/usr/lib/naviai", "owner": "root"},
+        {"source": "system_deployment/one_stop/assets/orin-humble/perception/config", "destination": "/home/naviai/navi_project/config/perception", "owner": "naviai"},
+        {"source": "system_deployment/one_stop/assets/orin-humble/shared/schema", "destination": "/home/naviai/navi_project/schema", "owner": "naviai"},
+        {"source": "system_deployment/one_stop/assets/orin-humble/diangosis/config", "destination": "/home/naviai/navi_project/tool/diangosis", "owner": "naviai"}
+      ],
       "device": "ORIN",
       "os_id": "ubuntu",
       "os_version": "22.04",
@@ -16,7 +24,7 @@
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/navi_common_dep-2.0.0-release-humble-arm64.deb",
           "sha256": "",
           "installers": [
-            "auto"
+            "/usr/sbin/install_common_deps.sh"
           ]
         },
         {
@@ -37,18 +45,161 @@
           "environment": {
             "PIP_NO_BUILD_ISOLATION": "1"
           }
+        },
+        {
+          "name": "chassis-msgs",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/chassis/release/msg_ros2/zj-humanoid-ros-humble-chassis-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "lidar-msgs",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/msg_ros2/zj-humanoid-ros-humble-lidar-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "map-server-msgs",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/map_server/release/msg_ros2/zj-humanoid-ros-humble-map-server-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "module-common-msgs",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/msg_ros2/zj-humanoid-ros-humble-module-common-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "naviai-localization-msgs",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/msg_ros2/zj-humanoid-ros-humble-naviai-localization-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "navigation-msgs",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/navigation/release/msg_ros2/zj-humanoid-ros-humble-navigation-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "navigation-dbg-msgs",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/navigation/release/msg_ros2/zj-humanoid-ros-humble-navigation-dbg-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "diagnosis-msgs",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/diagnosis/msg_ros2/zj-humanoid-ros-humble-diagnosis-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "naviai-log",
+          "version": "2204+latest-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/log/L3/release/zj_humanoid-naviai-log_2204%2Blatest-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "livox-sdk",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/livox_sdk/zj-humanoid-livox-sdk_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "chassis",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/chassis/release/chassis_ros2/zj-humanoid-ros-humble-chassis_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "vanjee-lidar",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/vanjee716/ros2/zj-humanoid-ros-humble-vanjee-716mini-lidar_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "livox-lidar",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/livox_lidar/ros2/zj-humanoid-ros-humble-livox-lidar_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "naviai-nav2",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_nav2/release/zj-humanoid-ros-humble-naviai-nav2_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services",
+          "wait_for_packages": [
+            "zj-humanoid-ros-humble-naviai-nav2-bringup"
+          ]
+        },
+        {
+          "name": "navigation",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/navigation/release/navigation_ros2/zj-humanoid-ros-humble-navigation_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "naviai-nav2-rawdata",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_nav2_rawdata/release/zj-humanoid-ros-humble-naviai-nav2-rawdata_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "diagnosis-system",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/diagnosis/release/zj-humanoid-ros-humble-diagnosis-system_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
+        },
+        {
+          "name": "web-rviz",
+          "version": "2.0.0-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/tool/web_rviz/release/zj-humanoid-web-rviz_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "navigation-chassis-services"
         }
       ],
       "runs": [
         {
-          "name": "chassis",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/chassis/develop/navi_chassis_orin_installer-2.0.0-release-humble-arm64.run",
+          "name": "manip",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/manipulation/develop/navi_manip_installer-2.0.0-release-humble-arm64.run",
           "sha256": "",
-          "arguments": [
-            "--",
-            "--robot-type",
-            "{robot_type}"
-          ]
+          "arguments": []
         },
         {
           "name": "sensor",
@@ -196,6 +347,12 @@
           "name": "upperlimb",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/upperlimb/develop/navi_pico_upperlimb_installer-2.0.0-release-humble-amd64.run",
           "sha256": ""
+        },
+        {
+          "name": "display",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/display/develop/navi_display_installer-2.0.0-release-humble-amd64.run",
+          "sha256": "",
+          "arguments": []
         }
       ]
     },

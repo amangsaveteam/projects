@@ -1,0 +1,19 @@
+event:
+  name: IMU通信丢失
+
+  enabled: false
+
+  rule:
+    field: imu_online
+    op: boolean_false
+    for_seconds: 0
+
+  alarm:
+    major_code: "20"
+    minor_code: "001"
+    name: "IMU通信丢失"
+    severity: 4
+    description: "IMU通信中断，机器人将失去平衡能力"
+    recovery: "IMU异常，重启重试或联系售后"
+    use_tts: true
+    audio_path: ""

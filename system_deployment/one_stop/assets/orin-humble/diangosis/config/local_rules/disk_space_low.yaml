@@ -1,0 +1,17 @@
+event:
+  name: 根分区空间不足
+
+  rule:
+    expr: (root_blocks_total - root_blocks_available) / root_blocks_total * 100
+    op: greater_than
+    value: 90
+
+  alarm:
+    major_code: "10"
+    minor_code: "003"
+    name: "根分区空间不足"
+    severity: 3
+    description: "系统存储空间不足"
+    recovery: "建议清理日志或导出历史数据"
+    use_tts: false
+    audio_path: ""

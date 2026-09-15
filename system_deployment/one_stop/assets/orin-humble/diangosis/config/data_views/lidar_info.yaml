@@ -1,0 +1,42 @@
+name: lidar_info
+# 中文名称: 雷达信息
+
+sources:
+  lidar_monitor:
+    tool: topic_monitor
+    params:
+      topic: /livox/lidar
+
+  lidar_point_metric:
+    tool: livox_lidar_metric
+    params:
+      topic: /livox/lidar
+
+fields:
+  lidar_online:
+    source: lidar_monitor
+    field: exists
+    description: 雷达在线状态
+    type: bool
+    default: false
+
+  lidar_has_msg:
+    source: lidar_monitor
+    field: has_msg
+    description: 雷达消息状态
+    type: bool
+    default: false
+
+  lidar_hz:
+    source: lidar_monitor
+    field: hz
+    description: 雷达频率
+    type: double
+    default: 0.0
+
+  lidar_point_num:
+    source: lidar_point_metric
+    field: point_num
+    description: 雷达点云数量
+    type: int
+    default: 0

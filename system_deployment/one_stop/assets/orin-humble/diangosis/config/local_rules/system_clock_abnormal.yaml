@@ -1,0 +1,25 @@
+event:
+  name: 系统时钟异常
+
+  rule:
+    op: or
+    conditions:
+      - field: ntp_offset_ms
+        op: greater_or_equal
+        value: 500
+      - field: ntp_offset_ms
+        op: less_or_equal
+        value: -500
+      - field: ntp_offset_ms
+        op: equals
+        value: 0
+
+  alarm:
+    major_code: "10"
+    minor_code: "004"
+    name: "系统时钟异常"
+    severity: 1
+    description: "系统时间异常"
+    recovery: "请检查NTP或时钟同步服务状态"
+    use_tts: false
+    audio_path: ""

@@ -189,7 +189,10 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
                 item["name"]: item["arguments"]
                 for item in config["targets"][target_name]["runs"]
             }
-            self.assertEqual(runs["chassis"], ["--", "--robot-type", "{robot_type}"])
+            if target_name == "orin-jazzy":
+                self.assertEqual(runs["chassis"], ["--", "--robot-type", "{robot_type}"])
+            else:
+                self.assertNotIn("chassis", runs)
             self.assertEqual(runs["sensor"], ["--", "--robot-type", "{robot_type}"])
             self.assertEqual(runs["robot"], [])
             self.assertEqual(runs["audio"], [])
@@ -492,19 +495,34 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
                 "orin-humble", "payloads/orin-humble/system-config", "", None, [], [],
                 [item[0] for item in startup], supervisor_startup=startup,
                 registrations=registrations, post_install=post_install, agent_service=paths, agent_payload=agent,
+                disabled_services=builder.supervisor_disabled_services("orin-humble", target),
             )
 
             robot_entrypoint = (stage / "targets/orin-humble/supervisor/robot/supervisor-entrypoint.sh").read_text(encoding="utf-8")
             audio_launch = (stage / "targets/orin-humble/supervisor/audio/launch.sh").read_text(encoding="utf-8")
             robot_unit = (stage / "targets/orin-humble/supervisor/robot/navi-orin-robot-supervisor.service").read_text(encoding="utf-8")
             robot_registration = (stage / "targets/orin-humble/supervisor/modules/robot.json").read_text(encoding="utf-8")
+            chassis_registration = (stage / "targets/orin-humble/supervisor/modules/chassis.json").read_text(encoding="utf-8")
+            chassis_launch = (stage / "targets/orin-humble/supervisor/chassis/launch.sh").read_text(encoding="utf-8")
+            livox_launch = (stage / "targets/orin-humble/supervisor/livox-lidar/launch.sh").read_text(encoding="utf-8")
             agent_unit_exists = (stage / "targets/orin-humble/supervisor-agent/navi-orin-supervisor-agent.service").is_file()
             agent_unit = (stage / "targets/orin-humble/supervisor-agent/navi-orin-supervisor-agent.service").read_text()
 
         self.assertEqual(
             {item[0] for item in startup},
             {
-                "navi-orin-chassis.service",
+                "navi-orin-chassis-supervisor.service",
+                "navi-orin-manip-segmentation-supervisor.service",
+                "navi-orin-manip-sam6d-supervisor.service",
+                "navi-orin-manip-lingbot-supervisor.service",
+                "navi-orin-manip-hand-detect-supervisor.service",
+                "navi-orin-vanjee-lidar-supervisor.service",
+                "navi-orin-livox-lidar-supervisor.service",
+                "navi-orin-navigation-supervisor.service",
+                "navi-orin-naviai-nav2-supervisor.service",
+                "navi-orin-naviai-nav2-rawdata-supervisor.service",
+                "navi-orin-diagnosis-system-supervisor.service",
+                "navi-orin-web-rviz-supervisor.service",
                 "navi-orin-robot-supervisor.service",
                 "navi-orin-audio-supervisor.service",
                 "navi-orin-vision-supervisor.service",
@@ -519,9 +537,14 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("pico_gateway_url:=ws://192.168.217.66:8765", audio_launch)
         self.assertIn("ExecStart=/bin/bash /etc/naviai/supervised-stack/robot/supervisor-entrypoint.sh", robot_unit)
         self.assertIn("http://192.168.217.100:19002/RPC2", robot_registration)
+        self.assertIn("http://192.168.217.100:19004/RPC2", chassis_registration)
+        self.assertIn("ros2 launch chassis chassis.launch.py", chassis_launch)
+        self.assertIn('detect_livox_model.py --lidar-ip "${LIVOX_LIDAR_IP:-192.168.217.17}" --timeout 4', livox_launch)
         self.assertIn("/etc/naviai/supervisor-agent/modules.d/robot.json", script)
         self.assertNotIn("configure_sensor_rpc.py", script)
         self.assertIn('"navi-sensor-host.service"', script)
+        self.assertIn("Disabling vendor service replaced by Supervisor: $unit", script)
+        self.assertIn("zj-humanoid-chassis.service", script)
         self.assertNotIn('[[ -f "/etc/systemd/system/$unit" ]]', script)
         self.assertIn("systemctl restart navi-orin-supervisor-agent.service", script)
         self.assertTrue(agent_unit_exists)
@@ -536,10 +559,28 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertNotIn("/bin/bash -lc", audio_launch)
         self.assertIn("exec ros2 launch navi_audio_pkg audio_bringup.launch.py", audio_launch)
 
-    def test_chassis_preserves_native_namespace(self) -> None:
+    def test_navigation_chassis_services_are_managed_by_supervisord(self) -> None:
         target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
         chassis = next(module for module in target["supervisor_modules"] if module["id"] == "chassis")
-        self.assertIn("namespace:=zj_humanoid", builder.supervisor_launch_script(chassis))
+        self.assertEqual(chassis["mode"], "managed")
+        self.assertEqual(chassis["port"], 19004)
+        self.assertEqual(chassis["disable_services"], ["zj-humanoid-chassis.service"])
+        services = builder.supervisor_systemd_services("orin-humble", target)
+        self.assertEqual(services, [])
+        disabled = builder.supervisor_disabled_services("orin-humble", target)
+        self.assertIn("zj-humanoid-chassis.service", disabled)
+        self.assertIn("zj-humanoid-navigation.service", disabled)
+
+    def test_nav2_background_package_is_waited_before_supervisor_services_start(self) -> None:
+        script = builder.target_install(
+            "orin-humble", "system-config", "", None,
+            [("payloads/nav2.deb", [], [], None, "navigation", ["zj-humanoid-ros-humble-naviai-nav2-bringup"])],
+            [], ["navi-orin-naviai-nav2-supervisor.service"],
+        )
+        self.assertIn("wait_for_debian_package()", script)
+        self.assertIn("wait_for_debian_package zj-humanoid-ros-humble-naviai-nav2-bringup", script)
+        self.assertLess(script.index("wait_for_debian_package zj-humanoid-ros-humble-naviai-nav2-bringup"),
+                        script.index("systemctl restart \"$unit\""))
 
     def test_native_services_restart_once_and_agent_failure_keeps_cleanup_active(self) -> None:
         for agent_status in (0, 7):
@@ -602,7 +643,12 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             robot = (stage / "targets/pico-humble/supervisor/modules/robot.json").read_text(encoding="utf-8")
             upperlimb = (stage / "targets/pico-humble/supervisor/modules/upperlimb.json").read_text(encoding="utf-8")
 
-        self.assertEqual(startup, [])
+            display_launch = (stage / "targets/pico-humble/supervisor/display/launch.sh").read_text()
+            self.assertLess(display_launch.index("/opt/ros/humble/setup.bash"),
+                            display_launch.index("/opt/navi_display/ros/setup.bash"))
+            self.assertIn("exec ros2 launch media_play media_play.launch.py", display_launch)
+
+        self.assertEqual([item[0] for item in startup], ["navi-pico-display-supervisor.service"])
         self.assertEqual(
             json.loads(robot)["modules"]["robot"]["endpoint"],
             "http://192.168.217.66:19002/RPC2",
@@ -622,12 +668,15 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         priorities = builder.supervisor_service_priorities("pico-humble", target)
         script = builder.target_install(
             "pico-humble", "payloads/pico-humble/system-config", "", None, [], [],
-            target["managed_services"], service_priorities=priorities,
+            target["managed_services"] + ["navi-pico-display-supervisor.service"], service_priorities=priorities,
         )
         robot = "navi-pico-robot-supervisor.service"
         upperlimb = "navi-pico-upperlimb.service"
         self.assertEqual(priorities[robot], 10)
         self.assertEqual(priorities[upperlimb], 20)
+        self.assertEqual(priorities["navi-pico-display-supervisor.service"], 1)
+        self.assertLess(script.index('"navi-pico-display-supervisor.service"'),
+                        script.index('"{}"'.format(robot)))
         self.assertLess(script.index('"{}"'.format(robot)),
                         script.index('"{}"'.format(upperlimb)))
         self.assertIn('systemctl is-active --quiet "$unit"', script)

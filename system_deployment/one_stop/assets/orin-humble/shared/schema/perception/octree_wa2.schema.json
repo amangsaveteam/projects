@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "局部地图配置",
+  "description": "局部地图配置",
+  "type": "object",
+  "role": ["engineer", "admin"],
+  "properties": {
+    "preference_yaml_path": {"title": "preference_yaml_path","type": "string","role": ["admin"],"description": "yaml配置文件路径，空时用默认话题名"},
+    "topic_args": {"title": "topic_args","type": "object","role": ["admin"],
+      "properties": {
+        "ros_node_id": {"title": "ros_node_id","type": "string","role": ["admin"],"description": "节点名"},
+        "global_topic_frame_id": {"title": "global_topic_frame_id","type": "string","role": ["admin"],"description": "栅格、局部地图坐标系"},
+        "localization_pose_topic_id": {"title": "localization_pose_topic_id","type": "string","role": ["admin"],"description": "定位pose话题"},
+        "odometer_pose_topic_id": {"title": "odometer_pose_topic_id","type": "string","role": ["admin"],"description": "里程计pose话题"},
+        "pose_aim_frame": {"title": "pose_aim_frame","type": "string","role": ["admin"],"description": "位姿目标坐标系"},
+        "pts_topic_ids": {"title": "pts_topic_ids","type": "array","role": ["admin"],"items": {"type": "string"},"description": "点云话题列表"},
+        "static_frames_pts": {"title": "static_frames_pts","type": "array","role": ["admin"],"items": {"type": "string"},"description": "点云坐标系列表"},
+        "voxel_topic_id": {"title": "voxel_topic_id","type": "string","role": ["admin"],"description": "栅格显示话题"},
+        "voxel_topic_namespace": {"title": "voxel_topic_namespace","type": "string","role": ["admin"],"description": "三维栅格命名空间"},
+        "flatten_grid_topic_namespace": {"title": "flatten_grid_topic_namespace","type": "string","role": ["admin"],"description": "二维网格命名空间"},
+        "flatten_full_map_pub_topic_id": {"title": "flatten_full_map_pub_topic_id","type": "string","role": ["admin"],"description": "局部地图发布话题"},
+        "box_arr_filter_topic": {"title": "box_arr_filter_topic","type": "string","role": ["admin"],"description": "框过滤话题"},
+        "errcode_topic": {"title": "errcode_topic","type": "string","role": ["admin"],"description": "错误码话题"},
+        "pts_repalce_from_yaml_list": {"title": "pts_repalce_from_yaml_list","type": "array","role": ["admin"],"items": {"type": "string"},"description": "yaml点云替换列表"},
+        "yaml_preference_node_name": {"title": "yaml_preference_node_name","type": "string","role": ["admin"],"description": "yaml节点名"},
+        "yaml_replace_list": {"title": "yaml_replace_list","type": "array","role": ["admin"],"items": {"type": "string"},"description": "yaml替换映射列表"}
+      },
+      "required": ["ros_node_id","global_topic_frame_id","localization_pose_topic_id","odometer_pose_topic_id","pose_aim_frame","pts_topic_ids","static_frames_pts","voxel_topic_id","voxel_topic_namespace","flatten_grid_topic_namespace","flatten_full_map_pub_topic_id","box_arr_filter_topic","errcode_topic","pts_repalce_from_yaml_list","yaml_preference_node_name","yaml_replace_list"],
+      "additionalProperties": false,
+      "description": "话题及坐标系参数"
+    },
+    "forest_base_args": {"title": "forest_base_args","type": "object","role": ["admin","engineer"],
+      "properties": {
+        "log_root_level_x": {"title": "log_root_level_x","type": "integer","role": ["admin"],"minimum": 0,"description": "x方向根数目，2的指数"},
+        "log_root_level_y": {"title": "log_root_level_y","type": "integer","role": ["admin"],"minimum": 0,"description": "y方向根数目，2的指数"},
+        "log_root_level_z": {"title": "log_root_level_z","type": "integer","role": ["admin"],"minimum": 0,"description": "z方向根数目，2的指数"},
+        "log_level_branch": {"title": "log_level_branch","type": "integer","role": ["admin"],"minimum": 0,"description": "根内分叉数目，2的指数"},
+        "log_level_leaf": {"title": "log_level_leaf","type": "integer","role": ["admin"],"minimum": 0,"description": "分叉内叶子数目，2的指数"},
+        "estimate_pts_num": {"title": "estimate_pts_num","type": "integer","role": ["admin","engineer"],"minimum": 1,"maximum": 200000,"description": "估计点云数目"},
+        "estimate_voxel_num": {"title": "estimate_voxel_num","type": "integer","role": ["admin"],"minimum": 1,"description": "估计地图体素数目"},
+        "resolution": {"title": "resolution","type": "number","role": ["admin"],"exclusiveMinimum": 0,"description": "地图体素分辨率"},
+        "angle_resolution": {"title": "angle_resolution","type": "number","role": ["admin"],"exclusiveMinimum": 0,"description": "地图角分辨率"},
+        "single_mode": {"title": "single_mode","type": "integer","role": ["admin"],"enum": [0,1],"description": "单帧模式"},
+        "frame_window": {"title": "frame_window","type": "integer","role": ["admin"],"minimum": 0,"description": "多帧累积帧数目"},
+        "extern_defined_range_x": {"title": "extern_defined_range_x","type": "number","role": ["admin"],"minimum": 0,"description": "外部指定x方向最大范围"},
+        "extern_defined_range_y": {"title": "extern_defined_range_y","type": "number","role": ["admin"],"minimum": 0,"description": "外部指定y方向最大范围"},
+        "extern_defined_range_z": {"title": "extern_defined_range_z","type": "number","role": ["admin"],"minimum": 0,"description": "外部指定z方向最大范围"}
+      },
+      "required": ["log_root_level_x","log_root_level_y","log_root_level_z","log_level_branch","log_level_leaf","estimate_pts_num","estimate_voxel_num","resolution","angle_resolution","single_mode","frame_window","extern_defined_range_x","extern_defined_range_y","extern_defined_range_z"],
+      "additionalProperties": false,
+      "description": "地图建树参数"
+    },
+    "optical_flow_args": {"title": "optical_flow_args","type": "object","role": ["admin"],
+      "properties": {
+        "optical_flow_on": {"title": "optical_flow_on","type": "boolean","role": ["admin"],"description": "是否打开此筛选"},
+        "catch_dist_adjust_mode": {"title": "catch_dist_adjust_mode","type": "integer","role": ["admin"],"minimum": 0,"description": "追踪距离修正模式"},
+        "catch_dist_angle_factor": {"title": "catch_dist_angle_factor","type": "number","role": ["admin"],"exclusiveMinimum": 0,"description": "距离判定系数"},
+        "voxel_filter_pts_occlusion_range": {"title": "voxel_filter_pts_occlusion_range","type": "number","role": ["admin"],"minimum": 0,"description": "点云追踪邻近点距离阈值"},
+        "voxel_filter_line_range": {"title": "voxel_filter_line_range","type": "number","role": ["admin"],"minimum": 0,"description": "点云点射线过栅格距离阈值"},
+        "voxel_filter_catch_dist_threshold": {"title": "voxel_filter_catch_dist_threshold","type": "number","role": ["admin"],"minimum": 0,"description": "栅格追踪距离阈值"},
+        "voxel_filter_catch_angle_threshold": {"title": "voxel_filter_catch_angle_threshold","type": "number","role": ["admin"],"minimum": 0,"description": "大入射角阈值"},
+        "pts_filter_voxel_occlusion_range": {"title": "pts_filter_voxel_occlusion_range","type": "number","role": ["admin"],"minimum": 0,"description": "栅格追踪邻近栅格距离阈值"},
+        "pts_filter_line_range": {"title": "pts_filter_line_range","type": "number","role": ["admin"],"minimum": 0,"description": "栅格点射线过点云距离阈值"},
+        "pts_filter_catch_dist_threshold": {"title": "pts_filter_catch_dist_threshold","type": "number","role": ["admin"],"minimum": 0,"description": "点云追踪距离阈值"},
+        "pts_filter_catch_angle_threshold": {"title": "pts_filter_catch_angle_threshold","type": "number","role": ["admin"],"minimum": 0,"description": "大入射角阈值"}
+      },
+      "required": ["optical_flow_on","catch_dist_adjust_mode","catch_dist_angle_factor","voxel_filter_pts_occlusion_range","voxel_filter_line_range","voxel_filter_catch_dist_threshold","voxel_filter_catch_angle_threshold","pts_filter_voxel_occlusion_range","pts_filter_line_range","pts_filter_catch_dist_threshold","pts_filter_catch_angle_threshold"],
+      "additionalProperties": false,
+      "description": "光追动态栅格参数"
+    },
+    "flatten_map_args": {"title": "flatten_map_args","type": "object","role": ["admin"],
+      "properties": {
+        "grade_threshold": {"title": "grade_threshold","type": "number","role": ["admin"],"description": "斜率过滤阈值"},
+        "height_threshold": {"title": "height_threshold","type": "number","role": ["admin"],"description": "断崖过滤高度"},
+        "z_min_threshold": {"title": "z_min_threshold","type": "number","role": ["admin"],"description": "三维z最小值"},
+        "z_max_threshold": {"title": "z_max_threshold","type": "number","role": ["admin"],"description": "三维z最大值"},
+        "map_x_range": {"title": "map_x_range","type": "number","role": ["admin"],"exclusiveMinimum": 0,"description": "二维地图x范围"},
+        "map_y_range": {"title": "map_y_range","type": "number","role": ["admin"],"exclusiveMinimum": 0,"description": "二维地图y范围"},
+        "map_resolution": {"title": "map_resolution","type": "number","role": ["admin"],"exclusiveMinimum": 0,"description": "二维地图分辨率"},
+        "map_filter": {"title": "map_filter","type": "array","role": ["admin"],"minItems": 3,"maxItems": 3,"items": {"type": "integer","minimum": 0},"description": "孤立点过滤器"}
+      },
+      "required": ["grade_threshold","height_threshold","z_min_threshold","z_max_threshold","map_x_range","map_y_range","map_resolution","map_filter"],
+      "additionalProperties": false,
+      "description": "三维向二维压平参数"
+    },
+    "pts_msg_filter_args": {"title": "pts_msg_filter_args","type": "object","role": ["admin","engineer"],
+      "properties": {
+        "x_min_threshold": {"title": "x_min_threshold","type": "number","role": ["admin"],"description": "过滤x最小值"},
+        "x_max_threshold": {"title": "x_max_threshold","type": "number","role": ["admin"],"description": "过滤x最大值"},
+        "y_min_threshold": {"title": "y_min_threshold","type": "number","role": ["admin"],"description": "过滤y最小值"},
+        "y_max_threshold": {"title": "y_max_threshold","type": "number","role": ["admin"],"description": "过滤y最大值"},
+        "z_min_threshold": {"title": "z_min_threshold","type": "number","role": ["admin","engineer"],"description": "过滤z最小值,出现明显地面时应当考虑调高"},
+        "z_max_threshold": {"title": "z_max_threshold","type": "number","role": ["admin"],"description": "过滤z最大值"},
+        "angle_resolution": {"title": "angle_resolution","type": "number","role": ["admin"],"description": "角度分辨率"},
+        "dist_threshold": {"title": "dist_threshold","type": "number","role": ["admin"],"exclusiveMinimum": 0,"description": "过滤距离"},
+        "symetric_angle_drop_min": {"title": "symetric_angle_drop_min","type": "number","role": ["admin"],"description": "角度过滤最小值"},
+        "symetric_angle_drop_max": {"title": "symetric_angle_drop_max","type": "number","role": ["admin"],"description": "角度过滤最大值"},
+        "symetric_center_x": {"title": "symetric_center_x","type": "number","role": ["admin"],"description": "传感器偏移x"},
+        "symetric_center_y": {"title": "symetric_center_y","type": "number","role": ["admin"],"description": "传感器偏移y"},
+        "symetric_drop_range": {"title": "symetric_drop_range","type": "number","role": ["admin"],"minimum": 0,"description": "点云水平过滤范围"},
+        "body_align_mode": {"title": "body_align_mode","type": "boolean","role": ["admin"],"description": "是否开启本体矫正模式"},
+        "local_coordinate_align": {"title": "local_coordinate_align","type": "boolean","role": ["admin"],"description": "是否进行本体坐标矫正"}
+      },
+      "required": ["x_min_threshold","x_max_threshold","y_min_threshold","y_max_threshold","z_min_threshold","z_max_threshold","angle_resolution","dist_threshold","symetric_angle_drop_min","symetric_angle_drop_max","symetric_center_x","symetric_center_y","symetric_drop_range","body_align_mode","local_coordinate_align"],
+      "additionalProperties": false,
+      "description": "点云过滤参数"
+    },
+    "box_pts_filter_args": {"title": "box_pts_filter_args","type": "object","role": ["admin","engineer"],
+      "properties": {
+        "box_center_x_list": {"title": "box_center_x_list","type": "array","role": ["admin","engineer"],"items": {"type": "number","minimum": -0.5,"maximum": 0.5},"description": "过滤框中心x"},
+        "box_center_y_list": {"title": "box_center_y_list","type": "array","role": ["admin","engineer"],"items": {"type": "number","minimum": -0.5,"maximum": 0.5},"description": "过滤框中心y"},
+        "box_center_z_list": {"title": "box_center_z_list","type": "array","role": ["admin","engineer"],"items": {"type": "number","minimum": -0.3,"maximum": 2.0},"description": "过滤框中心z"},
+        "box_range_x_list": {"title": "box_range_x_list","type": "array","role": ["admin","engineer"],"items": {"type": "number","minimum": 0,"maximum": 0.5},"description": "过滤框x半边长"},
+        "box_range_y_list": {"title": "box_range_y_list","type": "array","role": ["admin","engineer"],"items": {"type": "number","minimum": 0,"maximum": 0.5},"description": "过滤框y半边长"},
+        "box_range_z_list": {"title": "box_range_z_list","type": "array","role": ["admin","engineer"],"items": {"type": "number","minimum": 0,"maximum": 2.0},"description": "过滤框z半边长"}
+      },
+      "required": ["box_center_x_list","box_center_y_list","box_center_z_list","box_range_x_list","box_range_y_list","box_range_z_list"],
+      "additionalProperties": false,
+      "description": "框过滤点参数"
+    },
+    "body_filter_args": {"title": "body_filter_args","type": "object","role": ["admin","engineer"],
+      "properties": {
+        "box_estimate_num": {"title": "box_estimate_num","type": "integer","role": ["admin"],"minimum": 1,"description": "预计代表本体的框个数"},
+        "box_border_margin": {"title": "box_border_margin","type": "number","role": ["admin","engineer"],"minimum": 0,"maximum": 0.2,"description": "urdf框扩张边界"},
+        "body_norm2root_trans_mat": {"title": "body_norm2root_trans_mat","type": "array","role": ["admin"],"minItems": 12,"maxItems": 12,"items": {"type": "number"},"description": "根坐标系相对body系位姿"}
+      },
+      "required": ["box_estimate_num","box_border_margin","body_norm2root_trans_mat"],
+      "additionalProperties": false,
+      "description": "urdf动态位姿本体过滤参数"
+    },
+    "emergency_args": {"title": "emergency_args","type": "object","role": ["admin"],
+      "properties": {
+        "emergency_dist_x": {"title": "emergency_dist_x","type": "number","role": ["admin"],"description": "触发x距离"},
+        "emergency_dist_y": {"title": "emergency_dist_y","type": "number","role": ["admin"],"description": "触发y距离"},
+        "emergency_dist_range": {"title": "emergency_dist_range","type": "number","role": ["admin"],"description": "触发半径距离"},
+        "emergency_pts_margin": {"title": "emergency_pts_margin","type": "integer","role": ["admin"],"minimum": 0,"description": "触发点数阈值"},
+        "emergency_high_height": {"title": "emergency_high_height","type": "number","role": ["admin"],"description": "过滤高度上限"},
+        "emergency_low_height": {"title": "emergency_low_height","type": "number","role": ["admin"],"description": "过滤高度下限"},
+        "emergency_far_range": {"title": "emergency_far_range","type": "number","role": ["admin"],"minimum": 0,"description": "过滤半径"},
+        "emergency_resolution": {"title": "emergency_resolution","type": "number","role": ["admin"],"exclusiveMinimum": 0,"description": "判定网格分辨率"}
+      },
+      "required": ["emergency_dist_x","emergency_dist_y","emergency_dist_range","emergency_pts_margin","emergency_high_height","emergency_low_height","emergency_far_range","emergency_resolution"],
+      "additionalProperties": false,
+      "description": "软急停触发参数"
+    },
+    "extra_laser_args": {"title": "extra_laser_args","type": "object","role": ["admin"],
+      "properties": {
+        "estimate_laser_num": {"title": "estimate_laser_num","type": "integer","role": ["admin"],"minimum": 1,"description": "估计雷达点数"},
+        "scan_reserve_angle_min": {"title": "scan_reserve_angle_min","type": "number","role": ["admin"],"description": "有效扫描张角最小值"},
+        "scan_reserve_angle_max": {"title": "scan_reserve_angle_max","type": "number","role": ["admin"],"description": "有效扫描张角最大值"},
+        "scan_reserve_dist": {"title": "scan_reserve_dist","type": "number","role": ["admin"],"minimum": 0,"description": "忽略距离阈值"},
+        "to_body_norm_trans_mat": {"title": "to_body_norm_trans_mat","type": "array","role": ["admin"],"minItems": 12,"maxItems": 12,"items": {"type": "number"},"description": "到body系变换矩阵"}
+      },
+      "required": ["estimate_laser_num","scan_reserve_angle_min","scan_reserve_angle_max","scan_reserve_dist","to_body_norm_trans_mat"],
+      "additionalProperties": false,
+      "description": "后雷达2d激光参数"
+    },
+    "sensor_extra_trans_mat": {"title": "sensor_extra_trans_mat","type": "array","role": ["admin"],"minItems": 12,"maxItems": 12,"items": {"type": "number"},"description": "传感器安装位姿转换矩阵"},
+    "test_pose_id": {"title": "test_pose_id","type": "integer","role": ["admin"],"description": "测试位姿ID"}
+  },
+  "required": ["preference_yaml_path","topic_args","forest_base_args","optical_flow_args","flatten_map_args","pts_msg_filter_args","box_pts_filter_args","body_filter_args","emergency_args","extra_laser_args","sensor_extra_trans_mat","test_pose_id"],
+  "additionalProperties": false
+}

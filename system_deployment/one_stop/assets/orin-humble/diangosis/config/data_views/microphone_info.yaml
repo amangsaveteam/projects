@@ -1,0 +1,16 @@
+name: microphone_info
+# 中文名称: 麦克风阵列信息
+
+sources:
+  microphone_monitor:
+    tool: topic_monitor
+    params:
+      topic: /zj_humanoid/audio/microphone/audio_data_raw
+
+fields:
+  microphone_online:
+    source: microphone_monitor
+    field: has_msg
+    description: 麦克风阵列消息状态
+    type: bool
+    default: false

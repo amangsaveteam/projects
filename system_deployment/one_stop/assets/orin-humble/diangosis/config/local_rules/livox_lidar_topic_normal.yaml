@@ -1,0 +1,24 @@
+event:
+  name: Livox 雷达数据异常
+
+  enabled: false
+
+  rule:
+    op: or
+    conditions:
+      - field: lidar_online
+        op: boolean_false
+      - field: lidar_point_num
+        op: less_or_equal
+        value: 10000
+    for_seconds: 0
+
+  alarm:
+    major_code: "99"
+    minor_code: "002"
+    name: "Livox 雷达数据异常"
+    severity: 4
+    description: "激光雷达数据点数过少"
+    recovery: "请先检查时间戳是否正确，若时间戳正确，就重启sensor_lidar容器"
+    use_tts: true
+    audio_path: ""

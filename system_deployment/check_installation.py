@@ -20,22 +20,38 @@ TARGETS = {
 }
 MODULES = {
     "orin-humble": {
+        "manip-segmentation": ("navi-orin-manip-segmentation-supervisor.service", 19013, True),
+        "manip-sam6d": ("navi-orin-manip-sam6d-supervisor.service", 19014, True),
+        "manip-lingbot": ("navi-orin-manip-lingbot-supervisor.service", 19015, True),
+        "manip-hand-detect": ("navi-orin-manip-hand-detect-supervisor.service", 19016, True),
         "sensor": ("navi-sensor-host.service", 19001, False),
         "robot": ("navi-orin-robot-supervisor.service", 19002, True),
         "audio": ("navi-orin-audio-supervisor.service", 19003, True),
-        "chassis": ("navi-orin-chassis.service", 19004, True),
+        "chassis": ("navi-orin-chassis-supervisor.service", 19004, True),
+        "vanjee-lidar": ("navi-orin-vanjee-lidar-supervisor.service", 19006, True),
+        "livox-lidar": ("navi-orin-livox-lidar-supervisor.service", 19007, True),
+        "naviai-nav2": ("navi-orin-naviai-nav2-supervisor.service", 19008, True),
+        "navigation": ("navi-orin-navigation-supervisor.service", 19009, True),
+        "naviai-nav2-rawdata": ("navi-orin-naviai-nav2-rawdata-supervisor.service", 19010, True),
+        "diagnosis-system": ("navi-orin-diagnosis-system-supervisor.service", 19011, True),
+        "web-rviz": ("navi-orin-web-rviz-supervisor.service", 19012, True),
         "vision": ("navi-orin-vision-supervisor.service", 19005, True),
     },
     "orin-jazzy": {"vision": ("navi-vision-supervisor.service", 19005, True)},
     "pico-humble": {
         "robot": ("navi-pico-robot-supervisor.service", 19002, False),
         "upperlimb": ("navi-pico-upperlimb.service", 19003, False),
+        "display": ("navi-pico-display-supervisor.service", 19004, True),
     },
 }
 
 
 def key_values(path):
-    return dict(line.split("=", 1) for line in Path(path).read_text().splitlines()
+    return key_values_from_text(Path(path).read_text())
+
+
+def key_values_from_text(text):
+    return dict(line.split("=", 1) for line in text.splitlines()
                 if "=" in line and not line.lstrip().startswith("#"))
 
 
@@ -181,6 +197,8 @@ def run(args):
             for filename in ("launch.sh", "supervisor-entrypoint.sh"):
                 checks.file(config_dir + "/supervised-stack/" + name + "/" + filename)
             checks.file("/run/naviai/" + name + "/supervisord.conf")
+        if port is None:
+            continue
         def rpc(port=port):
             with xmlrpc.client.ServerProxy("http://agent:1@{}:{}/RPC2".format(ip, port),
                                           transport=Transport(args.timeout)) as proxy:
@@ -190,6 +208,44 @@ def run(args):
             return "{} processes RUNNING; authentication works".format(len(processes))
         checks.check(name + " direct RPC", rpc)
     if target == "orin-humble":
+        for package in ["ros-humble-rmw-cyclonedds-cpp","ros-humble-octomap-msgs","ros-humble-octomap-ros","ros-humble-octomap-server","ros-humble-pcl-ros","ros-humble-rosbag2-storage-mcap","ros-humble-mcap-vendor","liboctomap-dev","libcaca-dev","libcaca0","libslang2-dev","libsdl1.2-dev","libsdl1.2debian","libsdl-image1.2","libsdl-image1.2-dev","zstd","python3-uvicorn","python3-fastapi"]:
+            def dependency(package=package):
+                state = checks.command(["dpkg-query", "-W", "-f=${Status}", package])
+                if state != "install ok installed":
+                    raise ValueError(state)
+                return state
+            checks.check("dependency " + package, dependency)
+        def middleware_environment():
+            command = (
+                "source /etc/naviai/Middleware.env; "
+                "for key in ROBOT_TYPE ROBOT_NAME ROS_DOMAIN_ID RMW_IMPLEMENTATION "
+                "COMPOSE_PROFILES NAVIGATION_ROBOT_MODEL NAVIGATION_CONFIG_PATH LIDAR_3D_TYPE; do "
+                "printf '%s=%s\\n' \"$key\" \"${!key:-}\"; done"
+            )
+            output = checks.command([
+                "env", "-i", "PATH=/usr/sbin:/usr/bin:/sbin:/bin", "bash", "-c", command,
+            ])
+            values = key_values_from_text(output)
+            expected_type = key_values("/etc/zj_humanoid/device.env").get("ROBOT_TYPE")
+            if values.get("ROBOT_TYPE") != expected_type:
+                raise ValueError("ROBOT_TYPE does not match device.env")
+            if values.get("RMW_IMPLEMENTATION") != "rmw_cyclonedds_cpp":
+                raise ValueError("RMW_IMPLEMENTATION is not CycloneDDS")
+            for key in ("ROS_DOMAIN_ID", "COMPOSE_PROFILES", "NAVIGATION_ROBOT_MODEL", "NAVIGATION_CONFIG_PATH"):
+                if not values.get(key):
+                    raise ValueError("missing " + key)
+            return ", ".join("{}={}".format(key, values.get(key) or "<unset>") for key in values)
+        checks.check("Orin middleware environment", middleware_environment)
+        checks.file("/etc/naviai/navigation/navigation.env")
+        checks.file("/usr/lib/naviai/detect_livox_model.py")
+        def config_registry():
+            registry = json.loads(Path("/home/naviai/navi_project/schema/version.json").read_text())
+            entries = registry["ORIN"]["config"]
+            for entry in entries:
+                checks.file(entry["template"])
+                checks.file(entry["dst"])
+            return "{} configuration entries checked".format(len(entries))
+        checks.check("configuration registry", config_registry)
         for path in ("/etc/naviai/navi-sensor-host-supervisor.conf", "/etc/naviai/robot/robot_env.sh",
                      "/usr/lib/orin-vision-common-deb/vision_environment.sh"):
             checks.file(path)

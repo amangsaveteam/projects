@@ -1,0 +1,17 @@
+event:
+  name: CPU高温
+
+  rule:
+    field: cpu_temp_mc
+    op: greater_than
+    value: 90000
+
+  alarm:
+    major_code: "10"
+    minor_code: "002"
+    name: "CPU高温"
+    severity: 3
+    description: "主控温度过高"
+    recovery: "请改善通风环境并降低计算负载"
+    use_tts: false
+    audio_path: ""

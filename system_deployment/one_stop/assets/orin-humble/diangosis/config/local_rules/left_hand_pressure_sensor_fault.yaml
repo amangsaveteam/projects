@@ -1,0 +1,19 @@
+event:
+  name: 左手触觉传感器故障
+
+  enabled: false
+
+  rule:
+    field: left_hand_pressure_online
+    op: boolean_false
+    for_seconds: 0
+
+  alarm:
+    major_code: "20"
+    minor_code: "003"
+    name: "左手触觉传感器故障"
+    severity: 3
+    description: "左手灵巧手触觉反馈异常"
+    recovery: "左手触觉传感器故障，请检查传感器表面是否有异物。如果仍然异常，请联系售后"
+    use_tts: false
+    audio_path: ""

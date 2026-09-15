@@ -1,0 +1,19 @@
+event:
+  name: 麦克风阵列离线
+
+  enabled: false
+
+  rule:
+    field: microphone_online
+    op: boolean_false
+    for_seconds: 0
+
+  alarm:
+    major_code: "20"
+    minor_code: "004"
+    name: "麦克风阵列离线"
+    severity: 4
+    description: "当前麦克风故障"
+    recovery: "请联系售后检查硬件"
+    use_tts: false
+    audio_path: ""

@@ -1,0 +1,207 @@
+name: host_health
+# 中文名称: 机器健康状态
+
+sources:
+  cpu_raw:
+    tool: cpu_metric
+    params:
+      output_fields:
+        cpu_usage_percent: percent.cpu.usage
+        cpu_user_percent: percent.cpu.user
+        cpu_system_percent: percent.cpu.system
+        cpu_idle_percent: percent.cpu.idle
+        cpu_iowait_percent: percent.cpu.iowait
+        load_1m: loadavg.1m
+        cpu_temp_mc: thermal.thermal_zone0.temp
+
+  memory_raw:
+    tool: memory_metric
+    params:
+      output_fields:
+        mem_total_kb: meminfo.MemTotal
+        mem_free_kb: meminfo.MemFree
+        mem_available_kb: meminfo.MemAvailable
+        mem_buffers_kb: meminfo.Buffers
+        mem_cached_kb: meminfo.Cached
+        swap_total_kb: meminfo.SwapTotal
+        swap_free_kb: meminfo.SwapFree
+
+  disk_raw:
+    tool: disk_metric
+    params:
+      output_fields:
+        root_blocks_total: mounts./.blocks.total
+        root_blocks_available: mounts./.blocks.available
+        root_block_size: mounts./.blocks.size
+        root_inodes_total: mounts./.inodes.total
+        root_inodes_free: mounts./.inodes.free
+
+  time_raw:
+    tool: time_metric
+    params:
+      output_fields:
+        ntp_synced: ntp.synced
+        ntp_offset_ms: ntp.offset_ms
+        ntp_jitter_ms: ntp.jitter_ms
+        realtime_unix_sec: clock.realtime_unix_sec
+
+fields:
+  cpu_usage_percent:
+    source: cpu_raw
+    field: cpu_usage_percent
+    description: CPU总占用率
+    type: double
+
+  cpu_user_percent:
+    source: cpu_raw
+    field: cpu_user_percent
+    description: CPU user占比
+    type: double
+
+  cpu_system_percent:
+    source: cpu_raw
+    field: cpu_system_percent
+    description: CPU system占比
+    type: double
+
+  cpu_idle_percent:
+    source: cpu_raw
+    field: cpu_idle_percent
+    description: CPU idle占比
+    type: double
+
+  cpu_iowait_percent:
+    source: cpu_raw
+    field: cpu_iowait_percent
+    description: CPU iowait占比
+    type: double
+
+  load_1m:
+    source: cpu_raw
+    field: load_1m
+    description: 1分钟负载
+    type: double
+
+  cpu_temp_mc:
+    source: cpu_raw
+    field: cpu_temp_mc
+    description: CPU温度(毫摄氏度)
+    type: int
+    default: 0
+
+  mem_total_kb:
+    source: memory_raw
+    field: mem_total_kb
+    description: 总内存KB
+    type: int
+
+  mem_free_kb:
+    source: memory_raw
+    field: mem_free_kb
+    description: 空闲内存KB
+    type: int
+
+  mem_available_kb:
+    source: memory_raw
+    field: mem_available_kb
+    description: 可用内存KB
+    type: int
+
+  mem_buffers_kb:
+    source: memory_raw
+    field: mem_buffers_kb
+    description: Buffers内存KB
+    type: int
+    default: 0
+
+  mem_cached_kb:
+    source: memory_raw
+    field: mem_cached_kb
+    description: Cached内存KB
+    type: int
+    default: 0
+
+  swap_total_kb:
+    source: memory_raw
+    field: swap_total_kb
+    description: 总交换分区KB
+    type: int
+    default: 0
+
+  swap_free_kb:
+    source: memory_raw
+    field: swap_free_kb
+    description: 可用交换分区KB
+    type: int
+    default: 0
+
+  mem_usage_percent:
+    expr: (mem_total_kb - mem_available_kb) / mem_total_kb * 100
+    description: 内存使用率百分比
+    type: double
+    default: 0.0
+
+  swap_usage_percent:
+    expr: (swap_total_kb - swap_free_kb) / swap_total_kb * 100
+    description: 交换分区使用率百分比
+    type: double
+    default: 0.0
+
+  root_blocks_total:
+    source: disk_raw
+    field: root_blocks_total
+    description: 根分区总块数
+    type: int
+
+  root_blocks_available:
+    source: disk_raw
+    field: root_blocks_available
+    description: 根分区可用块数
+    type: int
+
+  root_block_size:
+    source: disk_raw
+    field: root_block_size
+    description: 根分区块大小
+    type: int
+
+  root_inodes_total:
+    source: disk_raw
+    field: root_inodes_total
+    description: 根分区inode总数
+    type: int
+    default: 0
+
+  root_inodes_free:
+    source: disk_raw
+    field: root_inodes_free
+    description: 根分区inode可用数
+    type: int
+    default: 0
+
+  root_usage_percent:
+    expr: (root_blocks_total - root_blocks_available) / root_blocks_total * 100
+    description: 根分区空间使用率百分比
+    type: double
+    default: 0.0
+
+  ntp_synced:
+    source: time_raw
+    field: ntp_synced
+    description: NTP同步状态
+    type: bool
+    default: false
+
+  ntp_offset_ms:
+    source: time_raw
+    field: ntp_offset_ms
+    description: NTP偏移毫秒
+    type: double
+    default: 0.0
+
+  ntp_jitter_ms:
+    source: time_raw
+    field: ntp_jitter_ms
+    description: NTP抖动毫秒
+    type: double
+    default: 0.0

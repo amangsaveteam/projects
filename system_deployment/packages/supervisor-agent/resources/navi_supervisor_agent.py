@@ -5,6 +5,7 @@ import argparse
 import http.client
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.parse
@@ -74,7 +75,33 @@ class Agent:
         url = "http://{}@{}:{}{}".format(credentials, endpoint.hostname, endpoint.port, endpoint.path or "/RPC2")
         return xmlrpc.client.ServerProxy(url, allow_none=True, transport=TimeoutTransport(self.timeout_seconds))
 
+    def systemd_status(self, module):
+        specification = self.modules[module]
+        service = specification["service"]
+        result = subprocess.run(
+            ["systemctl", "show", "--property=ActiveState,SubState,MainPID,ExecMainStatus", service],
+            text=True, capture_output=True, timeout=self.timeout_seconds, check=False,
+        )
+        if result.returncode:
+            raise OSError((result.stderr or result.stdout or "systemctl failed").strip())
+        values = dict(line.split("=", 1) for line in result.stdout.splitlines() if "=" in line)
+        active = values.get("ActiveState", "unknown")
+        state = "RUNNING" if active == "active" else "FATAL" if active == "failed" else "EXITED"
+        return {
+            "name": module, "reachable": True,
+            "processes": [{
+                "name": service, "state": state, "pid": int(values.get("MainPID", "0") or 0),
+                "description": "systemd: {} ({})".format(service, values.get("SubState", "unknown")),
+                "exit_status": int(values.get("ExecMainStatus", "0") or 0), "spawn_error": "",
+            }],
+        }
+
     def module_status(self, module):
+        if self.modules[module].get("type") == "systemd":
+            try:
+                return self.systemd_status(module)
+            except (OSError, ValueError, subprocess.SubprocessError) as error:
+                return {"name": module, "reachable": False, "error": str(error), "processes": []}
         try:
             processes = self.proxy(module).supervisor.getAllProcessInfo()
         except (OSError, ValueError, xmlrpc.client.Error) as error:
@@ -163,6 +190,14 @@ class Agent:
                     urllib.parse.quote(action, safe=""),
                 ),
             )
+        specification = self.modules[target_module]
+        if specification.get("type") == "systemd":
+            service = specification["service"]
+            if process != service or action not in {"start", "stop", "restart"}:
+                raise ValueError("unsupported systemd process action")
+            subprocess.run(["systemctl", action, service], timeout=self.timeout_seconds, check=True,
+                           text=True, capture_output=True)
+            return {"changed": True, "module": target_module, "process": process, "action": action}
         proxy = self.proxy(target_module).supervisor
         if action == "start":
             changed = proxy.startProcess(process, True)
@@ -191,6 +226,20 @@ class Agent:
                     length,
                 ),
             )
+        specification = self.modules[target_module]
+        if specification.get("type") == "systemd":
+            service = specification["service"]
+            if process != service:
+                raise ValueError("unknown systemd process")
+            result = subprocess.run(["journalctl", "--no-pager", "--output=short-iso", "--unit", service, "--lines=500"],
+                                    text=True, capture_output=True, timeout=self.timeout_seconds, check=False)
+            if result.returncode:
+                raise OSError((result.stderr or result.stdout or "journalctl failed").strip())
+            data = result.stdout
+            if offset > len(data):
+                offset = 0
+            return {"module": target_module, "process": process, "data": data[offset:offset + length],
+                    "next_offset": min(len(data), offset + length), "overflow": False}
         data, next_offset, overflow = self.proxy(target_module).supervisor.tailProcessStdoutLog(process, offset, length)
         return {"module": target_module, "process": process, "data": data, "next_offset": next_offset, "overflow": overflow}
 

@@ -1,0 +1,1905 @@
+{
+  "version": "v1.5.0",
+  "build_time": "20260903 11:07:20",
+  "branch_name": "",
+  "commit_id": "6b3368ec",
+  "device": "ORIN",
+  "branch_flag": "",
+  "commit_count": "",
+  "reversion": "1",
+  "__VERSION__": "V2",
+  "ORIN": {
+    "sys_env_version": "",
+    "build_time": "",
+    "branch_name": "",
+    "commit_id": "",
+    "user": "naviai",
+    "psd": "naviai@2024",
+    "scripts": {
+      "pre_install": [
+        {
+          "name": "pre_install deb",
+          "cmd": "cd .dists/pre_install && chmod +x ./*.deb && sudo dpkg -i ./*.deb",
+          "path": null
+        }
+      ],
+      "post_install": [],
+      "pre_uninstall": [],
+      "post_uninstall": []
+    },
+    "zjhrobot": null,
+    "modules": [
+      {
+        "name": "zj-humanoid-ros-noetic-map-server",
+        "version": "1.5.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/map_server/release/map_server_ros1/zj-humanoid-ros-noetic-map-server_1.5.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "map_server",
+        "version_id": "",
+        "path": ".dists/map_server/zj-humanoid-ros-noetic-map-server_1.5.0-0focal_arm64.deb",
+        "hash": "sha256:7dbe477e124c54a3e7f5d1999b3e53e25d7cacce474df9965bda5601f348cf74",
+        "suffix": ".deb",
+        "container": [
+          "map_server"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-navigation-core",
+        "version": "1.4.7-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/navigation/release/navigation/zj-humanoid-ros-noetic-navigation-core_1.4.7-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "navigation",
+        "version_id": "",
+        "path": ".dists/navigation/zj-humanoid-ros-noetic-navigation-core_1.4.7-0focal_arm64.deb",
+        "hash": "sha256:a900cd06e42b356661d90bf6b112a179256cd99c26771443d54cee83b0e7c276",
+        "suffix": ".deb",
+        "container": [
+          "navigation"
+        ]
+      },
+      {
+        "name": "kiss-matcher",
+        "version": "2.0.0-1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/third_party/kiss-matcher_2.0.0-1_arm64.deb",
+        "dependencies": [],
+        "dst": "perception",
+        "version_id": "",
+        "path": ".dists/perception/kiss-matcher_2.0.0-1_arm64.deb",
+        "hash": "sha256:35018cea66d1a402128cefa94c530b0bb6e1289ba6b4803d5efdb5d49c0db16f",
+        "suffix": ".deb",
+        "container": [
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-naviai-perception-msgs",
+        "version": "1.5.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/msg_ros1/zj-humanoid-ros-noetic-naviai-perception-msgs_1.5.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "perception",
+        "version_id": "",
+        "path": ".dists/perception/zj-humanoid-ros-noetic-naviai-perception-msgs_1.5.0-0focal_arm64.deb",
+        "hash": "sha256:837e0002b88e1014cc039d59ddd1e4806d9ca3670c02e6fe0894837c01eeb1b0",
+        "suffix": ".deb",
+        "container": [
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-location-core",
+        "version": "1.5.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/wa_location_core/zj-humanoid-location-core_1.5.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "perception",
+        "version_id": "",
+        "path": ".dists/perception/zj-humanoid-location-core_1.5.0-0focal_arm64.deb",
+        "hash": "sha256:b1e766feed82445254406b2198a0fc374528d207e569fe7da78e193a886db3d4",
+        "suffix": ".deb",
+        "container": [
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-location",
+        "version": "1.5.1-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/wa_location_ros1/zj-humanoid-ros-noetic-location_1.5.1-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "perception",
+        "version_id": "",
+        "path": ".dists/perception/zj-humanoid-ros-noetic-location_1.5.1-0focal_arm64.deb",
+        "hash": "sha256:1a78dca8133f83956aff66dbeb41690d840579e22d85ba8ce3523adf6036bb48",
+        "suffix": ".deb",
+        "container": [
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-rx-location",
+        "version": "1.4.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/rx_location_ros1/zj-humanoid-ros-noetic-rx-location_1.4.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "perception",
+        "version_id": "",
+        "path": ".dists/perception/zj-humanoid-ros-noetic-rx-location_1.4.0-0focal_arm64.deb",
+        "hash": "sha256:bbfb8c91042355791f7fe0dbd0e9c099ed72b2ddbbc2abe0fdda26a63ce4ed40",
+        "suffix": ".deb",
+        "container": [
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-mapping-core",
+        "version": "1.5.1-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/wa_mapping_core/zj-humanoid-mapping-core_1.5.1-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "perception",
+        "version_id": "",
+        "path": ".dists/perception/zj-humanoid-mapping-core_1.5.1-0focal_arm64.deb",
+        "hash": "sha256:8731e5e647bd6dc644ceda70da14c2e5288f980ca54a2e6a5eb01481669fb79e",
+        "suffix": ".deb",
+        "container": [
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-mapping",
+        "version": "1.5.1-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/mapping_ros1/zj-humanoid-ros-noetic-mapping_1.5.1-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "perception",
+        "version_id": "",
+        "path": ".dists/perception/zj-humanoid-ros-noetic-mapping_1.5.1-0focal_arm64.deb",
+        "hash": "sha256:fe598d4f86bda3bf5b979b6c3b1ecf018b789e75719947a92bc598d7223c403d",
+        "suffix": ".deb",
+        "container": [
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-perception-core",
+        "version": "1.5.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/perception_core/zj-humanoid-perception-core_1.5.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "perception",
+        "version_id": "",
+        "path": ".dists/perception/zj-humanoid-perception-core_1.5.0-0focal_arm64.deb",
+        "hash": "sha256:a744a6f1ad459755242b7b42c50c5ee890d4b24de443073377ea5a0affcbcd67",
+        "suffix": ".deb",
+        "container": [
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-perception",
+        "version": "1.5.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/perception_ros1/zj-humanoid-ros-noetic-perception_1.5.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "perception",
+        "version_id": "",
+        "path": ".dists/perception/zj-humanoid-ros-noetic-perception_1.5.0-0focal_arm64.deb",
+        "hash": "sha256:b4ea3713167ff5e482c76575315c1dbc44deb786fcfc28a7f6bf7a3e13a3a35b",
+        "suffix": ".deb",
+        "container": [
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-mid360s-dirver",
+        "version": "1.0.0-0focal-1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/MID360S/ros1/zj-humanoid-ros-noetic-mid360s-dirver_1.0.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "sensor_lidar",
+        "version_id": "",
+        "path": ".dists/sensor_lidar/zj-humanoid-ros-noetic-mid360s-dirver_1.0.0-0focal_arm64.deb",
+        "hash": "sha256:15aaed2613f88819d79619c5950716a15af59dd496e2263e36adbd0cb94d133f",
+        "suffix": ".deb",
+        "container": [
+          "sensor_lidar"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-mid360-ros-driver2",
+        "version": "1.3.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/MID360/ros1/zj-humanoid-ros-noetic-mid360-ros-driver2_1.3.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "sensor_lidar",
+        "version_id": "",
+        "path": ".dists/sensor_lidar/zj-humanoid-ros-noetic-mid360-ros-driver2_1.3.0-0focal_arm64.deb",
+        "hash": "sha256:64cf1f9f9de08a84760938878e8240bff82ee9a5f1b9175b94d8e540d1cd0eea",
+        "suffix": ".deb",
+        "container": [
+          "sensor_lidar"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-vanjee-mini-lidar",
+        "version": "1.0.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/vanjee716/ros1/zj-humanoid-ros-noetic-vanjee-mini-lidar_1.0.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "perception",
+        "version_id": "",
+        "path": ".dists/perception/zj-humanoid-ros-noetic-vanjee-mini-lidar_1.0.0-0focal_arm64.deb",
+        "hash": "sha256:bd43a5994179817709ec50b01b6339d99ed52da8b33206a79a408cefb982a611",
+        "suffix": ".deb",
+        "container": [
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-diagnosis",
+        "version": "1.0.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/diagnosis/release/zj-humanoid-ros-noetic-diagnosis_1.0.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "tool",
+        "version_id": "",
+        "path": ".dists/tool/zj-humanoid-ros-noetic-diagnosis_1.0.0-0focal_arm64.deb",
+        "hash": "sha256:68c4f26726cbbf6eb3f83c1ccc30b202ad55c7bdec6de81bc0867de974649f48",
+        "suffix": ".deb",
+        "container": [
+          "tool"
+        ]
+      },
+      {
+        "name": "zj-humanoid-web-rviz",
+        "version": "1.1.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/tool/web_rviz/release/zj-humanoid-web-rviz_1.1.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "tool",
+        "version_id": "",
+        "path": ".dists/tool/zj-humanoid-web-rviz_1.1.0-0focal_arm64.deb",
+        "hash": "sha256:265b8d1935c327d44c576565460febb7ef0c0692e50bc0efc5c2c1c7005dd94f",
+        "suffix": ".deb",
+        "container": [
+          "tool"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-oak-driver",
+        "version": "1.0.1-dev1.4.0+135-90c3ec9jammy",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/oak_driver/develop/zj-humanoid-ros-noetic-oak-driver_1.0.1-dev1.4.0%2B135-90c3ec9jammy_arm64.deb",
+        "dependencies": [],
+        "dst": "sensor",
+        "version_id": "22.04",
+        "path": ".dists/sensor/zj-humanoid-ros-noetic-oak-driver_1.0.1-dev1.4.0+135-90c3ec9jammy_arm64.deb",
+        "hash": "sha256:a0c7ce58777e16c8ba89e7d2d7e30acf14716ace31f5e127f82eabd0fcfe869b",
+        "suffix": ".deb",
+        "container": [
+          "sensor"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-realsense2-camera",
+        "version": "2.3.2-dev1.4.0+119-3dbdfa2jammy",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/realsense2_camera/develop/zj-humanoid-ros-noetic-realsense2-camera_2.3.2-dev1.4.0%2B119-3dbdfa2jammy_all.deb",
+        "dependencies": [],
+        "dst": "sensor",
+        "version_id": "22.04",
+        "path": ".dists/sensor/zj-humanoid-ros-noetic-realsense2-camera_2.3.2-dev1.4.0+119-3dbdfa2jammy_all.deb",
+        "hash": "sha256:3f42ca24cc41672036f9b651d49811d335ac0fb568461bb1a96f5ab7e3901858",
+        "suffix": ".deb",
+        "container": [
+          "sensor"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-sensor-control",
+        "version": "1.1.1-dev1.4.0+161-ef2553djammy",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor_control/develop/zj-humanoid-ros-noetic-sensor-control_1.1.1-dev1.4.0%2B161-ef2553djammy_arm64.deb",
+        "dependencies": [],
+        "dst": "sensor",
+        "version_id": "22.04",
+        "path": ".dists/sensor/zj-humanoid-ros-noetic-sensor-control_1.1.1-dev1.4.0+161-ef2553djammy_arm64.deb",
+        "hash": "sha256:99c0b9c5131608405fdf12455d09a035e8b4b8933ebf09c327fc63c22cbb8061",
+        "suffix": ".deb",
+        "container": [
+          "sensor"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-gscam",
+        "version": "1.0.2-dev1.4.0+161-ef2553djammy",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/gscam/develop/zj-humanoid-ros-noetic-gscam_1.0.2-dev1.4.0%2B161-ef2553djammy_arm64.deb",
+        "dependencies": [],
+        "dst": "sensor",
+        "version_id": "22.04",
+        "path": ".dists/sensor/zj-humanoid-ros-noetic-gscam_1.0.2-dev1.4.0+161-ef2553djammy_arm64.deb",
+        "hash": "sha256:4206a128e1c0c00a4313eb9135c017713e3714b132a1d86db910a34d5c944c06",
+        "suffix": ".deb",
+        "container": [
+          "sensor"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-chassis",
+        "version": "1.4.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/chassis/release/chassis_ros1/zj-humanoid-ros-noetic-chassis_1.4.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "chassis",
+        "version_id": "",
+        "path": ".dists/chassis/zj-humanoid-ros-noetic-chassis_1.4.0-0focal_arm64.deb",
+        "hash": "sha256:6c47ca1855d98392dad80667aa36c449a9ae20df679f7d6c0ff5b46b557928a0",
+        "suffix": ".deb",
+        "container": [
+          "chassis"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-chassis",
+        "version": "1.5.1-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/chassis/release/chassis_ros1/zj-humanoid-ros-noetic-chassis_1.5.1-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "chassis",
+        "version_id": "",
+        "path": ".dists/chassis/zj-humanoid-ros-noetic-chassis_1.5.1-0focal_arm64.deb",
+        "hash": "sha256:119eefbc27b5542b2a154dffb572b62c62a792b96d860c52406d91341138edcd",
+        "suffix": ".deb",
+        "container": [
+          "chassis"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-charge-mode-msgs",
+        "version": "0.2.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/charge_mode_msgs/release/zj-humanoid-ros-noetic-charge-mode-msgs_0.2.0-0focal_all.deb",
+        "dependencies": [],
+        "dst": "chassis",
+        "version_id": "",
+        "path": ".dists/chassis/zj-humanoid-ros-noetic-charge-mode-msgs_0.2.0-0focal_all.deb",
+        "hash": "sha256:1010c37b6d0db2a6746bbf928043df827cad7ff831ae8faefd22162552b6d19e",
+        "suffix": ".deb",
+        "container": [
+          "chassis"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-charge-protocol-adapter",
+        "version": "0.2.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/charge_protocol_adapter/release/zj-humanoid-ros-noetic-charge-protocol-adapter_0.2.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "chassis",
+        "version_id": "",
+        "path": ".dists/chassis/zj-humanoid-ros-noetic-charge-protocol-adapter_0.2.0-0focal_arm64.deb",
+        "hash": "sha256:989729af18a0af964ec8c763ac6ad2613e9ef506e017e38deb092849f37c8c30",
+        "suffix": ".deb",
+        "container": [
+          "chassis"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-naviai-charge-mode",
+        "version": "0.2.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_charge_mode/release/zj-humanoid-ros-noetic-naviai-charge-mode_0.2.0-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "chassis",
+        "version_id": "",
+        "path": ".dists/chassis/zj-humanoid-ros-noetic-naviai-charge-mode_0.2.0-0focal_arm64.deb",
+        "hash": "sha256:ff6671a2142d8652e27ecde1cd7f10729dd51f6a5c323f88e65acfd5e0503a25",
+        "suffix": ".deb",
+        "container": [
+          "chassis"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-orin-robot",
+        "version": "1.0.1-feat1.4.0+42-f963c9efocal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/orin_robot/develop/zj-humanoid-ros-noetic-orin-robot_1.0.1-feat1.4.0%2B42-f963c9efocal_arm64.deb",
+        "dependencies": [],
+        "dst": "robot",
+        "version_id": "",
+        "path": ".dists/robot/zj-humanoid-ros-noetic-orin-robot_1.0.1-feat1.4.0+42-f963c9efocal_arm64.deb",
+        "hash": "sha256:e6d4ef64ee0ec303c5f51c4642424e7e53a607048566cb63056f45438d756958",
+        "suffix": ".deb",
+        "container": [
+          "robot"
+        ]
+      },
+      {
+        "name": "zj-humanoid-startup-sound",
+        "version": "1.0.11",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/startup_services/zj-humanoid-startup-sound_1.0.11_all.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/zj-humanoid-startup-sound_1.0.11_all.deb",
+        "hash": "sha256:fbef87f882e860f487df234a9148b4933d676bf6c5f6d2937cbc72aa5539ceb6",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-naviai-mic-driver",
+        "version": "1.2.3-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_mic_driver/release/zj-humanoid-ros-noetic-naviai-mic-driver_1.2.3-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "audio",
+        "version_id": "",
+        "path": ".dists/audio/zj-humanoid-ros-noetic-naviai-mic-driver_1.2.3-0focal_arm64.deb",
+        "hash": "sha256:08321523aedfb4dfb0ee6bcdee458d7a2dc930b5615725f302ce56b89a9c6ad6",
+        "suffix": ".deb",
+        "container": [
+          "audio"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-naviai-speaker",
+        "version": "1.2.8-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_speaker/release/zj-humanoid-ros-noetic-naviai-speaker_1.2.8-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "audio",
+        "version_id": "",
+        "path": ".dists/audio/zj-humanoid-ros-noetic-naviai-speaker_1.2.8-0focal_arm64.deb",
+        "hash": "sha256:54a346e169d70ba379e04cabf6fcdc5860cc597131b1c51685230c2c08d105be",
+        "suffix": ".deb",
+        "container": [
+          "audio"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-naviai-audio-launch",
+        "version": "1.1.1-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_audio_launch/release/zj-humanoid-ros-noetic-naviai-audio-launch_1.1.1-0focal_arm64.deb",
+        "dependencies": [],
+        "dst": "audio",
+        "version_id": "",
+        "path": ".dists/audio/zj-humanoid-ros-noetic-naviai-audio-launch_1.1.1-0focal_arm64.deb",
+        "hash": "sha256:2a583b950b8ba5781f2c050decd8c7f76580f84b13e75aeaa00115d3ce51e9b6",
+        "suffix": ".deb",
+        "container": [
+          "audio"
+        ]
+      },
+      {
+        "name": "zj-humanoid-battery-calib",
+        "version": "1.0.4",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/startup_services/zj-humanoid-battery-calib_1.0.4_all.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/zj-humanoid-battery-calib_1.0.4_all.deb",
+        "hash": "sha256:fb24ede1a379e9f2d56b29fa0050c6a9a24e6cb406e9376105c636f6815bec25",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "lsyncd",
+        "version": "2.2.3-1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/lsyncd_2.2.3-1_arm64.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/lsyncd_2.2.3-1_arm64.deb",
+        "hash": "sha256:139061c29d591ab7fb75d1d72c7bad447b25ae9c82902d8c3111b5fb58a32510",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "sshpass",
+        "version": "1.06-1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/sshpass_1.06-1_arm64.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/sshpass_1.06-1_arm64.deb",
+        "hash": "sha256:e8c703f354bdb60268d1e45537a1df0b13f28a6575b62cab843004a185d80da8",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-lsyncd-config",
+        "version": "0.1.1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/lsyncd-config/release/zj-humanoid-lsyncd-config_0.1.1_all.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/zj-humanoid-lsyncd-config_0.1.1_all.deb",
+        "hash": "sha256:be4f5368dd6196e7a269d9a82622314edf1aa7cda5c7e19397244530c81d09e7",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj_humanoid_types_dev",
+        "version": "v1.5.0%2B29756ae%2B116",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/run_package/develop/zj_humanoid_types_dev-v1.5.0%2B29756ae%2B116.run",
+        "dependencies": [],
+        "dst": "${HOME}/containers/shared",
+        "version_id": "",
+        "path": "containers/shared/zj_humanoid_types_dev-v1.5.0+29756ae+116.run",
+        "hash": "",
+        "suffix": "",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "at",
+        "version": "3.1.23-1ubuntu1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/at_3.1.23-1ubuntu1_arm64.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/at_3.1.23-1ubuntu1_arm64.deb",
+        "hash": "sha256:9ac63de27174c671effb6d65b6db47f4d7e20ec75025719d181a8229eca286ba",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "libfl2",
+        "version": "2.6.4-6.2",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/libfl2_2.6.4-6.2_arm64.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/libfl2_2.6.4-6.2_arm64.deb",
+        "hash": "sha256:87e9634941018bcfc24c37e23516e25bed9e9cadec7ac1aa629edc614fb01b85",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "lrzsz",
+        "version": "0.12.21-10",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/lrzsz_0.12.21-10_arm64.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/lrzsz_0.12.21-10_arm64.deb",
+        "hash": "sha256:5ea28d0707474db113145f8791d9bb372b05f2a928ed06521db04e95b9162d51",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "debsums",
+        "version": "3.0.2",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/debsums_3.0.2_all.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/debsums_3.0.2_all.deb",
+        "hash": "sha256:00e96359036e96e3bd3235399d7c33e62f67d76621a90fb7383ec03f37f00f97",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "libfile-fnmatch-perl",
+        "version": "0.02-2build8",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/libfile-fnmatch-perl_0.02-2build8_arm64.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "22.04",
+        "path": ".dists/pre_install/libfile-fnmatch-perl_0.02-2build8_arm64.deb",
+        "hash": "sha256:6050d0019087ff0ff35644367e135b04a7314ff5e9b3b49f3ba2c486f20c11e1",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "pigz",
+        "version": "2.4-1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/pigz_2.4-1_arm64.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/pigz_2.4-1_arm64.deb",
+        "hash": "sha256:24a7efc4f258840bb8b405299d7c8a5f936952ecddf3e46a50b423bdb5245145",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "pv",
+        "version": "1.6.6-1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/pv_1.6.6-1_arm64.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/pv_1.6.6-1_arm64.deb",
+        "hash": "sha256:ada72f430e69f4c8b295ee4ad18ddb6d5cd4f44a25f951bb135526a223e49a2b",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "v4l-utils",
+        "version": "1.22.1-2build1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/v4l-utils_1.22.1-2build1_arm64.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "22.04",
+        "path": ".dists/pre_install/v4l-utils_1.22.1-2build1_arm64.deb",
+        "hash": "sha256:a72658b359f020257d50c1e864ca80a87853941db5f2764f5fedd83e24c622ab",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "libv4l2rds0",
+        "version": "1.22.1-2build1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/libv4l2rds0_1.22.1-2build1_arm64.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "22.04",
+        "path": ".dists/pre_install/libv4l2rds0_1.22.1-2build1_arm64.deb",
+        "hash": "sha256:331f15ead17d0ded88ebfc87584e036b5e4e81b58511f3e3d95f3ee11803bddc",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-usb-cams-udev-rules",
+        "version": "1.0.0-1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/usb_cams_udev_rules/zj-humanoid-usb-cams-udev-rules_1.0.0-1_all.deb",
+        "dependencies": [],
+        "dst": "pre_install",
+        "version_id": "",
+        "path": ".dists/pre_install/zj-humanoid-usb-cams-udev-rules_1.0.0-1_all.deb",
+        "hash": "sha256:c49bb9a261f2d4d1d64b599eb4e61b1b95dabfdfba3a0eec24261120d7a8eb6e",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-audio",
+        "version": "1.2.4-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:be5db168fb6ab46b5b3e5e8feee45b1f60358299850f7be0d6fafe5409f149f7",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-chassis-msgs",
+        "version": "1.4.2-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:b61d005d0446c62c1b1b44474e5f0c7232ace4efd4f36379ab445b9ed50798a4",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-diagnosis-msgs",
+        "version": "0.1.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:7b6577f55d8dec96ccd3312cbb74d3a8a87534560f05e4aaffd425a1dc7b7169",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-hand",
+        "version": "1.3.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:d4ff3e03e3d97fff7c544900abf71df860e99971823565dc062ff7965fcb1885",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-led-controller-msgs",
+        "version": "1.0.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:0f44ba4faa7584aa8f11e8f84f53a52f5b5e10be77a7fe6123a65d3ec9c9e9c6",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-legged-messages",
+        "version": "1.0.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:c97299e3084a41a5b368a6cc52346c76fbee29a85e6a760296f5a4479893535f",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-livox-ros-driver2",
+        "version": "1.3.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:7579620a01663e31fbec72fb3be103b4e03697fdf0b3f8709c589037bf50f2a8",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-manipulation",
+        "version": "1.0.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:e289c62c1a2c6349ba9b19c0add420c1655ae7a712dee5185505deb79ae4b4d6",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-map-server-msgs",
+        "version": "1.3.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:5c68e6d300a261a7cadd329bddd30ded4c860f789d8eac28dc094fc0d49ab9ed",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-module-common-msgs",
+        "version": "1.3.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:0d30d8c219f53f95a94e5574e41e776982173678706232c39a5ec40a2403891d",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-naviai-localization-msgs",
+        "version": "1.5.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:54a07bf8dd489500bed3ccf256eb477cb94122ec17aea0f9113fc65a26da0708",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-navigation-dbg",
+        "version": "1.5.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:7602d8fd1b40036286b6eea3fe156af598015568513c8345d9a46c1301544bae",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-navigation",
+        "version": "1.3.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:be489d0be5f9256778b762ae7b6967942c669254441f9f389c274e48eba4652e",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-sensor",
+        "version": "1.0.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:2aa995a4e6d6334d02454082dd061f592720981b10aba52c910a84c880698b54",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-upperlimb",
+        "version": "2.0.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:70ac6305da1811b5a3c2a8ad354166aa59c6f650e273e69327afabefe13b596c",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-zj-robot",
+        "version": "1.4.1-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:8539eb079025f36da033a2c05810196c02037acf3b6132e4e54201b51a304fe3",
+        "suffix": ".deb",
+        "container": [
+          "sensor",
+          "sensor_lidar",
+          "demos",
+          "robot",
+          "audio",
+          "navbrain_ros",
+          "rosbridge",
+          "perception"
+        ]
+      }
+    ],
+    "resources": [
+      {
+        "device_path": "",
+        "url": "",
+        "local_path": ""
+      }
+    ],
+    "containers": [
+      {
+        "name": "roscore_service",
+        "image": "10.51.33.201:30002/navi_project/environment:ros1_runtime_260807",
+        "tag": null,
+        "hash": "sha256:b593c611e59f997630816e72e65645c8e94bd3dd4886e8d6747bc4c18cf0475d"
+      },
+      {
+        "name": "sensor",
+        "image": "10.51.33.201:30002/navi_project/sensor:20CUDA",
+        "tag": null,
+        "hash": "sha256:4261bd311af4238225e4500d4e08a04a7479e01654bff76e943403436690ff9f"
+      },
+      {
+        "name": "sensor",
+        "image": "10.51.33.201:30002/navi_project/sensor:22CUDA_v1",
+        "tag": null,
+        "hash": "sha256:72ddbb5f745fe4ddf5fe77a5374d09eee9cc7d67332c219afb598d07b79d9269"
+      },
+      {
+        "name": "sensor_lidar",
+        "image": "10.51.33.201:30002/navi_project/environment:ros1_runtime_260807",
+        "tag": null,
+        "hash": "sha256:b593c611e59f997630816e72e65645c8e94bd3dd4886e8d6747bc4c18cf0475d"
+      },
+      {
+        "name": "demos",
+        "image": "10.51.33.201:30002/navi_project/environment:ros1_runtime_260807",
+        "tag": null,
+        "hash": "sha256:b593c611e59f997630816e72e65645c8e94bd3dd4886e8d6747bc4c18cf0475d"
+      },
+      {
+        "name": "robot",
+        "image": "10.51.33.201:30002/navi_project/environment:ros1_runtime_260807",
+        "tag": null,
+        "hash": "sha256:b593c611e59f997630816e72e65645c8e94bd3dd4886e8d6747bc4c18cf0475d"
+      },
+      {
+        "name": "audio",
+        "image": "10.51.33.201:30002/navi_project/audio:v1.1.1",
+        "tag": null,
+        "hash": "sha256:fccf489bc50fb0edf1acfd7b0c8a1f826a64fb3cd9d9f31a76a4e0b0de86fca2"
+      },
+      {
+        "name": "navbrain_ros",
+        "image": "10.51.33.201:30002/navi_project/navbrain_ros:v2.2.product_fix_6_30",
+        "tag": null,
+        "hash": "sha256:ed69137767a58890924fdf6856fd1ac5d92d21dfe08b9f718b277229a0478ce7"
+      },
+      {
+        "name": "rosbridge",
+        "image": "10.51.33.201:30002/navi_project/environment:ros1_runtime_260807",
+        "tag": null,
+        "hash": "sha256:b593c611e59f997630816e72e65645c8e94bd3dd4886e8d6747bc4c18cf0475d"
+      },
+      {
+        "name": "perception",
+        "image": "10.51.33.201:30002/navi_project/environment:ros1_runtime_260807",
+        "tag": null,
+        "hash": "sha256:b593c611e59f997630816e72e65645c8e94bd3dd4886e8d6747bc4c18cf0475d"
+      },
+      {
+        "name": "map_server",
+        "image": "10.51.33.201:30002/navi_project/environment:ros1_runtime_260807",
+        "tag": null,
+        "hash": "sha256:b593c611e59f997630816e72e65645c8e94bd3dd4886e8d6747bc4c18cf0475d"
+      },
+      {
+        "name": "navigation",
+        "image": "10.51.33.201:30002/navi_project/environment:ros1_runtime_260807",
+        "tag": null,
+        "hash": "sha256:b593c611e59f997630816e72e65645c8e94bd3dd4886e8d6747bc4c18cf0475d"
+      },
+      {
+        "name": "chassis",
+        "image": "10.51.33.201:30002/navi_project/environment:ros1_runtime_260807",
+        "tag": null,
+        "hash": "sha256:b593c611e59f997630816e72e65645c8e94bd3dd4886e8d6747bc4c18cf0475d"
+      },
+      {
+        "name": "novnc",
+        "image": "10.51.33.201:30002/navi_project/environment:ros1_runtime_260807",
+        "tag": null,
+        "hash": "sha256:b593c611e59f997630816e72e65645c8e94bd3dd4886e8d6747bc4c18cf0475d"
+      },
+      {
+        "name": "robot_viewer",
+        "image": "10.51.33.201:30002/navi_project/robot_viewer:v1.0.3",
+        "tag": null,
+        "hash": "sha256:82cb9c7f64c230de3620a0fe099b6e7036e787d511aa50b9ef0f56ac02912a5f"
+      },
+      {
+        "name": "tool",
+        "image": "10.51.33.201:30002/navi_project/environment:ros1_runtime_260807",
+        "tag": null,
+        "hash": "sha256:b593c611e59f997630816e72e65645c8e94bd3dd4886e8d6747bc4c18cf0475d"
+      }
+    ],
+    "config": [
+      {
+        "name": "navigation",
+        "template": "/home/naviai/navi_project/schema/navigation/explicit_config.schema.json",
+        "dst": "/home/naviai/navi_project/config/navigation/config/explicit_config.json",
+        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+      },
+      {
+        "name": "navigation",
+        "template": "/home/naviai/navi_project/schema/navigation/planner_config.schema.json",
+        "dst": "/home/naviai/navi_project/config/navigation/config/planner_config.json",
+        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+      },
+      {
+        "name": "navigation",
+        "template": "/home/naviai/navi_project/schema/navigation/robot_params.rx.schema.json",
+        "dst": "/home/naviai/navi_project/config/navigation/config/robot_params.rx.json",
+        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+      },
+      {
+        "name": "navigation",
+        "template": "/home/naviai/navi_project/schema/navigation/robot_params.wa1.schema.json",
+        "dst": "/home/naviai/navi_project/config/navigation/config/robot_params.wa1.json",
+        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+      },
+      {
+        "name": "navigation",
+        "template": "/home/naviai/navi_project/schema/navigation/robot_params.wa2.schema.json",
+        "dst": "/home/naviai/navi_project/config/navigation/config/robot_params.wa2.json",
+        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+      },
+      {
+        "name": "navigation",
+        "template": "/home/naviai/navi_project/schema/navigation/topic_config.schema.json",
+        "dst": "/home/naviai/navi_project/config/navigation/config/topic_config.yaml",
+        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+      },
+      {
+        "name": "perception",
+        "template": "/home/naviai/navi_project/schema/perception/lmapping.schema.json",
+        "dst": "/home/naviai/navi_project/config/perception/mid360.yaml",
+        "restart_policy": "sudo systemctl restart navi-orin-naviai-nav2-supervisor.service"
+      },
+      {
+        "name": "perception",
+        "template": "/home/naviai/navi_project/schema/perception/octree_wa1.schema.json",
+        "dst": "/home/naviai/navi_project/config/perception/config_wa1.json",
+        "restart_policy": "sudo systemctl restart navi-orin-naviai-nav2-supervisor.service"
+      },
+      {
+        "name": "perception",
+        "template": "/home/naviai/navi_project/schema/perception/octree_wa2.schema.json",
+        "dst": "/home/naviai/navi_project/config/perception/config_wa2.json",
+        "restart_policy": "sudo systemctl restart navi-orin-naviai-nav2-supervisor.service"
+      },
+      {
+        "name": "perception",
+        "template": "/home/naviai/navi_project/schema/perception/lio.schema.json",
+        "dst": "/home/naviai/navi_project/config/perception/mid360_wa1.yaml",
+        "restart_policy": "sudo systemctl restart navi-orin-naviai-nav2-supervisor.service"
+      },
+      {
+        "name": "perception",
+        "template": "/home/naviai/navi_project/schema/perception/lio.schema.json",
+        "dst": "/home/naviai/navi_project/config/perception/mid360_wa2.yaml",
+        "restart_policy": "sudo systemctl restart navi-orin-naviai-nav2-supervisor.service"
+      }
+    ],
+    "docker_compose": "${HOME}/docker-compose.yaml"
+  },
+  "PICO": {
+    "sys_env_version": "",
+    "build_time": "",
+    "branch_name": "",
+    "commit_id": "",
+    "user": "nav01",
+    "psd": " ",
+    "scripts": {
+      "pre_install": [],
+      "post_install": [],
+      "pre_uninstall": [],
+      "post_uninstall": []
+    },
+    "zjhrobot": "{}",
+    "modules": [
+      {
+        "name": "zj-humanoid-rtipc-runtime",
+        "version": "1.4.2focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/rtipc_runtime/release/zj-humanoid-rtipc-runtime_1.4.2focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-rtipc-runtime_1.4.2focal_amd64.deb",
+        "hash": "sha256:ff6653f8725bcb38a3e569bf7daedd4e67da4981ce66f10ff6b979cdef5b2135",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-uplimb-runtime",
+        "version": "1.4.0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/uplimb_runtime/release/zj-humanoid-uplimb-runtime_1.4.0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-uplimb-runtime_1.4.0focal_amd64.deb",
+        "hash": "sha256:e68575ab2928eb3f2fceed8ec29a950f83179dd0f8f9419347a75ce860cb034a",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-uplimb-interface",
+        "version": "2.0.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/uplimb_interface/release/zj-humanoid-ros-noetic-uplimb-interface_2.0.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-uplimb-interface_2.0.0-0focal_amd64.deb",
+        "hash": "sha256:94cef99a72719c5279b175d143b3c47740d8396816717c4bbb465d80e2ec21a6",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-dexhand-interface",
+        "version": "1.3.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/dexhand_interface/release/zj-humanoid-ros-noetic-dexhand-interface_1.3.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-dexhand-interface_1.3.0-0focal_amd64.deb",
+        "hash": "sha256:bd53d5a682893e798078ac41764b1f3397255d4088f5bb4c0de06eb778c0c623",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-legged-nav-description",
+        "version": "1.1.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/legged_nav_description/release/zj-humanoid-ros-noetic-legged-nav-description_1.1.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-legged-nav-description_1.1.0-0focal_amd64.deb",
+        "hash": "sha256:a888242409f43f274e0f3ea4cfb7d86b69dd979808f9dcdb16ef990fa9a5382f",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-legged-common",
+        "version": "1.1.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/legged_common/release/zj-humanoid-ros-noetic-legged-common_1.1.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-legged-common_1.1.0-0focal_amd64.deb",
+        "hash": "sha256:321e475bec4da7f06a3b0910ccc7d5dfdd7d423cde9876e776c0b66ddea0114f",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-legged-hw",
+        "version": "1.1.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/legged_hw/release/zj-humanoid-ros-noetic-legged-hw_1.1.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-legged-hw_1.1.0-0focal_amd64.deb",
+        "hash": "sha256:282aff80557a1142ddfc998c02c4d692de376d954432cf3d32a5a67e825caa4d",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-legged-nav2-hw",
+        "version": "1.2.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/legged_nav2_hw/release/zj-humanoid-ros-noetic-legged-nav2-hw_1.2.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-legged-nav2-hw_1.2.0-0focal_amd64.deb",
+        "hash": "sha256:1ffa709a279c54b6869e1301a8b2d845684394cf517d430783f9585986ea4fe5",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-legged-nav-fsm",
+        "version": "1.1.0-master+9-dd6e2eafocal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/legged_nav_fsm/develop/zj-humanoid-ros-noetic-legged-nav-fsm_1.1.0-master%2B9-dd6e2eafocal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-legged-nav-fsm_1.1.0-master+9-dd6e2eafocal_amd64.deb",
+        "hash": "sha256:c013f2d2e2b993c51e9e1ed57e94452bfc22976495d6ecf350c1a1fdea3cd224",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-legged-rl-controllers",
+        "version": "1.1.0-master+9-dd6e2eafocal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/legged_rl_controllers/develop/zj-humanoid-ros-noetic-legged-rl-controllers_1.1.0-master%2B9-dd6e2eafocal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-legged-rl-controllers_1.1.0-master+9-dd6e2eafocal_amd64.deb",
+        "hash": "sha256:20ed005b66bf608094b82512347e0370f3ac93bf2c58adfabbc188d339596a20",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-naviai-robot",
+        "version": "1.5.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_robot/release/zj-humanoid-ros-noetic-naviai-robot_1.5.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-naviai-robot_1.5.0-0focal_amd64.deb",
+        "hash": "sha256:915e3f4a0823083f38afc4f1c07be78928933d437c5f065ccd1396b8dac47f16",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-pico-states",
+        "version": "1.1.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/pico_states/release/zj-humanoid-ros-noetic-pico-states_1.1.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-pico-states_1.1.0-0focal_amd64.deb",
+        "hash": "sha256:652cdaf33eb6bfe38520359b9b0641f37fe0cfa82325476e5f74e60aca6bbb2c",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-media-play",
+        "version": "1.5.1-testv1.5.1+43-0e783d7focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/media_play/test/zj-humanoid-ros-noetic-media-play_1.5.1-testv1.5.1%2B43-0e783d7focal_all.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-media-play_1.5.1-testv1.5.1+43-0e783d7focal_all.deb",
+        "hash": "sha256:37425bd7a81468b34940325d316e73ce42708a444ab268bac399f5d1ad3c293f",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-text-show",
+        "version": "1.3.1-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/text_show/release/zj-humanoid-ros-noetic-text-show_1.3.1-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-text-show_1.3.1-0focal_amd64.deb",
+        "hash": "sha256:8a8acd8722d95ff573faab06c9d0054c38bb9388c6b65d90fcc7fcf3326e9dad",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-robot-state",
+        "version": "1.3.8-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/robot_state/release/zj-humanoid-ros-noetic-robot-state_1.3.8-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-robot-state_1.3.8-0focal_amd64.deb",
+        "hash": "sha256:dd896e45adc559ef66bba688348baee525b5bbec205446f686345efd341db08a",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-joy-manager",
+        "version": "1.3.9-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/joy_manager/release/zj-humanoid-ros-noetic-joy-manager_1.3.9-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-joy-manager_1.3.9-0focal_amd64.deb",
+        "hash": "sha256:de369b6aa0a154ec844125c3aca5f32d1e347ea6334285dfc69f43dba373b8d2",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-legged-control",
+        "version": "1.1.0-master+9-dd6e2eafocal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/legged_control/develop/zj-humanoid-ros-noetic-legged-control_1.1.0-master%2B9-dd6e2eafocal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-legged-control_1.1.0-master+9-dd6e2eafocal_amd64.deb",
+        "hash": "sha256:a579b675994af13b8f04afb0ccceee34a7bce121977354bb2ee084fdee2ceacf",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-libonnxruntime",
+        "version": "1.1.0-master+9-dd6e2eafocal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/libonnxruntime/develop/zj-humanoid-ros-noetic-libonnxruntime_1.1.0-master%2B9-dd6e2eafocal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-libonnxruntime_1.1.0-master+9-dd6e2eafocal_amd64.deb",
+        "hash": "sha256:6390eaf61c26b645461df04eaa086521b5fd02ec75993436772260032156ff38",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-libbase-fsm",
+        "version": "1.1.0-master+9-dd6e2eafocal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/libbase_fsm/develop/zj-humanoid-ros-noetic-libbase-fsm_1.1.0-master%2B9-dd6e2eafocal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-libbase-fsm_1.1.0-master+9-dd6e2eafocal_amd64.deb",
+        "hash": "sha256:071974799450771c3292d7d710c9a6d06e73e759f6b1194f9fd48a3a489a4d89",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-bbox-collision-model",
+        "version": "0.1.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/bbox_collision_model/release/zj-humanoid-ros-noetic-bbox-collision-model_0.1.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-bbox-collision-model_0.1.0-0focal_amd64.deb",
+        "hash": "sha256:9f971b13b2d009cc321dbfd07100ae8b42483a4da8028e495290cc011adf769c",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-logging",
+        "version": "0.1.0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/logging/release/zj-humanoid-logging_0.1.0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-logging_0.1.0focal_amd64.deb",
+        "hash": "sha256:7dec1c2795e4d2c784896a9cdab3a712a4163817bc4b511facf9ba33b942b3c7",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj_humanoid_types_dev",
+        "version": "v1.5.0%2B29756ae%2B116",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/run_package/develop/zj_humanoid_types_dev-v1.5.0%2B29756ae%2B116.run",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj_humanoid_types_dev-v1.5.0+29756ae+116.run",
+        "hash": "",
+        "suffix": "",
+        "container": null
+      },
+      {
+        "name": "ros-noetic-teleop-tools-msgs",
+        "version": "0.5.0-1focal.20250426.015904",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/ros-noetic-teleop-tools-msgs_0.5.0-1focal.20250426.015904_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/ros-noetic-teleop-tools-msgs_0.5.0-1focal.20250426.015904_amd64.deb",
+        "hash": "sha256:51dad5bb88d4d66c60126d74ca8a99b887ec572c18542aaa5e733ae1f77b7a80",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "ros-noetic-twist-mux-msgs",
+        "version": "2.1.0-1focal.20250520.015630",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/ros-noetic-twist-mux-msgs_2.1.0-1focal.20250520.015630_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/ros-noetic-twist-mux-msgs_2.1.0-1focal.20250520.015630_amd64.deb",
+        "hash": "sha256:aa1ea1daf5ac11b616b73d0b083bbf3aad5bed039b722ddb1d109168af5253f9",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "ros-noetic-twist-mux",
+        "version": "3.1.3-1focal.20250520.020007",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/ros-noetic-twist-mux_3.1.3-1focal.20250520.020007_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/ros-noetic-twist-mux_3.1.3-1focal.20250520.020007_amd64.deb",
+        "hash": "sha256:ea4090e43f401443812bf9f1953e9c607151e8ffecfe57a6bc4587d5823e5ea0",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "ros-noetic-joy-teleop",
+        "version": "0.5.0-1focal.20250520.000537",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/ros-noetic-joy-teleop_0.5.0-1focal.20250520.000537_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/ros-noetic-joy-teleop_0.5.0-1focal.20250520.000537_amd64.deb",
+        "hash": "sha256:8dfccb3f343ee5a09b3bdb185d821d6b54c83fef2dfd16532c53bfce8aeb4c76",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "ros-noetic-joy",
+        "version": "1.15.1-1focal.20250520.004901",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/ros-noetic-joy_1.15.1-1focal.20250520.004901_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/ros-noetic-joy_1.15.1-1focal.20250520.004901_amd64.deb",
+        "hash": "sha256:0f2e4652ead2e28e08773d56f9383ee7664db22abfc636310ca3f5a9589dfa54",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "libgflags-dev",
+        "version": "2.2.2-1build1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/libgflags-dev_2.2.2-1build1_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/libgflags-dev_2.2.2-1build1_amd64.deb",
+        "hash": "sha256:5c38d4052156d4091ed2252981433c7602a36d7f51c3dd0c722232f509db8da3",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "libgflags2.2",
+        "version": "2.2.2-1build1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/libgflags2.2_2.2.2-1build1_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/libgflags2.2_2.2.2-1build1_amd64.deb",
+        "hash": "sha256:dfa24fbe3a1a5983f820498dc3df4c5d56dee126c7ed1d14b011febf2d20181e",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "libgoogle-glog-dev",
+        "version": "0.4.0-1build1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/libgoogle-glog-dev_0.4.0-1build1_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/libgoogle-glog-dev_0.4.0-1build1_amd64.deb",
+        "hash": "sha256:555f0ba838f0d420cd78349112f24f46da893c207dfc49f76368fe1bfb12c7f1",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "libgoogle-glog0v5",
+        "version": "0.4.0-1build1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/libgoogle-glog0v5_0.4.0-1build1_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/libgoogle-glog0v5_0.4.0-1build1_amd64.deb",
+        "hash": "sha256:2ccdc26e4befb55f79461c73a7e72128d770660ccd5fb343f8792ca6f9bd7694",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "hdf5-tools",
+        "version": "1.10.4+repack-11ubuntu1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/hdf5-tools_1.10.4%2Brepack-11ubuntu1_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/hdf5-tools_1.10.4+repack-11ubuntu1_amd64.deb",
+        "hash": "sha256:4a6830bc13d397b5fb7ff087ecbd026b8dfd7c84101f2d156d558daa926621a1",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "libhdf5-dev",
+        "version": "1.10.4+repack-11ubuntu1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/libhdf5-dev_1.10.4%2Brepack-11ubuntu1_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/libhdf5-dev_1.10.4+repack-11ubuntu1_amd64.deb",
+        "hash": "sha256:82cabb578f13c1b6e411b3b0ec5bd8d7592df04b14f69c9e3c09e47318652be4",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "lrzsz",
+        "version": "0.12.21-10",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/lrzsz_0.12.21-10_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/lrzsz_0.12.21-10_amd64.deb",
+        "hash": "sha256:3397f1d46b3a7ab6d1fa50f070f61e58773c97f03e2e3edcefaf95c5cbfc8815",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "at",
+        "version": "3.1.23-1ubuntu1",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/at_3.1.23-1ubuntu1_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/at_3.1.23-1ubuntu1_amd64.deb",
+        "hash": "sha256:a141b40a6d9d7d33aeee203f2c6e55b43b3d9f523d756f28301f11b134c073a8",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "libfl2",
+        "version": "2.6.4-6.2",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/libfl2_2.6.4-6.2_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/libfl2_2.6.4-6.2_amd64.deb",
+        "hash": "sha256:de6c0f0afce0a1df7e3834c2e65a46d69b419eb9c6943914949b950cf4003fd4",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "apache2-utils",
+        "version": "2.4.41-4ubuntu3.23",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/apache2-utils_2.4.41-4ubuntu3.23_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/apache2-utils_2.4.41-4ubuntu3.23_amd64.deb",
+        "hash": "sha256:60097a875c778228275d9ff1dfda76506c7cce633d83c1197e70aa92994780c8",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "libfile-fnmatch-perl",
+        "version": "0.02-2build6",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/libfile-fnmatch-perl_0.02-2build6_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/libfile-fnmatch-perl_0.02-2build6_amd64.deb",
+        "hash": "sha256:cffa12f650d65ad230ed0980ecc47bcf2ef1095dd694302c3bad578005c1b736",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "debsums",
+        "version": "2.2.5",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/third_party/debsums_2.2.5_all.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/debsums_2.2.5_all.deb",
+        "hash": "sha256:60d20a5bd4db62bb55f7c1749809ba5ee09aa211891e00ec40368b5560460a67",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-i2-s-description",
+        "version": "2.0.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared%2Fmodules%2Fi2_s_description/release/zj-humanoid-ros-noetic-i2-s-description_2.0.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-i2-s-description_2.0.0-0focal_amd64.deb",
+        "hash": "sha256:7780597b6ee4ab160e0ee08432dfb8ecf98dc3a3278a880db4622cb69d091c40",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-u1-description",
+        "version": "2.0.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared%2Fmodules%2Fu1_description/release/zj-humanoid-ros-noetic-u1-description_2.0.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-u1-description_2.0.0-0focal_amd64.deb",
+        "hash": "sha256:ac005424727703d1039c73e16aaa54610ea114ecb7bf4721f498842fbc0d9ff3",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-wa1-400l-description",
+        "version": "2.0.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared%2Fmodules%2Fwa1_400l_description/release/zj-humanoid-ros-noetic-wa1-400l-description_2.0.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-wa1-400l-description_2.0.0-0focal_amd64.deb",
+        "hash": "sha256:a0f8433377cf4b2d9d62472d8873045c9e7a8e1d3ec290396c4327e9e56041fb",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-jk2-description",
+        "version": "2.0.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared%2Fmodules%2Fjk2_description/release/zj-humanoid-ros-noetic-jk2-description_2.0.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-jk2-description_2.0.0-0focal_amd64.deb",
+        "hash": "sha256:75fc7d09fa29c377569f73d8c18a6befd2af98bee5d0863428d56b0d49c789a4",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-wa2-ls-description",
+        "version": "2.0.0-0focal",
+        "url": "http://10.51.33.211:10000/chfs/shared%2Fmodules%2Fwa2_ls_description/release/zj-humanoid-ros-noetic-wa2-ls-description_2.0.0-0focal_amd64.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-wa2-ls-description_2.0.0-0focal_amd64.deb",
+        "hash": "sha256:a49ea36c5241f34fe15f6efd97bd2ce8886b8d34e73ee6b2ee88c27bb8ac9a90",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-led-controller-msgs",
+        "version": "1.5.1-featfix-setled-md5+6-fc86222focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/led_controller_msgs/develop/zj-humanoid-ros-noetic-led-controller-msgs_1.5.1-featfix-setled-md5%2B6-fc86222focal_all.deb",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-led-controller-msgs_1.5.1-featfix-setled-md5+6-fc86222focal_all.deb",
+        "hash": "sha256:cba92f3df7fd22eb3364d7a4540f1d90cf42fd24b75985eda4b90a305389de2a",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-led-controller",
+        "version": "1.5.1-featfix-setled-md5+6-fc86222focal",
+        "url": "http://10.51.33.211:10000/chfs/shared/modules/led_controller/develop/zj-humanoid-ros-noetic-led-controller_1.5.1-featfix-setled-md5%2B6-fc86222focal_amd64.deb",
+        "dependencies": [
+          "zj-humanoid-ros-noetic-led-controller-msgs"
+        ],
+        "dst": "",
+        "version_id": "",
+        "path": ".dists/zj-humanoid-ros-noetic-led-controller_1.5.1-featfix-setled-md5+6-fc86222focal_amd64.deb",
+        "hash": "sha256:f3945645394967e659f499e67b01a8ca8f1f9d28b2f398c96e81a5386e2602b9",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-audio",
+        "version": "1.2.4-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:be5db168fb6ab46b5b3e5e8feee45b1f60358299850f7be0d6fafe5409f149f7",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-chassis-msgs",
+        "version": "1.4.2-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:b61d005d0446c62c1b1b44474e5f0c7232ace4efd4f36379ab445b9ed50798a4",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-diagnosis-msgs",
+        "version": "0.1.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:7b6577f55d8dec96ccd3312cbb74d3a8a87534560f05e4aaffd425a1dc7b7169",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-hand",
+        "version": "1.3.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:d4ff3e03e3d97fff7c544900abf71df860e99971823565dc062ff7965fcb1885",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-legged-messages",
+        "version": "1.0.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:c97299e3084a41a5b368a6cc52346c76fbee29a85e6a760296f5a4479893535f",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-livox-ros-driver2",
+        "version": "1.3.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:7579620a01663e31fbec72fb3be103b4e03697fdf0b3f8709c589037bf50f2a8",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-manipulation",
+        "version": "1.0.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:e289c62c1a2c6349ba9b19c0add420c1655ae7a712dee5185505deb79ae4b4d6",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-map-server-msgs",
+        "version": "1.3.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:5c68e6d300a261a7cadd329bddd30ded4c860f789d8eac28dc094fc0d49ab9ed",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-module-common-msgs",
+        "version": "1.3.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:0d30d8c219f53f95a94e5574e41e776982173678706232c39a5ec40a2403891d",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-naviai-localization-msgs",
+        "version": "1.5.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:54a07bf8dd489500bed3ccf256eb477cb94122ec17aea0f9113fc65a26da0708",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-navigation-dbg",
+        "version": "1.5.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:7602d8fd1b40036286b6eea3fe156af598015568513c8345d9a46c1301544bae",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-navigation",
+        "version": "1.3.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:be489d0be5f9256778b762ae7b6967942c669254441f9f389c274e48eba4652e",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-sensor",
+        "version": "1.0.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:2aa995a4e6d6334d02454082dd061f592720981b10aba52c910a84c880698b54",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-upperlimb",
+        "version": "2.0.0-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:70ac6305da1811b5a3c2a8ad354166aa59c6f650e273e69327afabefe13b596c",
+        "suffix": ".deb",
+        "container": null
+      },
+      {
+        "name": "zj-humanoid-ros-noetic-zj-robot",
+        "version": "1.4.1-0focal",
+        "url": "",
+        "dependencies": [],
+        "dst": "",
+        "version_id": "",
+        "path": "",
+        "hash": "sha256:8539eb079025f36da033a2c05810196c02037acf3b6132e4e54201b51a304fe3",
+        "suffix": ".deb",
+        "container": null
+      }
+    ],
+    "resources": [],
+    "containers": [],
+    "docker_compose": null
+  }
+}

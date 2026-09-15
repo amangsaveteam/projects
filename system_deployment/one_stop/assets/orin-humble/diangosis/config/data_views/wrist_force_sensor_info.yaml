@@ -1,0 +1,136 @@
+name: wrist_force_sensor_info
+# 中文名称: 腕部力传感器信息
+
+sources:
+  left_wrist_force_monitor:
+    tool: topic_monitor
+    params:
+      topic: /zj_humanoid/hand/wrist_force_sensor/left
+
+  right_wrist_force_monitor:
+    tool: topic_monitor
+    params:
+      topic: /zj_humanoid/hand/wrist_force_sensor/right
+
+  left_wrist_force_raw:
+    tool: topic_message
+    params:
+      topic: /zj_humanoid/hand/wrist_force_sensor/left
+      output_fields:
+        force_x: wrench.force.x
+        force_y: wrench.force.y
+        force_z: wrench.force.z
+        torque_x: wrench.torque.x
+        torque_y: wrench.torque.y
+        torque_z: wrench.torque.z
+
+  right_wrist_force_raw:
+    tool: topic_message
+    params:
+      topic: /zj_humanoid/hand/wrist_force_sensor/right
+      output_fields:
+        force_x: wrench.force.x
+        force_y: wrench.force.y
+        force_z: wrench.force.z
+        torque_x: wrench.torque.x
+        torque_y: wrench.torque.y
+        torque_z: wrench.torque.z
+
+fields:
+  left_wrist_force_online:
+    source: left_wrist_force_monitor
+    field: has_msg
+    description: 左腕力传感器消息状态
+    type: bool
+    default: false
+
+  right_wrist_force_online:
+    source: right_wrist_force_monitor
+    field: has_msg
+    description: 右腕力传感器消息状态
+    type: bool
+    default: false
+
+  left_wrist_force_x:
+    source: left_wrist_force_raw
+    field: force_x
+    description: 左腕力X
+    type: double
+    default: 0.0
+
+  left_wrist_force_y:
+    source: left_wrist_force_raw
+    field: force_y
+    description: 左腕力Y
+    type: double
+    default: 0.0
+
+  left_wrist_force_z:
+    source: left_wrist_force_raw
+    field: force_z
+    description: 左腕力Z
+    type: double
+    default: 0.0
+
+  left_wrist_torque_x:
+    source: left_wrist_force_raw
+    field: torque_x
+    description: 左腕力矩X
+    type: double
+    default: 0.0
+
+  left_wrist_torque_y:
+    source: left_wrist_force_raw
+    field: torque_y
+    description: 左腕力矩Y
+    type: double
+    default: 0.0
+
+  left_wrist_torque_z:
+    source: left_wrist_force_raw
+    field: torque_z
+    description: 左腕力矩Z
+    type: double
+    default: 0.0
+
+  right_wrist_force_x:
+    source: right_wrist_force_raw
+    field: force_x
+    description: 右腕力X
+    type: double
+    default: 0.0
+
+  right_wrist_force_y:
+    source: right_wrist_force_raw
+    field: force_y
+    description: 右腕力Y
+    type: double
+    default: 0.0
+
+  right_wrist_force_z:
+    source: right_wrist_force_raw
+    field: force_z
+    description: 右腕力Z
+    type: double
+    default: 0.0
+
+  right_wrist_torque_x:
+    source: right_wrist_force_raw
+    field: torque_x
+    description: 右腕力矩X
+    type: double
+    default: 0.0
+
+  right_wrist_torque_y:
+    source: right_wrist_force_raw
+    field: torque_y
+    description: 右腕力矩Y
+    type: double
+    default: 0.0
+
+  right_wrist_torque_z:
+    source: right_wrist_force_raw
+    field: torque_z
+    description: 右腕力矩Z
+    type: double
+    default: 0.0

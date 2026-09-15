@@ -1,0 +1,18 @@
+event:
+  name: 电池过压保护
+
+  rule:
+    field: battery_voltage
+    op: greater_than
+    # alarm.md 中 28.5V 标注为示例值，这里先按整包电压占位，后续需按实机规格确认。
+    value: 58.0
+
+  alarm:
+    major_code: "30"
+    minor_code: "003"
+    name: "电池过压保护"
+    severity: 4
+    description: "电池电压过高"
+    recovery: "停止充电，检查电池管理系统"
+    use_tts: false
+    audio_path: ""

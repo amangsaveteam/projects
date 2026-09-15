@@ -55,3 +55,47 @@ class SplitConfigTest(unittest.TestCase):
         self.assertIn("supervisor_modules", joined)
         audio = next(p for p in joined["runs"] if p["name"] == "audio")
         self.assertEqual(audio["start_policy"], "supervisor")
+
+    def test_deb_module_can_supply_managed_runtime_and_install_environment(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            packages = root / "package-urls.json"
+            packages.write_text(json.dumps({"targets": {"pico-humble": {
+                "extra_debs": [{
+                    "name": "robot-deb", "url": "file:///robot.deb",
+                    "environment": {"INSTALL_CONFIG": "/etc/nav01/robot.yaml"},
+                    "runtime": {"environment": {"ROBOT_CONFIG": "/etc/nav01/robot.yaml"}},
+                }], "runs": [],
+            }}}))
+            (root / "supervisor.json").write_text(json.dumps({"schema_version": 1, "targets": {
+                "pico-humble": {"supervisor_modules": [{
+                    "id": "robot", "package": "robot-deb", "mode": "managed", "port": 19002,
+                    "working_directory": temporary, "command": "/usr/bin/printenv ROBOT_CONFIG",
+                }]}
+            }}))
+            target = builder.load_delivery(packages)["targets"]["pico-humble"]
+            module = target["supervisor_modules"][0]
+            result = subprocess.run(["bash", "-c", builder.supervisor_launch_script(module)],
+                                    capture_output=True, text=True, check=True)
+            self.assertEqual(result.stdout.strip(), "/etc/nav01/robot.yaml")
+            script = builder.target_install(
+                "pico-humble", "system-config", "", None,
+                [("payloads/robot.deb", [], ["INSTALL_CONFIG=/etc/nav01/robot.yaml"], None)], [], [],
+            )
+            self.assertIn('env INSTALL_CONFIG=/etc/nav01/robot.yaml dpkg -i "$root/payloads/robot.deb"', script)
+
+    def test_deb_module_rejects_run_only_install_policies(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            packages = root / "package-urls.json"
+            packages.write_text(json.dumps({"targets": {"pico-humble": {
+                "extra_debs": [{"name": "robot", "url": "file:///robot.deb"}], "runs": [],
+            }}}))
+            (root / "supervisor.json").write_text(json.dumps({"schema_version": 1, "targets": {
+                "pico-humble": {"supervisor_modules": [{
+                    "id": "robot", "mode": "external", "port": 19002,
+                    "restart_service": "robot.service", "start_policy": "supervisor",
+                }]}
+            }}))
+            with self.assertRaisesRegex(builder.BuildError, "only for RUN"):
+                builder.load_delivery(packages)

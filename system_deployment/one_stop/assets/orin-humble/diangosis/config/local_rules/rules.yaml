@@ -1,0 +1,23 @@
+common:
+  - path: cpu_overload.yaml
+  - path: cpu_high_temperature.yaml
+  - path: disk_space_low.yaml
+  - path: memory_leak.yaml
+  - path: system_clock_abnormal.yaml
+  - path: battery_low_level.yaml
+  - path: battery_critical_level.yaml
+  - path: battery_over_voltage.yaml
+  - path: battery_over_temperature.yaml
+  - path: charging_abnormal.yaml
+  - path: emergency_stop_triggered.yaml
+  - path: collision_strip_triggered.yaml
+
+wa1:
+  - path: livox_lidar_topic_exists.yaml
+  - path: livox_lidar_topic_normal.yaml
+
+wa2:
+  - path: livox_lidar_topic_exists.yaml
+  - path: livox_lidar_topic_normal.yaml
+
+rx: []

@@ -1,0 +1,17 @@
+event:
+  name: 极低电量停机
+
+  rule:
+    field: battery_level
+    op: less_than
+    value: 0.05
+
+  alarm:
+    major_code: "30"
+    minor_code: "001"
+    name: "极低电量停机"
+    severity: 4
+    description: "电量过低，即将关机"
+    recovery: "请立即充电，防止数据丢失"
+    use_tts: true
+    audio_path: ""

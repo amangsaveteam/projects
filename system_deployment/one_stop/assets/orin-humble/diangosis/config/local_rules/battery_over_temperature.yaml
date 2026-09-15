@@ -1,0 +1,17 @@
+event:
+  name: 电池过温预警
+
+  rule:
+    field: battery_temperature
+    op: greater_than
+    value: 60
+
+  alarm:
+    major_code: "30"
+    minor_code: "004"
+    name: "电池过温预警"
+    severity: 3
+    description: "电池温度过高"
+    recovery: "请在阴凉处散热，停止高功耗任务"
+    use_tts: false
+    audio_path: ""

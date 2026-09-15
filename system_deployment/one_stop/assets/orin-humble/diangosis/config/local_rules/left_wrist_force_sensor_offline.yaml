@@ -1,0 +1,19 @@
+event:
+  name: 左腕力传感器离线
+
+  enabled: false
+
+  rule:
+    field: left_wrist_force_online
+    op: boolean_false
+    for_seconds: 0
+
+  alarm:
+    major_code: "20"
+    minor_code: "002"
+    name: "左腕力传感器离线"
+    severity: 4
+    description: "左腕力传感器通信连接丢失"
+    recovery: "左腕力传感器故障，请检查"
+    use_tts: false
+    audio_path: ""

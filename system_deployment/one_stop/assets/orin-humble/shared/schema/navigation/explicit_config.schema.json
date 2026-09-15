@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "显式规划参数配置",
+  "type": "object",
+  "role": ["admin", "engineer"],
+  "properties": {
+    "strategy": {
+      "type": "object", 
+      "title": "strategy",
+      "properties": {
+        "min_safe_time_s": { "type": "number", "title": "min_safe_time_s", "description": "最小安全时间", "minimum": 0, "maximum": 2.0, "default": 1.5, "unit": "s" },
+        "max_adjust_time": { "type": "integer", "title": "max_adjust_time", "description": "最大调整时间", "minimum": 0, "maximum": 10000, "default": 5000, "unit": "ms" },
+        "enable_replan": { "type": "boolean", "title": "enable_replan", "description": "重规划" },
+        "enable_early_finish": { "type": "boolean", "title": "enable_early_finish", "description": "提前结束" },
+        "enable_timeout_exit": { "type": "boolean", "title": "enable_timeout_exit", "description": "超时退出" },
+        "enable_slow_arrival": { "type": "boolean", "title": "enable_slow_arrival", "description": "低速到达" }
+      },
+      "required": ["min_safe_time_s", "max_adjust_time", "enable_replan", "enable_early_finish", "enable_timeout_exit", "enable_slow_arrival"],
+      "additionalProperties": false
+    },
+    "search": {
+      "type": "object", 
+      "title": "search",
+      "properties": {
+        "use_local_map": { "type": "boolean", "title": "use_local_map", "description": "使用局部地图" },
+        "enable_attempt_path": { "type": "boolean", "title": "enable_attempt_path", "description": "启用尝试路径" },
+        "safe_buffer": { "type": "number", "title": "safe_buffer", "description": "膨胀距离", "minimum": 0, "maximum": 0.2, "default": 0.1, "unit": "m" },
+        "max_time_ms": { "type": "integer", "title": "max_time_ms", "description": "最大搜索时间", "minimum": 0, "maximum": 5000, "default": 2000, "unit": "ms" }
+      },
+      "required": ["use_local_map", "enable_attempt_path", "safe_buffer", "max_time_ms"],
+      "additionalProperties": false
+    },
+    "bound_params": {
+      "type": "object", 
+      "title": "bound_params",
+      "properties": {
+        "front_expansion": { "type": "number", "title": "front_expansion", "description": "前方扩展距离", "minimum": 0, "maximum": 0.1, "default": 0.1, "unit": "m" },
+        "rear_expansion": { "type": "number", "title": "rear_expansion", "description": "后方扩展距离", "minimum": 0, "maximum": 0.1, "default":0.1, "unit": "m" },
+        "side_expansion": { "type": "number", "title": "side_expansion", "description": "侧方扩展距离", "minimum": 0, "maximum": 0.1, "default": 0.1, "unit": "m" }
+      },
+      "required": ["front_expansion", "rear_expansion", "side_expansion"],
+      "additionalProperties": false
+    },
+    "dyn_params": {
+      "type": "object", 
+      "title": "dyn_params",
+      "properties": {
+        "target_speed": { "type": "number", "title": "target_speed", "description": "目标速度", "minimum": 0.02, "maximum": 1.5, "default": 0.5, "unit": "m/s" },
+        "target_yaw_rate": { "type": "number", "title": "target_yaw_rate", "description": "目标角速度", "minimum": 0.1, "maximum": 1.5, "default": 0.6, "unit": "rad/s" }
+      },
+      "required": ["target_speed", "target_yaw_rate"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["strategy", "search", "bound_params", "dyn_params"],
+  "additionalProperties": false
+}

@@ -1,0 +1,28 @@
+name: hand_sensor_info
+# 中文名称: 手部触觉传感器信息
+
+sources:
+  left_hand_pressure_monitor:
+    tool: topic_monitor
+    params:
+      topic: /zj_humanoid/hand/finger_pressures/left
+
+  right_hand_pressure_monitor:
+    tool: topic_monitor
+    params:
+      topic: /zj_humanoid/hand/finger_pressures/right
+
+fields:
+  left_hand_pressure_online:
+    source: left_hand_pressure_monitor
+    field: has_msg
+    description: 左手触觉消息状态
+    type: bool
+    default: false
+
+  right_hand_pressure_online:
+    source: right_hand_pressure_monitor
+    field: has_msg
+    description: 右手触觉消息状态
+    type: bool
+    default: false

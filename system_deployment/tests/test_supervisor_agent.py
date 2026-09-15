@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import importlib.util
 import json
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
@@ -44,6 +45,28 @@ class SupervisorAgentTest(unittest.TestCase):
         handler.write_json = MagicMock()
         handler.do_GET()
         self.assertEqual(handler.write_json.call_args.args[0], 404)
+
+    def test_systemd_module_is_observed_and_controlled_without_xmlrpc(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            password = Path(temporary) / "password"
+            password.write_text("1\n")
+            agent = agent_module.Agent({
+                "rpc_password_file": str(password),
+                "modules": {"navigation": {"type": "systemd", "service": "zj-humanoid-navigation.service"}},
+            })
+            completed = subprocess.CompletedProcess(
+                ["systemctl"], 0, "ActiveState=active\nSubState=running\nMainPID=42\nExecMainStatus=0\n", ""
+            )
+            with patch.object(agent_module.subprocess, "run", return_value=completed) as command:
+                status = agent.module_status("navigation")
+                self.assertEqual(status["processes"][0]["state"], "RUNNING")
+                self.assertEqual(status["processes"][0]["pid"], 42)
+                action = agent.process_action("navigation", "zj-humanoid-navigation.service", "restart")
+                self.assertTrue(action["changed"])
+                command.assert_any_call(
+                    ["systemctl", "restart", "zj-humanoid-navigation.service"], timeout=3, check=True,
+                    text=True, capture_output=True,
+                )
 
     def test_readiness_retries_connection_refused_and_checks_device(self):
         response = MagicMock()

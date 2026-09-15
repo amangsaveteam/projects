@@ -1,0 +1,20 @@
+event:
+  name: 内存泄漏
+
+  enabled: true
+
+  rule:
+    field: mem_usage_percent
+    op: greater_than
+    value: 95
+    for_seconds: 0
+
+  alarm:
+    major_code: "10"
+    minor_code: "004"
+    name: "内存泄漏"
+    severity: 4
+    description: "内存资源耗尽"
+    recovery: "系统可能即将重启，请联系维护"
+    use_tts: false
+    audio_path: ""

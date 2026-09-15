@@ -1,0 +1,22 @@
+event:
+  name: 充电异常
+
+  rule:
+    op: and
+    conditions:
+      - field: agv_state_code
+        op: equals
+        value: 5
+      - field: battery_current
+        op: greater_than
+        value: 0
+
+  alarm:
+    major_code: "30"
+    minor_code: "005"
+    name: "充电异常"
+    severity: 3
+    description: "充电异常，请检查"
+    recovery: "检查充电接口接触是否良好"
+    use_tts: false
+    audio_path: ""

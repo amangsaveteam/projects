@@ -1,0 +1,89 @@
+common:
+    lid_topic:  "/livox/lidar"
+    imu_topic:  "/livox/imu"
+    wheel_topic: "/emma_odom"
+    lio_pos_log_enable: true
+    pcd_save_en: false
+    online_reloc_en: true
+    use_parallel: false
+    use_wheel: false
+
+preprocess:
+    lidar_type: 1                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
+    scan_line: 4
+    strict_tag_en: false
+    min_range: 0.1
+    max_range: 60.0
+    min_intensity: 0
+    max_intensity: 255
+    filter_size_surf: 0.5
+    filter_size_map: 0.5
+    point_filter_num: 1
+    time_scale: 0.001
+    min_eigval: 11.0
+    use_outlier_removal: false
+
+lio:
+    acc_cov: 0.1
+    gyr_cov: 0.1
+    b_acc_cov: 0.0001
+    b_gyr_cov: 0.0001
+    use_aa: true
+    extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic
+    extrinsic_T: [ -0.011, -0.02329, 0.04412 ]
+    extrinsic_R: [ 1, 0, 0,
+                   0, 1, 0,
+                   0, 0, 1]
+    R_bi: [ 0, 0.9962, 0.0872,
+            -1, 0, 0,
+            0, -0.0872, 0.9962]
+    T_bi: [0.37, 0.00, 0 ]
+    pos_cov_thres: 0.1
+    orient_cov_thres: 0.1
+    vel_cov_thres: 0.1
+    ref_cov: 0.00002
+    max_iteration: 3
+hash_map:
+    hash_capacity: 2000000
+    vox_resolution: 0.5
+
+publish:
+    path_en:  true
+    scan_publish_en:  true       # false: close all the point cloud output
+    dense_publish_en: true       # false: low down the points number in a global-frame point clouds scan.
+    scan_bodyframe_pub_en: true  # true: output the point cloud scans in IMU-body-frame
+
+reloc:
+    win_size: 10
+    map_path: "/home/naviai/.zj_humanoid/datasets"
+    reloc_method: "KISS_MATCHER" # 自动重定位方法，默认使用BTC
+    refine_method: "GICP"
+    icp:
+        icp_voxel_size: 0.1                         # 0.1 for indoor environment, 0.25 for outdoor environment
+        thread_number: 1                            # if 0, max number of core
+        icp_score_threshold: 0.5                    # lower is more accurate, for map-scan matching
+        correspondences_number: 20
+        max_correspondence_distance: 0.5           
+        max_iter: 50
+        transformation_epsilon: 0.005
+        euclidean_fitness_epsilon: 0.005
+        inlier_ratio: 0.7
+        ransac:
+            max_iter: 0
+            outlier_rejection_threshold: 0.5
+
+    BTC:
+        sessions: "map:0.25"
+        if_outdoor: 0
+        voxel_size: 0.1
+        acsize: 10
+        mgsize: 3
+        dept_err: 0.02 
+        beam_err: 0.05
+        icp_eigval: 9
+    KISS_MATCHER:
+        voxel_size: 0.2
+        crop_distance: 30.0
+        inlier_threshold: 5
+    INITPOSE:
+        near_frame_range: 20.0 # 取20m内的点

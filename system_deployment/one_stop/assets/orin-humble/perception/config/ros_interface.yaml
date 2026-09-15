@@ -1,0 +1,49 @@
+topics:
+  MAP_INFO:           /map
+  ODOM_INFO:          navigation/odom_info
+  OBSTACLE:           navigation/local_map
+  TASK_INFO:          navigation/task_info
+  JOYSTICK:           /joy
+  CONTROL_COMMAND:    lowerlimb/cmd_vel/calib
+  PLAN_DEBUG_INFO:    /plan_debug_info
+  NAVIGATION_STATUS:  navigation/navigation_status
+
+  # OAK
+  IMU:                sensor/head_imu  
+  CAM_A_CAMARA_INFO:  sensor/CAM_A/camera_info         
+  CAM_A_IMAGE_RAW:    sensor/CAM_A/image_raw
+  CAM_A_COMPRESSED:   sensor/CAM_A/compressed
+  CAM_B_CAMARA_INFO:  sensor/CAM_B/camera_info   
+  CAM_B_IMAGE_RAW:    sensor/CAM_B/image_raw
+  CAM_B_COMPRESSED:   sensor/CAM_B/compressed
+  CAM_C_CAMARA_INFO:  sensor/CAM_C/camera_info   
+  CAM_C_IMAGE_RAW:    sensor/CAM_C/image_raw
+  CAM_C_COMPRESSED:   sensor/CAM_C/compressed
+  CAM_D_CAMARA_INFO:  sensor/CAM_D/camera_info   
+  CAM_D_IMAGE_RAW:    sensor/CAM_D/image_raw
+  CAM_D_COMPRESSED:   sensor/CAM_D/compressed
+
+  # MID360
+  LIDAR_POINTS:       /livox/lidar
+  LIDAR_IMU:          /livox/imu
+
+  #REALSENSE_SENS UPPER
+  REALSENSE_UP_ALIGNED_CAMERA_INFO: sensor/realsense_up/aligned_depth_to_color/camera_info
+  REALSENSE_UP_ALIGNED_IMAGE_RAW:   sensor/realsense_up/aligned_depth_to_color/image_raw
+  REALSENSE_UP_COLOR_CAMERA_INFO:   sensor/realsense_up/aligned_depth_to_color/camera_info
+  REALSENSE_UP_COLOR_IMAGE_RAW:     sensor/realsense_up/aligned_depth_to_color/image_raw
+  REALSENSE_UP_DEPTH_CAMERA_INFO:   sensor/realsense_up/aligned_depth_to_color/camera_info
+  REALSENSE_UP_DEPTH_IMAGE_RAW:     sensor/realsense_up/aligned_depth_to_color/image_raw
+  REALSENSE_UP_DEPTH_POINTS:        sensor/realsense_up/depth/color/points
+
+  #REALSENSE_SENS DOWN
+  REALSENSE_DOWN_ALIGNED_CAMERA_INFO: sensor/realsense_down/aligned_depth_to_color/camera_info
+  REALSENSE_DOWN_ALIGNED_IMAGE_RAW:   sensor/realsense_down/aligned_depth_to_color/image_raw
+  REALSENSE_DOWN_COLOR_CAMERA_INFO:   sensor/realsense_down/aligned_depth_to_color/camera_info
+  REALSENSE_DOWN_COLOR_IMAGE_RAW:     sensor/realsense_down/aligned_depth_to_color/image_raw
+  REALSENSE_DOWN_DEPTH_CAMERA_INFO:   sensor/realsense_down/aligned_depth_to_color/camera_info
+  REALSENSE_DOWN_DEPTH_IMAGE_RAW:     sensor/realsense_down/aligned_depth_to_color/image_raw
+  REALSENSE_DOWN_DEPTH_POINTS:        sensor/realsense_down/depth/color/points
+service:
+  VERSION:                            navigation/version
+# action:    

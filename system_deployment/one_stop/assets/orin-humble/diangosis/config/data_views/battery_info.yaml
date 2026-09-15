@@ -1,0 +1,49 @@
+name: battery_info
+# 中文名称: 电池信息
+
+sources:
+  battery_raw:
+    tool: topic_message
+    params:
+      topic: /zj_humanoid/robot/battery_info
+      output_fields:
+        percentage: percentage
+        voltage: voltage
+        temperature: temperature
+        current: current
+        present: present
+
+fields:
+  battery_level:
+    source: battery_raw
+    field: percentage
+    description: 电池电量
+    type: double
+
+  battery_voltage:
+    source: battery_raw
+    field: voltage
+    description: 电池电压
+    type: double
+    default: 0.0
+
+  battery_temperature:
+    source: battery_raw
+    field: temperature
+    description: 电池温度
+    type: double
+    default: 0.0
+
+  battery_current:
+    source: battery_raw
+    field: current
+    description: 电池电流
+    type: double
+    default: 0.0
+
+  battery_present:
+    source: battery_raw
+    field: present
+    description: 电池在位状态
+    type: bool
+    default: false
