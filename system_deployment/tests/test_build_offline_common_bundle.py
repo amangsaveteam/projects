@@ -41,6 +41,10 @@ class OfflineCommonBundleTest(unittest.TestCase):
         self.assertIn("--verify-only", contents)
         self.assertIn("/usr/sbin/install_common_deps.sh", contents)
 
+    def test_orin_humble_common_provides_the_legacy_robot_dependency_name(self) -> None:
+        config = (ROOT / "common/configs/orin-common-humble.json").read_text(encoding="utf-8")
+        self.assertIn('"provides": ["orin-common-deb"]', config)
+
     def test_installer_skips_higher_top_level_version_and_never_forces_archives(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             staging = Path(temporary)

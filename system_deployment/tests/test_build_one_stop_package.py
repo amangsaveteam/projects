@@ -137,7 +137,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
     def test_pico_common_is_downloaded_before_module_dependencies(self) -> None:
         target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["pico-humble"]
         extras = target["extra_debs"]
-        self.assertEqual([item["name"] for item in extras[:3]], ["pico-common", "upperlimb-common", "robot"])
+        self.assertEqual([item["name"] for item in extras[:3]], ["pico-common", "upperlimb-common", "robot-common-dep"])
         self.assertEqual(
             extras[0]["url"],
             "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/pico/develop/"
@@ -256,7 +256,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
     def test_orin_humble_installs_cloud_common_before_sensor_without_building_a_compat_deb(self) -> None:
         target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
         extras = target["extra_debs"]
-        self.assertEqual([item["name"] for item in extras[:3]], ["orin-common", "sensor", "robot"])
+        self.assertEqual([item["name"] for item in extras[:3]], ["orin-common", "sensor-common-dep", "robot-common-dep"])
         self.assertNotIn("sensor_parent_compatibility", target)
         self.assertEqual(
             extras[0]["url"],
