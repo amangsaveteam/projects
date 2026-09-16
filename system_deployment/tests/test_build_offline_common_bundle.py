@@ -46,11 +46,11 @@ class OfflineCommonBundleTest(unittest.TestCase):
             output = Path(temporary)
             artifacts = common_builder.build_compatibility_debs(
                 {
-                    "release_version": "2.0.0~humble+21",
+                    "release_version": "2.0.0~humble+22",
                     "compatibility_debs": [{
                         "package_name": "orin-common-deb",
                         "artifact_filename": "orin_common_deb.deb",
-                        "depends": ["navi-common-dep (= 2.0.0~humble+21)"],
+                        "depends": ["navi-common-dep (= 2.0.0~humble+22)"],
                         "description": "legacy compatibility identity",
                     }],
                 },
@@ -61,8 +61,12 @@ class OfflineCommonBundleTest(unittest.TestCase):
             self.assertEqual(common_builder.deb_field(artifacts[0], "Package"), "orin-common-deb")
             self.assertEqual(
                 common_builder.deb_field(artifacts[0], "Depends"),
-                "navi-common-dep (= 2.0.0~humble+21)",
+                "navi-common-dep (= 2.0.0~humble+22)",
             )
+
+    def test_orin_humble_common_replaces_the_legacy_verifier_owner(self) -> None:
+        config = (ROOT / "common/configs/orin-common-humble.json").read_text(encoding="utf-8")
+        self.assertIn('"deb_replaces": ["orin-common-deb"]', config)
 
     def test_installer_skips_higher_top_level_version_and_never_forces_archives(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

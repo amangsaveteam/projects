@@ -512,6 +512,12 @@ def build(config_path: Path) -> Path:
         )
 
         dependencies = ", ".join(str(item) for item in config.get("deb_depends", []))
+        replaces = config.get("deb_replaces", [])
+        if not isinstance(replaces, list) or not all(
+            isinstance(item, str) and item.strip() and "\n" not in item for item in replaces
+        ):
+            raise ValueError("deb_replaces must be a list of non-empty Debian package names")
+        replaces_field = f"Replaces: {', '.join(replaces)}\n" if replaces else ""
         carrier_description = (
             " Environment configuration only; this package does not contain dependency payloads.\n"
             if environment_only
@@ -524,6 +530,7 @@ def build(config_path: Path) -> Path:
             f"Architecture: {target['architecture']}\n"
             "Maintainer: Navi <navi@localhost>\n"
             f"Depends: {dependencies}\n"
+            f"{replaces_field}"
             f"Description: {config['description']}\n"
             f"{carrier_description}"
         )

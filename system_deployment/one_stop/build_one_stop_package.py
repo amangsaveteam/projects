@@ -232,6 +232,15 @@ def resolve_wait_packages(values, field):
     return values
 
 
+def resolve_skip_if_package_installed(value, field):
+    """Validate an optional installed-package guard for a transitional DEB."""
+    if value is None:
+        return None
+    if not isinstance(value, str) or not TOKEN.fullmatch(value):
+        raise BuildError(field + ".skip_if_package_installed must be a Debian package name")
+    return value
+
+
 def load_delivery(urls_file, supervisor_file=None):
     """Join package and operations contracts by target and module identifier."""
     packages = load(urls_file)
@@ -912,16 +921,19 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         relpath, installers, environment, contract = extra[:4]
         group = extra[4] if len(extra) > 4 else None
         wait_packages = extra[5] if len(extra) > 5 else []
+        skip_if_installed = extra[6] if len(extra) > 6 else None
         # An omitted group preserves the historical one-DEB-at-a-time
         # behaviour.  Only a named group forms a shared dpkg transaction.
         if group is None:
-            extra_groups.append((None, [(relpath, installers, environment, contract, wait_packages)]))
+            extra_groups.append((None, [(relpath, installers, environment, contract, wait_packages, skip_if_installed)]))
             continue
+        if skip_if_installed:
+            raise BuildError(target_id + ": skip_if_package_installed cannot be used with install_group")
         if group and group in seen_groups and (not extra_groups or extra_groups[-1][0] != group):
             raise BuildError(target_id + ": install_group entries must be contiguous: " + group)
         if not extra_groups or extra_groups[-1][0] != group:
             extra_groups.append((group, []))
-        extra_groups[-1][1].append((relpath, installers, environment, contract, wait_packages))
+        extra_groups[-1][1].append((relpath, installers, environment, contract, wait_packages, skip_if_installed))
         if group:
             seen_groups.add(group)
     for group, items in extra_groups:
@@ -930,13 +942,26 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             raise BuildError(target_id + ": install_group must use one installation environment: " + str(group))
         environment = items[0][2]
         prefix = "env " + " ".join(environment) + " " if environment else ""
-        for _, _, _, contract, _ in items:
+        for _, _, _, contract, _, _ in items:
             lines.extend(system_python_contract_check(contract))
+        if group is None and items[0][5]:
+            relpath, installers, _, _, _, skip_if_installed = items[0]
+            lines.extend((
+                "if dpkg-query -W -f='${{db:Status-Status}}' {} 2>/dev/null | grep -Fxq installed; then".format(shlex.quote(skip_if_installed)),
+                "  echo {}".format(shlex.quote(
+                    "Keeping installed {} instead of replacing it with the transitional compatibility package.".format(skip_if_installed)
+                )),
+                "else",
+                prefix + "  dpkg -i \"$root/{}\"".format(relpath),
+                *(prefix + "  \"{}\"".format(item) for item in installers),
+                "fi",
+            ))
+            continue
         paths = " ".join('\"$root/{}\"'.format(item[0]) for item in items)
         lines.append(prefix + "dpkg -i " + paths)
-        for _, installers, _, _, _ in items:
+        for _, installers, _, _, _, _ in items:
             lines.extend(prefix + "\"{}\"".format(item) for item in installers)
-        for package in sorted({package for _, _, _, _, packages in items for package in packages}):
+        for package in sorted({package for _, _, _, _, packages, _ in items for package in packages}):
             lines.append("wait_for_debian_package {}".format(shlex.quote(package)))
     for run in runs:
         item, arguments = run[:2]
@@ -1188,6 +1213,7 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                     resolve_system_python_contract(item.get("system_python_contract"), target_id + ".extra"),
                     resolve_install_group(item.get("install_group"), target_id + ".extra"),
                     resolve_wait_packages(item.get("wait_for_packages"), target_id + ".extra"),
+                    resolve_skip_if_package_installed(item.get("skip_if_package_installed"), target_id + ".extra"),
                 ))
             requires_no_final_exec_helper = False
             for index, item in enumerate(target.get("runs", [])):

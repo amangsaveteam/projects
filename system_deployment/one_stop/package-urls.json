@@ -31,7 +31,8 @@
           "name": "orin-common-compat",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/orin_common_deb_2.0.0-release-humble-arm64.deb",
           "sha256": "",
-          "installers": []
+          "installers": [],
+          "skip_if_package_installed": "orin-common-deb"
         },
         {
           "name": "sensor-common-dep",

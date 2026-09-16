@@ -273,6 +273,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/"
             "orin_common_deb_2.0.0-release-humble-arm64.deb",
         )
+        self.assertEqual(extras[1]["skip_if_package_installed"], "orin-common-deb")
         install = builder.target_install(
             "orin-humble", "payloads/orin-humble/system-config", "", None,
             [
