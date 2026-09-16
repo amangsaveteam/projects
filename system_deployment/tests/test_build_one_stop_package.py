@@ -274,6 +274,9 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             "orin_common_deb_2.0.0-release-humble-arm64.deb",
         )
         self.assertEqual(extras[1]["skip_if_package_installed"], "orin-common-deb")
+        log = next(item for item in extras if item["name"] == "naviai-log")
+        self.assertTrue(log["force_overwrite"])
+        self.assertNotIn("install_group", log)
         install = builder.target_install(
             "orin-humble", "payloads/orin-humble/system-config", "", None,
             [
@@ -290,6 +293,18 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             install.index('dpkg -i "$root/payloads/orin-humble/extra-01.deb"'),
             install.index('/usr/lib/orin-sensor-common-deb/install_deps.sh'),
         )
+
+    def test_force_overwrite_is_limited_to_an_ungrouped_deb(self) -> None:
+        install = builder.target_install(
+            "orin-humble", "payloads/orin-humble/system-config", "", None,
+            [("payloads/orin-humble/extra-04.deb", [], [], None, None, [], None, True)], [], [],
+        )
+        self.assertIn('dpkg --force-overwrite -i "$root/payloads/orin-humble/extra-04.deb"', install)
+        with self.assertRaisesRegex(builder.BuildError, "force_overwrite requires an extra_debs entry without install_group"):
+            builder.target_install(
+                "orin-humble", "payloads/orin-humble/system-config", "", None,
+                [("payloads/orin-humble/extra-04.deb", [], [], None, "shared", [], None, True)], [], [],
+            )
 
     def test_vision_is_installed_only_by_its_vendor_run_package_when_available(self) -> None:
         config = builder.load_delivery(ROOT / "one_stop/package-urls.json")

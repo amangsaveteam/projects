@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "orin-common-humble",
   "package_name": "navi-common-dep",
-  "release_version": "2.0.0~humble+22",
+  "release_version": "2.0.0~humble+23",
   "device_config_target": "orin-humble",
   "description": "Native Orin Humble offline common dependency bootstrap",
   "target": {
@@ -22,7 +22,7 @@
     {
       "package_name": "orin-common-deb",
       "artifact_filename": "orin_common_deb_2.0.0-release-humble-arm64.deb",
-      "depends": ["navi-common-dep (= 2.0.0~humble+22)"],
+      "depends": ["navi-common-dep (= 2.0.0~humble+23)"],
       "description": "Compatibility identity for legacy Orin Sensor and Robot installers"
     }
   ],
@@ -39,12 +39,6 @@
     {
       "source": "common/templates/Middleware.orin.env",
       "destination": "etc/naviai/Middleware.env",
-      "mode": "0644",
-      "conffile": true
-    },
-    {
-      "source": "common/templates/device.env.example",
-      "destination": "etc/zj_humanoid/device.env",
       "mode": "0644",
       "conffile": true
     },

@@ -164,6 +164,15 @@ Common DEB 由目标匹配的独立构建机生成并发布：Pico Humble Common
 Orin Humble Common 在 Ubuntu 22.04 arm64 构建。总包不触发这些远程构建；它只从云端下载已发布的
 Common DEB。Pico Common 是 PICO 的首个依赖 DEB，随后安装 upperlimb-common 与 robot。
 
+`extra_debs` 默认用 `dpkg -i` 安装。仅当上游 DEB 缺少 `Replaces`、但必须覆盖已知旧包文件时，才可为
+该条目设置 `"force_overwrite": true`；它必须不属于 `install_group`，总包会只对这一份 DEB 执行
+`dpkg --force-overwrite -i`。当前 Orin Humble 的远端 `naviai-log` 用于替换旧
+`zj-humanoid-naviai-log-compat`，是唯一启用项；不要将此选项复制给其他包。
+
+`/etc/zj_humanoid/device.env` 是物理设备身份和机型配置，由总包的 system-config 在安装开始时通过
+`deploy_common.py configure` 写入；Orin Humble Common 不再将它作为 DEB conffile 交付。升级 Common
+不会询问是否用模板覆盖设备身份。手动恢复或修改时，使用相同的 `configure` 命令，不要直接从包内模板覆盖。
+
 当 target 声明 `supervisor` 时，总包会同时内嵌并安装对应的 Supervisor Agent；不再依赖另一份
 Agent `.run` 包。Audio 的 `start_policy: "supervisor"` 只会抑制厂商 `.run` 最后一条前台 ROS
 启动命令，依赖安装内容和其余安装逻辑保持原样，随后由 `navi-orin-audio-supervisor.service` 启动。

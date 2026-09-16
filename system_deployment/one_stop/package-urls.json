@@ -54,6 +54,14 @@
           }
         },
         {
+          "name": "naviai-log",
+          "version": "2204+latest-0jammy",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/log/L3/release/zj_humanoid-naviai-log_2204%2Blatest-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "force_overwrite": true
+        },
+        {
           "name": "chassis-msgs",
           "version": "2.0.0-0jammy",
           "url": "http://10.51.33.211:10000/chfs/shared/modules/chassis/release/msg_ros2/zj-humanoid-ros-humble-chassis-msgs_2.0.0-0jammy_arm64.deb",
@@ -113,14 +121,6 @@
           "name": "diagnosis-msgs",
           "version": "2.0.0-0jammy",
           "url": "http://10.51.33.211:10000/chfs/shared/modules/diagnosis/msg_ros2/zj-humanoid-ros-humble-diagnosis-msgs_2.0.0-0jammy_arm64.deb",
-          "sha256": "",
-          "installers": [],
-          "install_group": "navigation-chassis-services"
-        },
-        {
-          "name": "naviai-log",
-          "version": "2204+latest-0jammy",
-          "url": "http://10.51.33.211:10000/chfs/shared/modules/log/L3/release/zj_humanoid-naviai-log_2204%2Blatest-0jammy_arm64.deb",
           "sha256": "",
           "installers": [],
           "install_group": "navigation-chassis-services"

@@ -345,6 +345,15 @@ def resolve_run_remove_packages(values, field):
     return values
 
 
+def resolve_force_overwrite(value, field):
+    """Validate the narrowly scoped opt-in for a known legacy file conflict."""
+    if value is None:
+        return False
+    if value is not True:
+        raise BuildError(field + ".force_overwrite must be true when specified")
+    return True
+
+
 def render_run_command(relpath, arguments, start_policy="vendor", helper_rel=None):
     rendered = []
     for argument in arguments:
@@ -922,18 +931,21 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         group = extra[4] if len(extra) > 4 else None
         wait_packages = extra[5] if len(extra) > 5 else []
         skip_if_installed = extra[6] if len(extra) > 6 else None
+        force_overwrite = extra[7] if len(extra) > 7 else False
         # An omitted group preserves the historical one-DEB-at-a-time
         # behaviour.  Only a named group forms a shared dpkg transaction.
         if group is None:
-            extra_groups.append((None, [(relpath, installers, environment, contract, wait_packages, skip_if_installed)]))
+            extra_groups.append((None, [(relpath, installers, environment, contract, wait_packages, skip_if_installed, force_overwrite)]))
             continue
         if skip_if_installed:
             raise BuildError(target_id + ": skip_if_package_installed cannot be used with install_group")
+        if force_overwrite:
+            raise BuildError(target_id + ": force_overwrite requires an extra_debs entry without install_group")
         if group and group in seen_groups and (not extra_groups or extra_groups[-1][0] != group):
             raise BuildError(target_id + ": install_group entries must be contiguous: " + group)
         if not extra_groups or extra_groups[-1][0] != group:
             extra_groups.append((group, []))
-        extra_groups[-1][1].append((relpath, installers, environment, contract, wait_packages, skip_if_installed))
+        extra_groups[-1][1].append((relpath, installers, environment, contract, wait_packages, skip_if_installed, force_overwrite))
         if group:
             seen_groups.add(group)
     for group, items in extra_groups:
@@ -942,10 +954,12 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             raise BuildError(target_id + ": install_group must use one installation environment: " + str(group))
         environment = items[0][2]
         prefix = "env " + " ".join(environment) + " " if environment else ""
-        for _, _, _, contract, _, _ in items:
+        for _, _, _, contract, _, _, _ in items:
             lines.extend(system_python_contract_check(contract))
         if group is None and items[0][5]:
-            relpath, installers, _, _, _, skip_if_installed = items[0]
+            relpath, installers, _, _, _, skip_if_installed, force_overwrite = items[0]
+            if force_overwrite:
+                raise BuildError(target_id + ": force_overwrite cannot be combined with skip_if_package_installed")
             lines.extend((
                 "if dpkg-query -W -f='${{db:Status-Status}}' {} 2>/dev/null | grep -Fxq installed; then".format(shlex.quote(skip_if_installed)),
                 "  echo {}".format(shlex.quote(
@@ -957,11 +971,16 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
                 "fi",
             ))
             continue
+        if group is None and items[0][6]:
+            relpath, installers, _, _, _, _, _ = items[0]
+            lines.append(prefix + "dpkg --force-overwrite -i \"$root/{}\"".format(relpath))
+            lines.extend(prefix + "\"{}\"".format(item) for item in installers)
+            continue
         paths = " ".join('\"$root/{}\"'.format(item[0]) for item in items)
         lines.append(prefix + "dpkg -i " + paths)
-        for _, installers, _, _, _, _ in items:
+        for _, installers, _, _, _, _, _ in items:
             lines.extend(prefix + "\"{}\"".format(item) for item in installers)
-        for package in sorted({package for _, _, _, _, packages, _ in items for package in packages}):
+        for package in sorted({package for _, _, _, _, packages, _, _ in items for package in packages}):
             lines.append("wait_for_debian_package {}".format(shlex.quote(package)))
     for run in runs:
         item, arguments = run[:2]
@@ -1214,6 +1233,7 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                     resolve_install_group(item.get("install_group"), target_id + ".extra"),
                     resolve_wait_packages(item.get("wait_for_packages"), target_id + ".extra"),
                     resolve_skip_if_package_installed(item.get("skip_if_package_installed"), target_id + ".extra"),
+                    resolve_force_overwrite(item.get("force_overwrite"), target_id + ".extra"),
                 ))
             requires_no_final_exec_helper = False
             for index, item in enumerate(target.get("runs", [])):
