@@ -535,6 +535,8 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             chassis_registration = (stage / "targets/orin-humble/supervisor/modules/chassis.json").read_text(encoding="utf-8")
             chassis_launch = (stage / "targets/orin-humble/supervisor/chassis/launch.sh").read_text(encoding="utf-8")
             livox_launch = (stage / "targets/orin-humble/supervisor/livox-lidar/launch.sh").read_text(encoding="utf-8")
+            web_rviz_launch = (stage / "targets/orin-humble/supervisor/web-rviz/launch.sh").read_text(encoding="utf-8")
+            manip_lingbot_launch = (stage / "targets/orin-humble/supervisor/manip-lingbot/launch.sh").read_text(encoding="utf-8")
             agent_unit_exists = (stage / "targets/orin-humble/supervisor-agent/navi-orin-supervisor-agent.service").is_file()
             agent_unit = (stage / "targets/orin-humble/supervisor-agent/navi-orin-supervisor-agent.service").read_text()
 
@@ -570,6 +572,13 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("http://192.168.217.100:19004/RPC2", chassis_registration)
         self.assertIn("ros2 launch chassis chassis.launch.py", chassis_launch)
         self.assertIn('detect_livox_model.py --lidar-ip "${LIVOX_LIDAR_IP:-192.168.217.17}" --timeout 4', livox_launch)
+        self.assertIn("source /etc/naviai/Middleware.env", web_rviz_launch)
+        self.assertIn("export ROS_LOG_DIR=/var/log/naviai/web-rviz/ros", web_rviz_launch)
+        self.assertIn("exec /opt/zj_humanoid/lib/web_rviz_ros2/start_web_navigation.sh", web_rviz_launch)
+        self.assertNotIn("exec source", web_rviz_launch)
+        self.assertIn("source /etc/naviai/Middleware.env", manip_lingbot_launch)
+        self.assertIn("exec /bin/bash /opt/naviai/manip/functions/bin/start-lingbot.sh", manip_lingbot_launch)
+        self.assertNotIn("env ROS_DOMAIN_ID=72", manip_lingbot_launch)
         self.assertIn("/etc/naviai/supervisor-agent/modules.d/robot.json", script)
         self.assertNotIn("configure_sensor_rpc.py", script)
         self.assertIn('"navi-sensor-host.service"', script)
@@ -589,12 +598,24 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertNotIn("/bin/bash -lc", audio_launch)
         self.assertIn("exec ros2 launch navi_audio_pkg audio_bringup.launch.py", audio_launch)
 
+    def test_replaced_vendor_services_are_disabled_again_after_run_installation(self) -> None:
+        script = builder.target_install(
+            "orin-humble", "payloads/orin-humble/system-config", "", None, [],
+            [("payloads/orin-humble/run-vision.run", [])], [],
+            disabled_services=["navi-vision.service", "navi-vision-supervisor.service"],
+        )
+        run_index = script.index('/bin/bash "$root/payloads/orin-humble/run-vision.run"')
+        self.assertGreater(script.rfind("disable_replaced_services"), run_index)
+        self.assertIn("navi-vision-supervisor.service", script)
+
     def test_navigation_chassis_services_are_managed_by_supervisord(self) -> None:
         target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
         chassis = next(module for module in target["supervisor_modules"] if module["id"] == "chassis")
         self.assertEqual(chassis["mode"], "managed")
         self.assertEqual(chassis["port"], 19004)
         self.assertEqual(chassis["disable_services"], ["zj-humanoid-chassis.service"])
+        vision = next(module for module in target["supervisor_modules"] if module["id"] == "vision")
+        self.assertEqual(vision["disable_services"], ["navi-vision.service", "navi-vision-supervisor.service"])
         services = builder.supervisor_systemd_services("orin-humble", target)
         self.assertEqual(services, [])
         disabled = builder.supervisor_disabled_services("orin-humble", target)

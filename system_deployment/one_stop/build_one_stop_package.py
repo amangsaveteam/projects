@@ -905,12 +905,16 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         lines.append("install -d -m 0755 /var/lib/navi /var/lib/navi/ros /var/log/navi/ros /var/log/navi/robot /var/log/naviai/robot")
     if disabled_services:
         lines.extend([
-            "for unit in " + " ".join(shlex.quote(unit) for unit in sorted(set(disabled_services))) + "; do",
-            "  if [[ $(systemctl show -p LoadState --value \"$unit\") != not-found ]]; then",
-            "    echo \"Disabling vendor service replaced by Supervisor: $unit\"",
-            "    systemctl disable --now \"$unit\"",
-            "  fi",
-            "done",
+            "disable_replaced_services() {",
+            "  local unit",
+            "  for unit in " + " ".join(shlex.quote(unit) for unit in sorted(set(disabled_services))) + "; do",
+            "    if [[ $(systemctl show -p LoadState --value \"$unit\") != not-found ]]; then",
+            "      echo \"Disabling vendor service replaced by Supervisor: $unit\"",
+            "      systemctl disable --now \"$unit\"",
+            "    fi",
+            "  done",
+            "}",
+            "disable_replaced_services",
         ])
     if any(len(extra) > 5 and extra[5] for extra in extras):
         lines.extend([
@@ -1001,6 +1005,11 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         lines.append(prefix + render_run_command(item, arguments, start_policy, helper_rel))
         if services:
             lines.append("stop_managed_services")
+    # Vendor RUN packages may enable or start their own units while installing.
+    # Retire them again before the generated Supervisor units claim the same
+    # port and business process.
+    if disabled_services:
+        lines.append("disable_replaced_services")
     lines.append('if [[ -f "$root/targets/{0}/install-config-files.sh" ]]; then bash "$root/targets/{0}/install-config-files.sh"; fi'.format(target_id))
     for _, launch_rel, service_rel, destination in startup_services:
         lines.extend((
@@ -1244,7 +1253,11 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                 if not dry_run:
                     path.chmod(0o755)
                     target_checksums.append((file_sha256(path), relpath))
-                    services.extend(services_from_run(path))
+                    # A module configured as managed replaces any vendor unit
+                    # with the same role; do not bring that retired unit back
+                    # during the final service-start pass.
+                    services.extend(service for service in services_from_run(path)
+                                    if service not in disabled_services)
                 start_policy = resolve_run_start_policy(item.get("start_policy"), target_id + ".run")
                 requires_no_final_exec_helper |= start_policy == "supervisor"
                 vision_helper_rel = "targets/{}/helpers/install_vision_preserving_shared.py".format(target_id)

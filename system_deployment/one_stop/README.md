@@ -136,7 +136,7 @@ Orin Humble 的 `manip` RUN 使用 `--force` 安装参数。厂商安装器在�
 | `manip-lingbot` | 19015 | `start-lingbot.sh` |
 | `manip-hand-detect` | 19016 | `start-hand-detect.sh` |
 
-四项以 root 执行，均传入 `ROS_DOMAIN_ID=72`、`RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`、`ROS_LOCALHOST_ONLY=0`，通过 Agent `:9080` 查看和启停。脚本需保持前台运行并保留这些环境变量；若安装器另行启用原生服务，需确认服务名后停用，避免重复启动。
+四项以 root 执行，均先加载 `/etc/naviai/Middleware.env`，再执行模块脚本。该统一入口加载设备身份和对应 ROS 环境，并从 `/etc/zj_humanoid/device.env`、`/etc/zj_humanoid/cyclonedds.xml` 提供 `ROS_DOMAIN_ID`、`RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`、`ROS_LOCALHOST_ONLY=0`、`CYCLONEDDS_URI`、`ROBOT_TYPE` 和 `ROBOT_NAME`。不要在 Manip 脚本或 Supervisor 命令中再写死 Domain 或 DDS URI；以设备统一环境为准，才能与 Sensor 的相机话题处于同一 DDS 网络。通过 Agent `:9080` 查看和启停。脚本需保持前台运行；若安装器另行启用原生服务，需确认服务名后停用，避免重复启动。
 
 不要再维护独立的 `supervised_stack` manifest。`supervisor.json` 的 target 内：
 
@@ -184,6 +184,8 @@ Agent 争用 9080。生成的单元也声明服务冲突，并通过 `ExecStartP
 ## Vision 服务
 
 Orin Humble 已恢复 Vision `.run` 安装，生成 `navi-orin-vision-supervisor.service` 和网页注册。
+安装会在 Vision RUN 前后停用旧的 `navi-vision.service` 与 `navi-vision-supervisor.service`；最终只由
+`navi-orin-vision-supervisor.service` 监听 19005，避免旧服务使用旧 RPC 密码占用端口。
 `vision-preserve-shared` 安装策略保留已经安装的 `ros-humble-upperlimb-msgs`，不比较其与随包版本是否一致，
 并将它从本次 Vision 安装、事务备份和版本恢复列表中排除。仅在未安装时使用随包版本；厂商运行验证继续执行。
 适配只修改本次解压的安装器，不修改下载的原始工件；未识别的厂商脚本格式会在安装前报错。

@@ -19,7 +19,8 @@
           "mode": "managed",
           "port": 19013,
           "working_directory": "/opt/naviai/manip/functions/bin",
-          "command": "env ROS_DOMAIN_ID=72 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_LOCALHOST_ONLY=0 /bin/bash /opt/naviai/manip/functions/bin/start-segmentation.sh",
+          "source_files": ["/etc/naviai/Middleware.env"],
+          "command": "/bin/bash /opt/naviai/manip/functions/bin/start-segmentation.sh",
           "autorestart": "unexpected",
           "startsecs": 5
         },
@@ -30,7 +31,8 @@
           "mode": "managed",
           "port": 19014,
           "working_directory": "/opt/naviai/manip/functions/bin",
-          "command": "env ROS_DOMAIN_ID=72 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_LOCALHOST_ONLY=0 /bin/bash /opt/naviai/manip/functions/bin/start-sam6d.sh",
+          "source_files": ["/etc/naviai/Middleware.env"],
+          "command": "/bin/bash /opt/naviai/manip/functions/bin/start-sam6d.sh",
           "autorestart": "unexpected",
           "startsecs": 5
         },
@@ -41,7 +43,8 @@
           "mode": "managed",
           "port": 19015,
           "working_directory": "/opt/naviai/manip/functions/bin",
-          "command": "env ROS_DOMAIN_ID=72 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_LOCALHOST_ONLY=0 /bin/bash /opt/naviai/manip/functions/bin/start-lingbot.sh",
+          "source_files": ["/etc/naviai/Middleware.env"],
+          "command": "/bin/bash /opt/naviai/manip/functions/bin/start-lingbot.sh",
           "autorestart": "unexpected",
           "startsecs": 5
         },
@@ -52,7 +55,8 @@
           "mode": "managed",
           "port": 19016,
           "working_directory": "/opt/naviai/manip/functions/bin",
-          "command": "env ROS_DOMAIN_ID=72 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_LOCALHOST_ONLY=0 /bin/bash /opt/naviai/manip/functions/bin/start-hand-detect.sh",
+          "source_files": ["/etc/naviai/Middleware.env"],
+          "command": "/bin/bash /opt/naviai/manip/functions/bin/start-hand-detect.sh",
           "autorestart": "unexpected",
           "startsecs": 5
         },
@@ -159,8 +163,11 @@
           "port": 19012,
           "working_directory": "/opt/zj_humanoid/lib/web_rviz_ros2",
           "source_files": ["/etc/naviai/Middleware.env"],
-          "prelude": ["install -d -m 0755 /var/log/naviai/web-rviz/ros /var/log/zj_humanoid/web_rviz_ros2"],
-          "command": "source /etc/naviai/Middleware.env; export ROS_LOG_DIR=/var/log/naviai/web-rviz/ros; exec /opt/zj_humanoid/lib/web_rviz_ros2/start_web_navigation.sh",
+          "prelude": [
+            "export ROS_LOG_DIR=/var/log/naviai/web-rviz/ros",
+            "install -d -m 0755 /var/log/naviai/web-rviz/ros /var/log/zj_humanoid/web_rviz_ros2"
+          ],
+          "command": "/opt/zj_humanoid/lib/web_rviz_ros2/start_web_navigation.sh",
           "disable_services": ["zj-humanoid-web-rviz-ros2.service"],
           "startup_priority": 60
         },
@@ -245,6 +252,10 @@
           "startsecs": 20,
           "after_services": [
             "navi-sensor-host.service"
+          ],
+          "disable_services": [
+            "navi-vision.service",
+            "navi-vision-supervisor.service"
           ],
           "start_policy": "vision-preserve-shared"
         }
