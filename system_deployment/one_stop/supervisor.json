@@ -4,7 +4,7 @@
     "orin-humble": {
       "supervisor": {
         "internal_ip": "192.168.217.100",
-        "agent_service": "navi-orin-supervisor-agent.service",
+        "agent_service": "zj-humanoid-orin-supervisor-agent.service",
         "agent_modules_directory": "/etc/naviai/supervisor-agent/modules.d",
         "agent_password_file": "/etc/naviai/supervisor-agent/supervisor-rpc.password",
         "module_root": "/etc/naviai/supervised-stack",
@@ -266,7 +266,7 @@
     "orin-jazzy": {
       "supervisor": {
         "internal_ip": "192.168.217.100",
-        "agent_service": "navi-orin-supervisor-agent.service",
+        "agent_service": "zj-humanoid-orin-supervisor-agent.service",
         "agent_modules_directory": "/etc/naviai/supervisor-agent/modules.d",
         "agent_password_file": "/etc/naviai/supervisor-agent/supervisor-rpc.password",
         "module_root": "/etc/naviai/supervised-stack",
@@ -278,7 +278,7 @@
           "id": "vision",
           "description": "Navi Vision Jazzy",
           "mode": "managed",
-          "service_name": "navi-vision-supervisor",
+          "service_name": "zj-humanoid-orin-vision-supervisor",
           "port": 19005,
           "working_directory": "/var/lib/navi-vision/supervised",
           "prelude": [
@@ -296,7 +296,7 @@
     "pico-humble": {
       "supervisor": {
         "internal_ip": "192.168.217.66",
-        "agent_service": "navi-pico-supervisor-agent.service",
+        "agent_service": "zj-humanoid-pico-supervisor-agent.service",
         "agent_modules_directory": "/etc/nav01/supervisor-agent/modules.d",
         "agent_password_file": "/etc/nav01/supervisor-agent/supervisor-rpc.password",
         "module_root": "/etc/nav01/supervised-stack",

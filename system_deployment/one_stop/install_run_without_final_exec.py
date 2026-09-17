@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 
 
-REPLACEMENT = 'echo "Audio installed; startup is managed by navi-orin-audio-supervisor.service"'
+REPLACEMENT = 'echo "Audio installed; startup is managed by zj-humanoid-orin-audio-supervisor.service"'
 # Audio release bundles have changed their final command more than once: some
 # use ``exec`` or ``exec_as_runtime_user``, some expand different argument variables. Match the concrete
 # Audio package/launch-file pair instead of an entire shell line, then replace
@@ -45,14 +45,14 @@ is_audio_launch() {
 }
 ros2() {
     if is_audio_launch "$@"; then
-        echo "Audio installed; startup is managed by navi-orin-audio-supervisor.service"
+        echo "Audio installed; startup is managed by zj-humanoid-orin-audio-supervisor.service"
         return 0
     fi
     command ros2 "$@"
 }
 exec() {
     if [[ "${1:-}" == ros2 ]] && is_audio_launch "${@:2}"; then
-        echo "Audio installed; startup is managed by navi-orin-audio-supervisor.service"
+        echo "Audio installed; startup is managed by zj-humanoid-orin-audio-supervisor.service"
         return 0
     fi
     builtin exec "$@"

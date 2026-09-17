@@ -55,7 +55,7 @@ assets/orin-humble/
 
 构建内嵌文件并记录 SHA-256；在模块安装后、服务启动前覆盖部署，原文件保留 `.~1~` 等编号备份，不删除目标目录的其他文件。设备须已存在对应用户/组；源目录不接受符号链接。
 
-配置编辑注册表是 `assets/orin-humble/shared/schema/version.json` 的 `ORIN.config`，不是总包版本文件 `one_stop/version.json`。已有 11 项配置；重启命令已映射为 `navi-orin-navigation-supervisor.service` 和 `navi-orin-naviai-nav2-supervisor.service`。当前该 schema 目录缺少 `navigation/topic_config.schema.json`，导航运行配置文件需由导航包提供；注册表不会自动生成这些文件。可用 `sudo python3 check_installation.py` 检查安装后的模板、目标文件及依赖包。
+配置编辑注册表是 `assets/orin-humble/shared/schema/version.json` 的 `ORIN.config`，不是总包版本文件 `one_stop/version.json`。已有 11 项配置；重启命令已映射为 `zj-humanoid-orin-navigation-supervisor.service` 和 `zj-humanoid-orin-naviai-nav2-supervisor.service`。当前该 schema 目录缺少 `navigation/topic_config.schema.json`，导航运行配置文件需由导航包提供；注册表不会自动生成这些文件。可用 `sudo python3 check_installation.py` 检查安装后的模板、目标文件及依赖包。
 
 安装器环境使用包条目的 `environment`；模块运行环境使用包条目的 `runtime` 或 `supervisor.json` 中的 `source_files`、`environment`、`prelude`。导航环境首装时由 `environment-defaults/orin-humble/navigation.env` 创建为设备上的 `/etc/naviai/navigation/navigation.env`，并由 Humble `Middleware.env` 加载。该文件后续安装保留不覆盖，可直接手动修改。
 
@@ -78,14 +78,14 @@ sudo python3 /usr/lib/navi-common-dep/deploy_common.py configure \
 
 ```bash
 sudoedit /etc/naviai/navigation/navigation.env
-sudo systemctl restart navi-orin-navigation-supervisor.service
-sudo systemctl restart navi-orin-naviai-nav2-supervisor.service
+sudo systemctl restart zj-humanoid-orin-navigation-supervisor.service
+sudo systemctl restart zj-humanoid-orin-naviai-nav2-supervisor.service
 ```
 
 修改 `LIDAR_3D_TYPE` 后还应重启 Livox 服务：
 
 ```bash
-sudo systemctl restart navi-orin-livox-lidar-supervisor.service
+sudo systemctl restart zj-humanoid-orin-livox-lidar-supervisor.service
 ```
 
 查看自动识别结果：
@@ -123,7 +123,38 @@ Orin Humble 在执行模块安装器前创建 Robot 的 `/var/lib/navi` 工作�
 
 ## Supervisor 服务
 
-Pico Humble 的 `display` 使用 `managed` 模式，RPC 为 `192.168.217.66:19004`，服务为 `navi-pico-display-supervisor.service`。启动优先级为 1，早于 Robot（10）和上肢（20）；此顺序用于总包安装收尾启动，不保证开机时不同 systemd 服务的启动顺序。`autorestart: "true"`、`startsecs: 0` 使已创建的进程正常或异常退出后持续重启，避免快速退出耗尽启动重试。人工停止仍有效，进程卡住或子节点退出但 launch 存活时不会自动恢复画面。启动时先加载公共 `/etc/nav01/Middleware.env`，再依次加载 `/opt/ros/humble/setup.bash` 和 `/opt/navi_display/ros/setup.bash`，执行 `ros2 launch media_play media_play.launch.py`；通过 Agent `:9080` 查看及启停。安装器暂按无参数调用配置；图形会话所需的环境变量若有额外要求，需由模块方提供。
+### systemd 服务命名
+
+总包创建的 systemd 单元统一采用以下名称，`<platform>` 仅为 `orin` 或 `pico`，`<module>` 为
+`supervisor.json` 中的模块 `id`：
+
+```text
+zj-humanoid-<platform>-supervisor-agent.service
+zj-humanoid-<platform>-<module>-supervisor.service
+```
+
+当前总包生成并启用的服务如下：
+
+| 目标 | Agent | 模块服务 |
+| --- | --- | --- |
+| Orin Humble | `zj-humanoid-orin-supervisor-agent.service` | `zj-humanoid-orin-{manip-segmentation,manip-sam6d,manip-lingbot,manip-hand-detect,chassis,vanjee-lidar,livox-lidar,naviai-nav2,navigation,naviai-nav2-rawdata,diagnosis-system,web-rviz,robot,audio,vision}-supervisor.service` |
+| Orin Jazzy | `zj-humanoid-orin-supervisor-agent.service` | `zj-humanoid-orin-vision-supervisor.service` |
+| Pico Humble | `zj-humanoid-pico-supervisor-agent.service` | `zj-humanoid-pico-display-supervisor.service` |
+
+下列服务由供应商模块包创建，属于 `external` 模块。总包只能注册、停启或重启它们，不能改名；改名需要
+模块包同时修改自身的 `ExecStart`、安装脚本和配置路径：
+
+| 目标 / 模块 | 原生服务名 |
+| --- | --- |
+| Orin Humble / Sensor | `navi-sensor-host.service` |
+| Pico Humble / Robot | `navi-pico-robot-supervisor.service` |
+| Pico Humble / Upperlimb | `navi-pico-upperlimb.service` |
+
+所有旧 `navi-<platform>-*-supervisor.service` 和 `navi-<platform>-supervisor-agent.service` 都是迁移名称；
+安装新版总包时会先停用它们，再创建并启动对应的 `zj-humanoid-*` 服务。Orin Jazzy 还会停用供应商旧
+`navi-vision-supervisor.service`，两套服务不会同时运行。
+
+Pico Humble 的 `display` 使用 `managed` 模式，RPC 为 `192.168.217.66:19004`，服务为 `zj-humanoid-pico-display-supervisor.service`。启动优先级为 1，早于 Robot（10）和上肢（20）；此顺序用于总包安装收尾启动，不保证开机时不同 systemd 服务的启动顺序。`autorestart: "true"`、`startsecs: 0` 使已创建的进程正常或异常退出后持续重启，避免快速退出耗尽启动重试。人工停止仍有效，进程卡住或子节点退出但 launch 存活时不会自动恢复画面。启动时先加载公共 `/etc/nav01/Middleware.env`，再依次加载 `/opt/ros/humble/setup.bash` 和 `/opt/navi_display/ros/setup.bash`，执行 `ros2 launch media_play media_play.launch.py`；通过 Agent `:9080` 查看及启停。安装器暂按无参数调用配置；图形会话所需的环境变量若有额外要求，需由模块方提供。
 
 Orin Humble 的 `manip` RUN 使用 `--force` 安装参数。厂商安装器在发现其内嵌的
 `ros-humble-navi-manip-msgs` 已安装时会拒绝默认重装；`--force` 允许在相同发布基线或经确认的升级
@@ -148,7 +179,7 @@ Orin Humble 的 `manip` RUN 使用 `--force` 安装参数。厂商安装器在�
 
 Orin Humble 注册 chassis、两个雷达、导航、Nav2、原始数据、诊断、Web RViz、sensor、robot、audio、vision。导航、底盘与工具
 DEB 组的八项业务服务以 `managed` 模式接入：总包生成独立 supervisord、Agent RPC 及 systemd 外层服务。总包不安装 `zj-humanoid-services`；若旧设备已有其 unit，会停用这些供应商原服务以避免重复启动。Orin 的 robot 由总包生成
-`navi-orin-robot-supervisor.service` 并使用 `19002`；Sensor 已由自身安装包原生维护
+`zj-humanoid-orin-robot-supervisor.service` 并使用 `19002`；Sensor 已由自身安装包原生维护
 Supervisor。总包在共享凭据就绪后，备份原配置并补齐 Sensor 的认证 TCP RPC（仅监听内网 19001），
 保留原生相机程序配置，再重启 `navi-sensor-host.service`；重复安装也会重新应用该配置。
 
@@ -166,6 +197,10 @@ Pico Robot 与 Display 安装器按无自定义参数调用（`"arguments": []`�
 显式配置 `"arguments": ["--", "--robot-type", "{robot_type}"]`。总包会在调用它们前写入
 `/etc/zj_humanoid/device.env`。不要省略 `arguments`：Pico Robot 不支持该选项，而上肢必须接收该选项。
 
+总包在每个厂商 RUN 前加载目标的统一 `Middleware.env`，因此安装脚本可读取设备身份、ROS、Domain 72 和
+CycloneDDS 环境。RUN 完成后会重新部署并加载总包的标准环境，避免厂商安装器覆盖
+`/etc/nav01/Middleware.env` 或 `/etc/naviai/Middleware.env` 后影响后续模块和最终服务启动。
+
 Common DEB 由目标匹配的独立构建机生成并发布：Pico Humble Common 在 Ubuntu 20.04 amd64 构建，
 Orin Humble Common 在 Ubuntu 22.04 arm64 构建。总包不触发这些远程构建；它只从云端下载已发布的
 Common DEB。Pico Common 是 PICO 的首个依赖 DEB，随后安装 upperlimb-common 与 robot。
@@ -181,7 +216,7 @@ Common DEB。Pico Common 是 PICO 的首个依赖 DEB，随后安装 upperlimb-c
 
 当 target 声明 `supervisor` 时，总包会同时内嵌并安装对应的 Supervisor Agent；不再依赖另一份
 Agent `.run` 包。Audio 的 `start_policy: "supervisor"` 只会抑制厂商 `.run` 最后一条前台 ROS
-启动命令，依赖安装内容和其余安装逻辑保持原样，随后由 `navi-orin-audio-supervisor.service` 启动。
+启动命令，依赖安装内容和其余安装逻辑保持原样，随后由 `zj-humanoid-orin-audio-supervisor.service` 启动。
 
 Orin 总包在启动自己的 Agent 前停用 Robot 包附带的 `navi-supervisor-agent.service`，避免两个
 Agent 争用 9080。生成的单元也声明服务冲突，并通过 `ExecStartPost` 等待本机健康检查返回匹配的
@@ -189,15 +224,15 @@ Agent 争用 9080。生成的单元也声明服务冲突，并通过 `ExecStartP
 
 ## Vision 服务
 
-Orin Humble 已恢复 Vision `.run` 安装，生成 `navi-orin-vision-supervisor.service` 和网页注册。
+Orin Humble 已恢复 Vision `.run` 安装，生成 `zj-humanoid-orin-vision-supervisor.service` 和网页注册。
 安装会在 Vision RUN 前后停用旧的 `navi-vision.service` 与 `navi-vision-supervisor.service`；最终只由
-`navi-orin-vision-supervisor.service` 监听 19005，避免旧服务使用旧 RPC 密码占用端口。
+`zj-humanoid-orin-vision-supervisor.service` 监听 19005，避免旧服务使用旧 RPC 密码占用端口。
 `vision-preserve-shared` 安装策略保留已经安装的 `ros-humble-upperlimb-msgs`，不比较其与随包版本是否一致，
 并将它从本次 Vision 安装、事务备份和版本恢复列表中排除。仅在未安装时使用随包版本；厂商运行验证继续执行。
 适配只修改本次解压的安装器，不修改下载的原始工件；未识别的厂商脚本格式会在安装前报错。
 Vision 进程以 `naviai` 用户加载厂商 `vision_environment.sh`，使用平台 DDS 配置。
 Orin Jazzy 会在 Vision `.run` 安装成功后部署并启用
-`navi-vision-supervisor.service`，由 systemd 启动 supervisord，再启动 Vision，并在本机 Agent 注册 19005。它保留独立的 ROS 运行环境：
+`zj-humanoid-orin-vision-supervisor.service`，由 systemd 启动 supervisord，再启动 Vision，并在本机 Agent 注册 19005。它保留独立的 ROS 运行环境：
 `ROS_DOMAIN_ID=72`、`RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`、
 `ROS_LOCALHOST_ONLY=0`，并明确取消 `CYCLONEDDS_URI`。服务启动命令为：
 

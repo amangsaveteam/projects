@@ -20,28 +20,28 @@ TARGETS = {
 }
 MODULES = {
     "orin-humble": {
-        "manip-segmentation": ("navi-orin-manip-segmentation-supervisor.service", 19013, True),
-        "manip-sam6d": ("navi-orin-manip-sam6d-supervisor.service", 19014, True),
-        "manip-lingbot": ("navi-orin-manip-lingbot-supervisor.service", 19015, True),
-        "manip-hand-detect": ("navi-orin-manip-hand-detect-supervisor.service", 19016, True),
+        "manip-segmentation": ("zj-humanoid-orin-manip-segmentation-supervisor.service", 19013, True),
+        "manip-sam6d": ("zj-humanoid-orin-manip-sam6d-supervisor.service", 19014, True),
+        "manip-lingbot": ("zj-humanoid-orin-manip-lingbot-supervisor.service", 19015, True),
+        "manip-hand-detect": ("zj-humanoid-orin-manip-hand-detect-supervisor.service", 19016, True),
         "sensor": ("navi-sensor-host.service", 19001, False),
-        "robot": ("navi-orin-robot-supervisor.service", 19002, True),
-        "audio": ("navi-orin-audio-supervisor.service", 19003, True),
-        "chassis": ("navi-orin-chassis-supervisor.service", 19004, True),
-        "vanjee-lidar": ("navi-orin-vanjee-lidar-supervisor.service", 19006, True),
-        "livox-lidar": ("navi-orin-livox-lidar-supervisor.service", 19007, True),
-        "naviai-nav2": ("navi-orin-naviai-nav2-supervisor.service", 19008, True),
-        "navigation": ("navi-orin-navigation-supervisor.service", 19009, True),
-        "naviai-nav2-rawdata": ("navi-orin-naviai-nav2-rawdata-supervisor.service", 19010, True),
-        "diagnosis-system": ("navi-orin-diagnosis-system-supervisor.service", 19011, True),
-        "web-rviz": ("navi-orin-web-rviz-supervisor.service", 19012, True),
-        "vision": ("navi-orin-vision-supervisor.service", 19005, True),
+        "robot": ("zj-humanoid-orin-robot-supervisor.service", 19002, True),
+        "audio": ("zj-humanoid-orin-audio-supervisor.service", 19003, True),
+        "chassis": ("zj-humanoid-orin-chassis-supervisor.service", 19004, True),
+        "vanjee-lidar": ("zj-humanoid-orin-vanjee-lidar-supervisor.service", 19006, True),
+        "livox-lidar": ("zj-humanoid-orin-livox-lidar-supervisor.service", 19007, True),
+        "naviai-nav2": ("zj-humanoid-orin-naviai-nav2-supervisor.service", 19008, True),
+        "navigation": ("zj-humanoid-orin-navigation-supervisor.service", 19009, True),
+        "naviai-nav2-rawdata": ("zj-humanoid-orin-naviai-nav2-rawdata-supervisor.service", 19010, True),
+        "diagnosis-system": ("zj-humanoid-orin-diagnosis-system-supervisor.service", 19011, True),
+        "web-rviz": ("zj-humanoid-orin-web-rviz-supervisor.service", 19012, True),
+        "vision": ("zj-humanoid-orin-vision-supervisor.service", 19005, True),
     },
-    "orin-jazzy": {"vision": ("navi-vision-supervisor.service", 19005, True)},
+    "orin-jazzy": {"vision": ("zj-humanoid-orin-vision-supervisor.service", 19005, True)},
     "pico-humble": {
         "robot": ("navi-pico-robot-supervisor.service", 19002, False),
         "upperlimb": ("navi-pico-upperlimb.service", 19003, False),
-        "display": ("navi-pico-display-supervisor.service", 19004, True),
+        "display": ("zj-humanoid-pico-display-supervisor.service", 19004, True),
     },
 }
 
@@ -146,7 +146,7 @@ def run(args):
     checks.report("previous.json", "INFO", "Optional on first successful installation.")
     modules = MODULES.get(target, {})
     if modules:
-        agent = "navi-{}-supervisor-agent.service".format(device)
+        agent = "zj-humanoid-{}-supervisor-agent.service".format(device)
         checks.check(agent, lambda: checks.command(["systemctl", "is-active", agent]))
         checks.file(config_dir + "/supervisor-agent/modules.json")
         def password():

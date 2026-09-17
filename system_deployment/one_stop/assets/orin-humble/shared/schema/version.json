@@ -1083,67 +1083,67 @@
         "name": "navigation",
         "template": "/home/naviai/navi_project/schema/navigation/explicit_config.schema.json",
         "dst": "/home/naviai/navi_project/config/navigation/config/explicit_config.json",
-        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+        "restart_policy": "sudo systemctl restart zj-humanoid-orin-navigation-supervisor.service"
       },
       {
         "name": "navigation",
         "template": "/home/naviai/navi_project/schema/navigation/planner_config.schema.json",
         "dst": "/home/naviai/navi_project/config/navigation/config/planner_config.json",
-        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+        "restart_policy": "sudo systemctl restart zj-humanoid-orin-navigation-supervisor.service"
       },
       {
         "name": "navigation",
         "template": "/home/naviai/navi_project/schema/navigation/robot_params.rx.schema.json",
         "dst": "/home/naviai/navi_project/config/navigation/config/robot_params.rx.json",
-        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+        "restart_policy": "sudo systemctl restart zj-humanoid-orin-navigation-supervisor.service"
       },
       {
         "name": "navigation",
         "template": "/home/naviai/navi_project/schema/navigation/robot_params.wa1.schema.json",
         "dst": "/home/naviai/navi_project/config/navigation/config/robot_params.wa1.json",
-        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+        "restart_policy": "sudo systemctl restart zj-humanoid-orin-navigation-supervisor.service"
       },
       {
         "name": "navigation",
         "template": "/home/naviai/navi_project/schema/navigation/robot_params.wa2.schema.json",
         "dst": "/home/naviai/navi_project/config/navigation/config/robot_params.wa2.json",
-        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+        "restart_policy": "sudo systemctl restart zj-humanoid-orin-navigation-supervisor.service"
       },
       {
         "name": "navigation",
         "template": "/home/naviai/navi_project/schema/navigation/topic_config.schema.json",
         "dst": "/home/naviai/navi_project/config/navigation/config/topic_config.yaml",
-        "restart_policy": "sudo systemctl restart navi-orin-navigation-supervisor.service"
+        "restart_policy": "sudo systemctl restart zj-humanoid-orin-navigation-supervisor.service"
       },
       {
         "name": "perception",
         "template": "/home/naviai/navi_project/schema/perception/lmapping.schema.json",
         "dst": "/home/naviai/navi_project/config/perception/mid360.yaml",
-        "restart_policy": "sudo systemctl restart navi-orin-naviai-nav2-supervisor.service"
+        "restart_policy": "sudo systemctl restart zj-humanoid-orin-naviai-nav2-supervisor.service"
       },
       {
         "name": "perception",
         "template": "/home/naviai/navi_project/schema/perception/octree_wa1.schema.json",
         "dst": "/home/naviai/navi_project/config/perception/config_wa1.json",
-        "restart_policy": "sudo systemctl restart navi-orin-naviai-nav2-supervisor.service"
+        "restart_policy": "sudo systemctl restart zj-humanoid-orin-naviai-nav2-supervisor.service"
       },
       {
         "name": "perception",
         "template": "/home/naviai/navi_project/schema/perception/octree_wa2.schema.json",
         "dst": "/home/naviai/navi_project/config/perception/config_wa2.json",
-        "restart_policy": "sudo systemctl restart navi-orin-naviai-nav2-supervisor.service"
+        "restart_policy": "sudo systemctl restart zj-humanoid-orin-naviai-nav2-supervisor.service"
       },
       {
         "name": "perception",
         "template": "/home/naviai/navi_project/schema/perception/lio.schema.json",
         "dst": "/home/naviai/navi_project/config/perception/mid360_wa1.yaml",
-        "restart_policy": "sudo systemctl restart navi-orin-naviai-nav2-supervisor.service"
+        "restart_policy": "sudo systemctl restart zj-humanoid-orin-naviai-nav2-supervisor.service"
       },
       {
         "name": "perception",
         "template": "/home/naviai/navi_project/schema/perception/lio.schema.json",
         "dst": "/home/naviai/navi_project/config/perception/mid360_wa2.yaml",
-        "restart_policy": "sudo systemctl restart navi-orin-naviai-nav2-supervisor.service"
+        "restart_policy": "sudo systemctl restart zj-humanoid-orin-naviai-nav2-supervisor.service"
       }
     ],
     "docker_compose": "${HOME}/docker-compose.yaml"

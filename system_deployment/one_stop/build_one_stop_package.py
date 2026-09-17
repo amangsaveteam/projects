@@ -452,7 +452,9 @@ def supervisor_module(target_id, index, value):
         result["working_directory"] = require(result.get("working_directory"), field + ".working_directory")
         if not result["working_directory"].startswith("/"):
             raise BuildError(field + ".working_directory must be an absolute path")
-        service_name = result.get("service_name", "navi-{}-{}-supervisor".format(target_id.split("-", 1)[0], identifier))
+        service_name = result.get(
+            "service_name", "zj-humanoid-{}-{}-supervisor".format(target_id.split("-", 1)[0], identifier)
+        )
         if not isinstance(service_name, str) or not MODULE_ID.fullmatch(service_name):
             raise BuildError(field + ".service_name is invalid")
         result["service_name"] = service_name + ".service"
@@ -614,9 +616,22 @@ def supervisor_systemd_services(target_id, target):
 
 def supervisor_disabled_services(target_id, target):
     """Return vendor systemd units retired in favour of managed Supervisors."""
-    return sorted({service
-                   for index, value in enumerate(target.get("supervisor_modules", []))
-                   for service in supervisor_module(target_id, index, value).get("disable_services", [])})
+    disabled = {
+        service
+        for index, value in enumerate(target.get("supervisor_modules", []))
+        for service in supervisor_module(target_id, index, value).get("disable_services", [])
+    }
+    # Release 2.0.0-2 and earlier generated navi-<platform>-* units.  Retire
+    # them before installing the zj-humanoid-* replacement so an upgraded
+    # device has one owner for each Supervisor port and business process.
+    platform = target_id.split("-", 1)[0]
+    for index, value in enumerate(target.get("supervisor_modules", [])):
+        module = supervisor_module(target_id, index, value)
+        if module["mode"] == "managed":
+            legacy = "navi-{}-{}-supervisor.service".format(platform, module["id"])
+            if legacy != module["service_name"]:
+                disabled.add(legacy)
+    return sorted(disabled)
 
 
 def stage_supervisor_agent(stage, target_id, paths, checksums, dry_run):
@@ -650,10 +665,14 @@ def stage_supervisor_agent(stage, target_id, paths, checksums, dry_run):
                 destination.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
             destination.chmod(0o755 if name.endswith(".py") else 0o644)
             checksums.append((file_sha256(destination), (Path(base) / name).as_posix()))
+        legacy_agents = ["navi-{}-supervisor-agent.service".format(device)]
+        if device == "orin":
+            legacy_agents.append("navi-supervisor-agent.service")
         service = stage / base / (paths["agent_service"].removesuffix(".service") + ".service")
         service.write_text("\n".join((
             "[Unit]", "Description=Navi {} Supervisor Agent".format(device.title()), "After=network-online.target",
-            *( ["Conflicts=navi-supervisor-agent.service", "After=navi-supervisor-agent.service"] if device == "orin" else [] ),
+            "Conflicts=" + " ".join(legacy_agents),
+            "After=" + " ".join(legacy_agents),
             "Wants=network-online.target", "", "[Service]", "Type=simple",
             "ExecStart=/usr/bin/python3 {}/navi_supervisor_agent.py --config {}/modules.json".format(
                 paths["agent_modules_directory"].rsplit("/modules.d", 1)[0],
@@ -671,7 +690,10 @@ def stage_supervisor_agent(stage, target_id, paths, checksums, dry_run):
         "base": base,
         "service": paths["agent_service"].removesuffix(".service") + ".service",
         "destination": paths["agent_modules_directory"].rsplit("/modules.d", 1)[0],
-        "replaces_services": ["navi-supervisor-agent.service"] if device == "orin" else [],
+        "replaces_services": (
+            ["navi-{}-supervisor-agent.service".format(device)]
+            + (["navi-supervisor-agent.service"] if device == "orin" else [])
+        ),
     }
 
 
@@ -891,7 +913,20 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             "trap on_install_exit EXIT",
         ])
     if system_config_rel:
-        lines.append("/bin/bash \"$root/targets/{}/install-system-config.sh\" \"$robot_type\"".format(target_id))
+        middleware_env = "/etc/nav01/Middleware.env" if target_id.startswith("pico-") else "/etc/naviai/Middleware.env"
+        lines.extend([
+            "install_system_config() {",
+            "  /bin/bash \"$root/targets/{}/install-system-config.sh\" \"$robot_type\"".format(target_id),
+            "}",
+            "load_shared_middleware() {",
+            "  [[ -r {} ]] || {{ echo {} >&2; return 1; }}".format(
+                shlex.quote(middleware_env),
+                shlex.quote("ERROR: shared Middleware environment is missing: " + middleware_env),
+            ),
+            "  source {}".format(shlex.quote(middleware_env)),
+            "}",
+            "install_system_config",
+        ])
     elif isinstance(common, dict):
         tool = require(common.get("configure_tool"), "common.configure_tool")
         configure_target = require(common.get("configure_target"), "common.configure_target", safe=True)
@@ -1002,7 +1037,16 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             ))
         environment = run[5] if len(run) > 5 else []
         prefix = "env " + " ".join(environment) + " " if environment else ""
+        if system_config_rel:
+            # A vendor installer may alter Middleware.env (the Pico upperlimb
+            # installer currently does).  Load the known-good carrier before
+            # each installer and restore it immediately afterwards so all
+            # following installers and generated services share one ROS/DDS
+            # identity.
+            lines.append("load_shared_middleware")
         lines.append(prefix + render_run_command(item, arguments, start_policy, helper_rel))
+        if system_config_rel:
+            lines.extend(("install_system_config", "load_shared_middleware"))
         if services:
             lines.append("stop_managed_services")
     # Vendor RUN packages may enable or start their own units while installing.

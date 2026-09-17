@@ -212,7 +212,7 @@ Orin Humble 当前的导航、底盘与工具 DEB 会分别注册为 8 个 `mana
 
 | 项目 | Robot | Vision |
 | --- | --- | --- |
-| systemd 服务 | `navi-orin-robot-supervisor.service` | `navi-orin-vision-supervisor.service` |
+| systemd 服务 | `zj-humanoid-orin-robot-supervisor.service` | `zj-humanoid-orin-vision-supervisor.service` |
 | 工作目录 | `/var/lib/navi` | `/var/lib/navi-vision/supervised` |
 | 业务运行用户 | root | naviai（通过 `runuser` 切换） |
 | 环境加载 | `/etc/naviai/Middleware.env`、`/etc/naviai/robot/robot_env.sh` | `/etc/naviai/Middleware.env`、`/usr/lib/orin-vision-common-deb/vision_environment.sh` |
@@ -222,7 +222,7 @@ Orin Humble 当前的导航、底盘与工具 DEB 会分别注册为 8 个 `mana
 总包根据这些字段生成并安装下列文件，`<module>` 分别为 `robot` 或 `vision`：
 
 ```text
-/etc/systemd/system/navi-orin-<module>-supervisor.service
+/etc/systemd/system/zj-humanoid-orin-<module>-supervisor.service
   → /etc/naviai/supervised-stack/<module>/supervisor-entrypoint.sh
     → 生成 /run/naviai/<module>/supervisord.conf 并启动 supervisord
       → /etc/naviai/supervised-stack/<module>/launch.sh
@@ -234,7 +234,7 @@ Agent 注册文件位于 `/etc/naviai/supervisor-agent/modules.d/<module>.json`�
 设备上查看实际启动配置：
 
 ```bash
-systemctl cat navi-orin-robot-supervisor.service
+systemctl cat zj-humanoid-orin-robot-supervisor.service
 sudo cat /etc/naviai/supervised-stack/robot/launch.sh
 sudo cat /run/naviai/robot/supervisord.conf
 # 查看 Vision 时，将以上 robot 替换为 vision
@@ -359,7 +359,7 @@ Web → Orin Agent :9080 → Orin XML-RPC 模块 :19001～19012
                       → PICO Agent :9080 → PICO 模块 XML-RPC
 ```
 
-`managed` 模块的 supervisord 和 systemd 配置由总包生成；`external` 模块复用模块包自己的 Supervisor；`systemd` 模块保留 DEB 的原生服务，由 Agent 通过 systemctl/journald 观测和控制。Humble 和 Jazzy Vision 均采用 systemd → supervisord → Vision，Jazzy 保留原服务名 `navi-vision-supervisor.service`，通过 19005 接入本机 Agent。
+`managed` 模块的 supervisord 和 systemd 配置由总包生成，名称统一为 `zj-humanoid-<orin|pico>-<module>-supervisor.service`；聚合服务统一为 `zj-humanoid-<orin|pico>-supervisor-agent.service`。`external` 模块复用模块包自己的 Supervisor，服务名由模块包决定；`systemd` 模块保留 DEB 的原生服务，由 Agent 通过 systemctl/journald 观测和控制。Humble 和 Jazzy Vision 均采用 systemd → supervisord → Vision；Jazzy 已迁移为 `zj-humanoid-orin-vision-supervisor.service`，通过 19005 接入本机 Agent。
 
 后续新增模块必须通过 `supervisor_modules` 接入统一管理和观测：由总包托管为 `managed`、注册模块原生 Supervisor 为 `external`，或注册模块包原生 systemd 服务为 `systemd`。不再新增未被 Agent 注册的直接启动路径。其他尚未接入的目标模块仍需逐项迁移，不代表目前所有目标已统一完成。
 
@@ -369,14 +369,14 @@ Orin Humble 导航、底盘与工具服务映射如下。每项都由独立 supe
 
 | Agent 模块 | Supervisor 服务 / 端口 | 供应商原 systemd 服务（停用） |
 | --- | --- | --- |
-| `navigation` | `navi-orin-navigation-supervisor.service` / 19009 | `zj-humanoid-navigation.service` |
-| `chassis` | `navi-orin-chassis-supervisor.service` / 19004 | `zj-humanoid-chassis.service` |
-| `vanjee-lidar` | `navi-orin-vanjee-lidar-supervisor.service` / 19006 | `zj-humanoid-vanjee-lidar.service` |
-| `livox-lidar` | `navi-orin-livox-lidar-supervisor.service` / 19007 | `zj-humanoid-livox-lidar.service` |
-| `naviai-nav2` | `navi-orin-naviai-nav2-supervisor.service` / 19008 | `zj-humanoid-naviai-nav2.service` |
-| `naviai-nav2-rawdata` | `navi-orin-naviai-nav2-rawdata-supervisor.service` / 19010 | `zj-humanoid-naviai-nav2-rawdata.service` |
-| `diagnosis-system` | `navi-orin-diagnosis-system-supervisor.service` / 19011 | `zj-humanoid-diagnosis-system.service` |
-| `web-rviz` | `navi-orin-web-rviz-supervisor.service` / 19012 | `zj-humanoid-web-rviz-ros2.service` |
+| `navigation` | `zj-humanoid-orin-navigation-supervisor.service` / 19009 | `zj-humanoid-navigation.service` |
+| `chassis` | `zj-humanoid-orin-chassis-supervisor.service` / 19004 | `zj-humanoid-chassis.service` |
+| `vanjee-lidar` | `zj-humanoid-orin-vanjee-lidar-supervisor.service` / 19006 | `zj-humanoid-vanjee-lidar.service` |
+| `livox-lidar` | `zj-humanoid-orin-livox-lidar-supervisor.service` / 19007 | `zj-humanoid-livox-lidar.service` |
+| `naviai-nav2` | `zj-humanoid-orin-naviai-nav2-supervisor.service` / 19008 | `zj-humanoid-naviai-nav2.service` |
+| `naviai-nav2-rawdata` | `zj-humanoid-orin-naviai-nav2-rawdata-supervisor.service` / 19010 | `zj-humanoid-naviai-nav2-rawdata.service` |
+| `diagnosis-system` | `zj-humanoid-orin-diagnosis-system-supervisor.service` / 19011 | `zj-humanoid-diagnosis-system.service` |
+| `web-rviz` | `zj-humanoid-orin-web-rviz-supervisor.service` / 19012 | `zj-humanoid-web-rviz-ros2.service` |
 
 Jazzy 本次接入 Vision；其 Agent 当前仅注册本机 Vision，不套用 Humble 的其他模块及 PICO 聚合配置。
 
