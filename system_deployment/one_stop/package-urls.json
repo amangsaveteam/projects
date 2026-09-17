@@ -348,12 +348,18 @@
         {
           "name": "robot",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/robot/develop/navi_pico_robot_installer-2.0.0-release-humble-amd64.run",
-          "sha256": ""
+          "sha256": "",
+          "arguments": []
         },
         {
           "name": "upperlimb",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/upperlimb/develop/navi_pico_upperlimb_installer-2.0.0-release-humble-amd64.run",
-          "sha256": ""
+          "sha256": "",
+          "arguments": [
+            "--",
+            "--robot-type",
+            "{robot_type}"
+          ]
         },
         {
           "name": "display",
@@ -377,7 +383,12 @@
         {
           "name": "upperlimb",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/upperlimb/jazzy/navi_pico_upperlimb_installer-2.0.0-release-jazzy-amd64.run",
-          "sha256": ""
+          "sha256": "",
+          "arguments": [
+            "--",
+            "--robot-type",
+            "{robot_type}"
+          ]
         }
       ]
     },

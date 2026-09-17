@@ -203,6 +203,20 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             else:
                 self.assertEqual(runs["vision"], [])
 
+    def test_pico_run_arguments_match_each_installer_interface(self) -> None:
+        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
+        humble = {
+            item["name"]: item["arguments"]
+            for item in config["targets"]["pico-humble"]["runs"]
+        }
+        jazzy = {
+            item["name"]: item["arguments"]
+            for item in config["targets"]["pico-jazzy"]["runs"]
+        }
+        robot_type_arguments = ["--", "--robot-type", "{robot_type}"]
+        self.assertEqual(humble, {"robot": [], "upperlimb": robot_type_arguments, "display": []})
+        self.assertEqual(jazzy["upperlimb"], robot_type_arguments)
+
     def test_orin_humble_robot_migrates_the_retired_monolithic_package_before_install(self) -> None:
         target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
         robot = next(item for item in target["runs"] if item["name"] == "robot")
@@ -537,6 +551,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             livox_launch = (stage / "targets/orin-humble/supervisor/livox-lidar/launch.sh").read_text(encoding="utf-8")
             web_rviz_launch = (stage / "targets/orin-humble/supervisor/web-rviz/launch.sh").read_text(encoding="utf-8")
             manip_lingbot_launch = (stage / "targets/orin-humble/supervisor/manip-lingbot/launch.sh").read_text(encoding="utf-8")
+            manip_lingbot_unit = (stage / "targets/orin-humble/supervisor/manip-lingbot/navi-orin-manip-lingbot-supervisor.service").read_text(encoding="utf-8")
             agent_unit_exists = (stage / "targets/orin-humble/supervisor-agent/navi-orin-supervisor-agent.service").is_file()
             agent_unit = (stage / "targets/orin-humble/supervisor-agent/navi-orin-supervisor-agent.service").read_text()
 
@@ -579,6 +594,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("source /etc/naviai/Middleware.env", manip_lingbot_launch)
         self.assertIn("exec /bin/bash /opt/naviai/manip/functions/bin/start-lingbot.sh", manip_lingbot_launch)
         self.assertNotIn("env ROS_DOMAIN_ID=72", manip_lingbot_launch)
+        self.assertIn("After=network-online.target navi-orin-supervisor-agent.service navi-sensor-host.service", manip_lingbot_unit)
         self.assertIn("/etc/naviai/supervisor-agent/modules.d/robot.json", script)
         self.assertNotIn("configure_sensor_rpc.py", script)
         self.assertIn('"navi-sensor-host.service"', script)
@@ -597,6 +613,13 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("configure_native_rpc.py /etc/naviai/navi-sensor-host-supervisor.conf", script)
         self.assertNotIn("/bin/bash -lc", audio_launch)
         self.assertIn("exec ros2 launch navi_audio_pkg audio_bringup.launch.py", audio_launch)
+
+    def test_lingbot_waits_for_sensor_and_restarts_while_camera_initializes(self) -> None:
+        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
+        lingbot = next(module for module in target["supervisor_modules"] if module["id"] == "manip-lingbot")
+        self.assertEqual(lingbot["after_services"], ["navi-sensor-host.service"])
+        self.assertEqual(lingbot["startup_priority"], 110)
+        self.assertEqual(lingbot["autorestart"], "true")
 
     def test_replaced_vendor_services_are_disabled_again_after_run_installation(self) -> None:
         script = builder.target_install(

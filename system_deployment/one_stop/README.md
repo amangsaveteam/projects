@@ -138,6 +138,8 @@ Orin Humble 的 `manip` RUN 使用 `--force` 安装参数。厂商安装器在�
 
 四项以 root 执行，均先加载 `/etc/naviai/Middleware.env`，再执行模块脚本。该统一入口加载设备身份和对应 ROS 环境，并从 `/etc/zj_humanoid/device.env`、`/etc/zj_humanoid/cyclonedds.xml` 提供 `ROS_DOMAIN_ID`、`RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`、`ROS_LOCALHOST_ONLY=0`、`CYCLONEDDS_URI`、`ROBOT_TYPE` 和 `ROBOT_NAME`。不要在 Manip 脚本或 Supervisor 命令中再写死 Domain 或 DDS URI；以设备统一环境为准，才能与 Sensor 的相机话题处于同一 DDS 网络。通过 Agent `:9080` 查看和启停。脚本需保持前台运行；若安装器另行启用原生服务，需确认服务名后停用，避免重复启动。
 
+`manip-lingbot` 依赖头部 RealSense 的 `CameraInfo`，因此安装收尾时排在 `navi-sensor-host.service` 之后启动，并设置 `autorestart: "true"`。相机尚未完成初始化时，Lingbot 会自行重试，后续安装或开机不需要人工重启。人工通过 Supervisor 停止时仍保持停止，直到手动启动或重启其 systemd 服务。
+
 不要再维护独立的 `supervised_stack` manifest。`supervisor.json` 的 target 内：
 
 - `supervisor` 是 Supervisor Agent 的 RPC、密码、运行目录和模块目录约定；
@@ -159,6 +161,10 @@ Pico Humble 注册两个原生模块：PICO Robot 使用 `192.168.217.66:19002`�
 PICO Agent、写入模块注册并在共享凭据就绪后重启服务。端口可以与 Orin 重复，因为绑定在不同设备。
 Orin Agent 经由 PICO Agent（`192.168.217.66:9080`）汇总状态，界面显示为 `orin / robot` 与
 `pico / robot`，而非跨设备直接代理 PICO 的 XML-RPC。
+
+Pico Robot 与 Display 安装器按无自定义参数调用（`"arguments": []`）；Pico 上肢安装器需要机型，必须
+显式配置 `"arguments": ["--", "--robot-type", "{robot_type}"]`。总包会在调用它们前写入
+`/etc/zj_humanoid/device.env`。不要省略 `arguments`：Pico Robot 不支持该选项，而上肢必须接收该选项。
 
 Common DEB 由目标匹配的独立构建机生成并发布：Pico Humble Common 在 Ubuntu 20.04 amd64 构建，
 Orin Humble Common 在 Ubuntu 22.04 arm64 构建。总包不触发这些远程构建；它只从云端下载已发布的

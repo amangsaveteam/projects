@@ -45,7 +45,9 @@
           "working_directory": "/opt/naviai/manip/functions/bin",
           "source_files": ["/etc/naviai/Middleware.env"],
           "command": "/bin/bash /opt/naviai/manip/functions/bin/start-lingbot.sh",
-          "autorestart": "unexpected",
+          "after_services": ["navi-sensor-host.service"],
+          "startup_priority": 110,
+          "autorestart": "true",
           "startsecs": 5
         },
         {
