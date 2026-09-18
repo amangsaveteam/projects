@@ -271,7 +271,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             for item in config["targets"]["pico-jazzy"]["runs"]
         }
         robot_type_arguments = ["--", "--robot-type", "{robot_type}"]
-        self.assertEqual(humble, {"robot": [], "upperlimb": robot_type_arguments, "display": ["--install"]})
+        self.assertEqual(humble, {"robot": [], "upperlimb": robot_type_arguments, "display": ["--reinstall"]})
         self.assertEqual(jazzy["upperlimb"], robot_type_arguments)
 
     def test_vendor_runs_inherit_and_cannot_replace_pico_shared_middleware(self) -> None:
@@ -830,19 +830,40 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             robot = (stage / "targets/pico-humble/supervisor/modules/robot.json").read_text(encoding="utf-8")
             upperlimb = (stage / "targets/pico-humble/supervisor/modules/upperlimb.json").read_text(encoding="utf-8")
 
+            upperlimb_launch = (stage / "targets/pico-humble/supervisor/upperlimb/launch.sh").read_text()
+            self.assertIn("Waiting for robot to publish STATE_ROBOT_RUN before starting this module.", upperlimb_launch)
+            self.assertIn("export HOME=/home/nav01 ROS_HOME=/home/nav01/.ros ROS_LOG_DIR=/var/log/naviai/upperlimb/ros", upperlimb_launch)
+            self.assertIn("install -d -o nav01 -g nav01 -m 0755 /home/nav01/.ros /var/log/naviai/upperlimb/ros", upperlimb_launch)
+            self.assertIn("timeout 5 ros2 topic echo --once /zj_humanoid/robot/robot_state", upperlimb_launch)
+            self.assertIn("grep -q '^state: 5$'", upperlimb_launch)
+            self.assertIn("grep -q '^state_info: STATE_ROBOT_RUN$'", upperlimb_launch)
+            self.assertLess(upperlimb_launch.index("STATE_ROBOT_RUN"),
+                            upperlimb_launch.index("exec /bin/bash /etc/nav01/upperlimb/navi-pico-upperlimb-start.sh"))
+
             display_launch = (stage / "targets/pico-humble/supervisor/display/launch.sh").read_text()
             self.assertLess(display_launch.index("/opt/ros/humble/setup.bash"),
                             display_launch.index("/opt/navi_display/ros/setup.bash"))
+            self.assertIn("export HOME=/var/lib/navi-display ROS_HOME=/var/lib/navi-display/ros ROS_LOG_DIR=/var/log/naviai/display/ros", display_launch)
+            self.assertIn("install -d -m 0755 /var/lib/navi-display /var/lib/navi-display/ros /var/log/naviai/display/ros", display_launch)
             self.assertIn("exec ros2 launch media_play media_play.launch.py", display_launch)
 
-        self.assertEqual([item[0] for item in startup], ["zj-humanoid-pico-display-supervisor.service"])
+        self.assertEqual(
+            [item[0] for item in startup],
+            [
+                "zj-humanoid-pico-upperlimb-supervisor.service",
+                "zj-humanoid-pico-display-supervisor.service",
+            ],
+        )
         self.assertEqual(
             json.loads(robot)["modules"]["robot"]["endpoint"],
             "http://192.168.217.66:19002/RPC2",
         )
         self.assertEqual(
-            json.loads(upperlimb)["modules"]["upperlimb"]["endpoint"],
-            "http://192.168.217.66:19003/RPC2",
+            json.loads(upperlimb)["modules"]["upperlimb"],
+            {
+                "endpoint": "http://192.168.217.66:19003/RPC2",
+                "local_log_file": "/var/log/naviai/upperlimb/upperlimb.log",
+            },
         )
         self.assertIn("zj-humanoid-pico-robot-supervisor.service", script)
         self.assertIn("navi-pico-robot-supervisor.service", script)
@@ -850,6 +871,8 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("zj_humanoid.service", script)
         self.assertIn('systemctl disable --now "$unit"', script)
         self.assertIn("navi-pico-upperlimb.service", script)
+        self.assertIn("zj-humanoid-pico-upperlimb-supervisor.service", script)
+        self.assertIn("/etc/nav01/supervised-stack/upperlimb/supervisor-entrypoint.sh", script)
         self.assertIn("/etc/nav01/supervisor-agent/modules.d/robot.json", script)
         self.assertIn("/etc/nav01/supervisor-agent/modules.d/upperlimb.json", script)
         self.assertNotIn("configure_sensor_rpc.py", script)
@@ -859,10 +882,13 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         priorities = builder.supervisor_service_priorities("pico-humble", target)
         script = builder.target_install(
             "pico-humble", "payloads/pico-humble/system-config", "", None, [], [],
-            target["managed_services"] + ["zj-humanoid-pico-display-supervisor.service"], service_priorities=priorities,
+            target["managed_services"] + [
+                "zj-humanoid-pico-upperlimb-supervisor.service",
+                "zj-humanoid-pico-display-supervisor.service",
+            ], service_priorities=priorities,
         )
         robot = "zj-humanoid-pico-robot-supervisor.service"
-        upperlimb = "navi-pico-upperlimb.service"
+        upperlimb = "zj-humanoid-pico-upperlimb-supervisor.service"
         self.assertEqual(priorities[robot], 10)
         self.assertEqual(priorities[upperlimb], 20)
         self.assertEqual(priorities["zj-humanoid-pico-display-supervisor.service"], 1)

@@ -240,7 +240,24 @@ class Agent:
                 offset = 0
             return {"module": target_module, "process": process, "data": data[offset:offset + length],
                     "next_offset": min(len(data), offset + length), "overflow": False}
-        data, next_offset, overflow = self.proxy(target_module).supervisor.tailProcessStdoutLog(process, offset, length)
+        local_log_file = specification.get("local_log_file")
+        if local_log_file:
+            try:
+                data = Path(local_log_file).read_text(encoding="utf-8", errors="replace")
+            except OSError as error:
+                raise OSError("cannot read local log for {}/{}: {}".format(
+                    target_module, process, error
+                )) from error
+            if offset > len(data):
+                offset = 0
+            return {"module": target_module, "process": process, "data": data[offset:offset + length],
+                    "next_offset": min(len(data), offset + length), "overflow": False}
+        try:
+            data, next_offset, overflow = self.proxy(target_module).supervisor.tailProcessStdoutLog(process, offset, length)
+        except (OSError, http.client.HTTPException, xmlrpc.client.Error) as error:
+            raise OSError("cannot read Supervisor stdout log for {}/{}: {}".format(
+                target_module, process, error
+            )) from error
         return {"module": target_module, "process": process, "data": data, "next_offset": next_offset, "overflow": overflow}
 
 
@@ -309,7 +326,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.write_json(200, self.agent.process_log(urllib.parse.unquote(parts[4]), urllib.parse.unquote(parts[6]), offset, length))
             except KeyError as error:
                 self.write_json(404, {"error": str(error)})
-            except (ValueError, OSError, xmlrpc.client.Error) as error:
+            except (ValueError, OSError, http.client.HTTPException, xmlrpc.client.Error) as error:
                 self.write_json(502, {"error": str(error)})
             return
         self.write_json(404, {"error": "not found"})

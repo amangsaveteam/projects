@@ -398,7 +398,7 @@ def supervisor_module(target_id, index, value):
     allowed = {
         "id", "description", "mode", "port", "register", "service_name", "restart_service", "systemd_service", "command", "_package_name",
         "working_directory", "source_files", "unset_environment", "environment", "prelude",
-        "autorestart", "exitcodes", "startsecs", "startretries", "timeout_stop_seconds",
+        "autorestart", "exitcodes", "startsecs", "startretries", "timeout_stop_seconds", "readiness_command", "local_log_file",
         "after_services", "part_of_services", "disable_services", "log_maxbytes", "log_backups", "native_rpc_config",
         "startup_priority",
     }
@@ -448,6 +448,12 @@ def supervisor_module(target_id, index, value):
         for name, item in result["environment"].items()
     )):
         raise BuildError(field + ".environment must be a string map")
+    if "readiness_command" in result:
+        if result["mode"] != "managed" or not isinstance(result["readiness_command"], str) or not result["readiness_command"].strip():
+            raise BuildError(field + ".readiness_command requires a managed module and must be non-empty")
+    if "local_log_file" in result:
+        if result["mode"] != "managed" or not isinstance(result["local_log_file"], str) or not result["local_log_file"].startswith("/"):
+            raise BuildError(field + ".local_log_file requires a managed module and an absolute path")
     if result["mode"] == "managed":
         result["command"] = require(result.get("command"), field + ".command")
         result["working_directory"] = require(result.get("working_directory"), field + ".working_directory")
@@ -472,6 +478,13 @@ def supervisor_launch_script(module):
     for path in module.get("source_files", []):
         lines.append("source {}".format(shlex.quote(path)))
     lines.extend(module.get("prelude", []))
+    if module.get("readiness_command"):
+        lines.extend((
+            "while ! ({}); do".format(module["readiness_command"]),
+            "  echo 'Waiting for robot to publish STATE_ROBOT_RUN before starting this module.' >&2",
+            "  sleep 2",
+            "done",
+        ))
     lines.append("cd {}".format(shlex.quote(module["working_directory"])))
     # A Supervisor program must own the long-running module process.  Replacing
     # this setup shell with the configured command keeps Supervisor's PID tied
@@ -563,6 +576,8 @@ def stage_supervisor_modules(stage, target_id, target, checksums, dry_run):
                 specification = ({"type": "systemd", "service": module["systemd_service"]}
                                  if module["mode"] == "systemd" else
                                  {"endpoint": "http://{}:{}/RPC2".format(paths["internal_ip"], module["port"])})
+                if module.get("local_log_file"):
+                    specification["local_log_file"] = module["local_log_file"]
                 destination.write_text(json.dumps({"modules": {identifier: specification}}, indent=2) + "\n", encoding="utf-8")
                 checksums.append((file_sha256(destination), relpath))
             registrations.append((relpath, "{}/{}.json".format(paths["agent_modules_directory"], identifier)))

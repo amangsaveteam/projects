@@ -369,7 +369,7 @@
           "name": "display",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/display/develop/navi_display_installer-2.0.0-release-humble-amd64.run",
           "sha256": "",
-          "arguments": ["--install"]
+          "arguments": ["--reinstall"]
         }
       ]
     },

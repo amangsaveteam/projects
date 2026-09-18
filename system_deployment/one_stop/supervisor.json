@@ -320,10 +320,25 @@
         {
           "id": "upperlimb",
           "description": "Navi PICO upperlimb stack",
-          "mode": "external",
+          "mode": "managed",
           "port": 19003,
           "startup_priority": 20,
-          "restart_service": "navi-pico-upperlimb.service"
+          "working_directory": "/etc/nav01/upperlimb",
+          "source_files": [
+            "/etc/nav01/Middleware.env"
+          ],
+          "prelude": [
+            "export HOME=/home/nav01 ROS_HOME=/home/nav01/.ros ROS_LOG_DIR=/var/log/naviai/upperlimb/ros",
+            "install -d -o nav01 -g nav01 -m 0755 /home/nav01/.ros /var/log/naviai/upperlimb/ros"
+          ],
+          "readiness_command": "state=\"$(timeout 5 ros2 topic echo --once /zj_humanoid/robot/robot_state 2>/dev/null || true)\"; grep -q '^state: 5$' <<< \"$state\" && grep -q '^state_info: STATE_ROBOT_RUN$' <<< \"$state\"",
+          "command": "/bin/bash /etc/nav01/upperlimb/navi-pico-upperlimb-start.sh",
+          "local_log_file": "/var/log/naviai/upperlimb/upperlimb.log",
+          "autorestart": "unexpected",
+          "startsecs": 0,
+          "disable_services": [
+            "navi-pico-upperlimb.service"
+          ]
         },
         {
           "id": "display",
@@ -337,14 +352,17 @@
             "/opt/ros/humble/setup.bash",
             "/opt/navi_display/ros/setup.bash"
           ],
+          "prelude": [
+            "export HOME=/var/lib/navi-display ROS_HOME=/var/lib/navi-display/ros ROS_LOG_DIR=/var/log/naviai/display/ros",
+            "install -d -m 0755 /var/lib/navi-display /var/lib/navi-display/ros /var/log/naviai/display/ros"
+          ],
           "command": "ros2 launch media_play media_play.launch.py",
           "autorestart": "true",
           "startsecs": 0
         }
       ],
       "managed_services": [
-        "zj-humanoid-pico-robot-supervisor.service",
-        "navi-pico-upperlimb.service"
+        "zj-humanoid-pico-robot-supervisor.service"
       ]
     }
   }

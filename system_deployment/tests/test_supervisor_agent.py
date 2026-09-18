@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import http.client
 import importlib.util
 import json
 import subprocess
@@ -45,6 +46,41 @@ class SupervisorAgentTest(unittest.TestCase):
         handler.write_json = MagicMock()
         handler.do_GET()
         self.assertEqual(handler.write_json.call_args.args[0], 404)
+
+    def test_supervisor_log_disconnect_is_reported_as_json_error(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            password = Path(temporary) / "rpc.password"
+            password.write_text("1\n")
+            agent = agent_module.Agent({
+                "rpc_password_file": str(password),
+                "modules": {"upperlimb": {"endpoint": "http://192.168.217.66:19003/RPC2"}},
+            })
+            proxy = MagicMock()
+            proxy.supervisor.tailProcessStdoutLog.side_effect = http.client.RemoteDisconnected(
+                "Remote end closed connection without response"
+            )
+            agent.proxy = lambda module: proxy
+            with self.assertRaisesRegex(OSError, "cannot read Supervisor stdout log for upperlimb/upperlimb"):
+                agent.process_log("upperlimb", "upperlimb", 0, 1024)
+
+    def test_module_log_reads_declared_local_file_without_xmlrpc(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            password = directory / "rpc.password"
+            password.write_text("1\n")
+            log_file = directory / "upperlimb.log"
+            log_file.write_text("line one\nline two\n")
+            agent = agent_module.Agent({
+                "rpc_password_file": str(password),
+                "modules": {"upperlimb": {
+                    "endpoint": "http://192.168.217.66:19003/RPC2",
+                    "local_log_file": str(log_file),
+                }},
+            })
+            agent.proxy = MagicMock(side_effect=AssertionError("XML-RPC must not be called"))
+            result = agent.process_log("upperlimb", "upperlimb", 0, 8)
+            self.assertEqual(result["data"], "line one")
+            self.assertEqual(result["next_offset"], 8)
 
     def test_systemd_module_is_observed_and_controlled_without_xmlrpc(self):
         with tempfile.TemporaryDirectory() as temporary:
