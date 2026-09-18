@@ -283,10 +283,11 @@ def load_delivery(urls_file, supervisor_file=None):
             # Keep the resolved package identity for the release manifest.
             # ``package`` itself belongs only to the source Supervisor file.
             module["_package_name"] = name
-            if module.get("mode") != "systemd":
-                if module["port"] in ports:
+            if module.get("mode") in {"managed", "external"}:
+                port = module.get("port")
+                if port in ports:
                     raise BuildError("duplicate Supervisor port in " + target_id)
-                ports.add(module["port"])
+                ports.add(port)
             package = module_packages[name]
             for key in ("start_policy", "remove_packages"):
                 if key in module:
@@ -438,8 +439,8 @@ def supervisor_module(target_id, index, value):
     for key in ("source_files", "unset_environment", "prelude", "after_services", "part_of_services", "disable_services"):
         if key in result and (not isinstance(result[key], list) or not all(isinstance(item, str) and item for item in result[key])):
             raise BuildError(field + ".{} must be a non-empty string list".format(key))
-    if result.get("disable_services") and result["mode"] != "managed":
-        raise BuildError(field + ".disable_services is only valid for a managed module")
+    if result.get("disable_services") and result["mode"] not in {"managed", "external"}:
+        raise BuildError(field + ".disable_services is only valid for a managed or external module")
     if "disable_services" in result and any(not SERVICE.fullmatch(item) for item in result["disable_services"]):
         raise BuildError(field + ".disable_services must contain systemd unit names")
     if "environment" in result and (not isinstance(result["environment"], dict) or not all(
@@ -492,6 +493,11 @@ def supervisor_entrypoint_script(module, paths):
         'install -d -m 0755 {}'.format(shlex.quote(module['working_directory'])),
         'password=$(tr -d "\\r\\n" < "$password_file")',
         '[[ "$password" == 1 || "$password" =~ ^[[:xdigit:]]{64}$ ]] || { echo "invalid Supervisor Agent RPC credential" >&2; exit 1; }',
+        'if ss -H -ltnp "sport = :{}" | grep -q .; then'.format(module["port"]),
+        '  echo "ERROR: Supervisor RPC port {} is already in use; refusing to start a second instance." >&2'.format(module["port"]),
+        '  ss -ltnp "sport = :{}" >&2 || true'.format(module["port"]),
+        '  exit 1',
+        'fi',
         'cat > "$config_path" <<EOF',
         "[supervisord]", "nodaemon=true", "user=root", "logfile={}/supervisord.log".format(log_dir),
         "pidfile={}/supervisord.pid".format(runtime_dir), "", "[unix_http_server]",
@@ -615,7 +621,7 @@ def supervisor_systemd_services(target_id, target):
 
 
 def supervisor_disabled_services(target_id, target):
-    """Return vendor systemd units retired in favour of managed Supervisors."""
+    """Return vendor systemd units retired in favour of configured Supervisors."""
     disabled = {
         service
         for index, value in enumerate(target.get("supervisor_modules", []))
@@ -724,7 +730,7 @@ def services_from_run(run_path):
 
 
 def header():
-    lines = ["#!/bin/sh", "set -eu", "archive_line=10", "work_dir=$(mktemp -d \"${TMPDIR:-/tmp}/navi-one-stop.XXXXXX\")", "cleanup() { rm -rf \"$work_dir\"; }", "trap cleanup EXIT; trap 'exit 129' HUP; trap 'exit 130' INT; trap 'exit 143' TERM", "tail -n +\"$archive_line\" \"$0\" | tar -xzf - -C \"$work_dir\"", "\"$work_dir/install.sh\" \"$@\"; exit 0", "__ARCHIVE_BELOW__", ""]
+    lines = ["#!/bin/sh", "set -eu", "archive_line=10", "work_dir=$(mktemp -d \"${TMPDIR:-/tmp}/navi-one-stop.XXXXXX\")", "cleanup() { rm -rf \"$work_dir\"; }", "trap cleanup EXIT; trap 'exit 129' HUP; trap 'exit 130' INT; trap 'exit 143' TERM", "tail -n +\"$archive_line\" \"$0\" | tar -xzf - -C \"$work_dir\"", "status=0; \"$work_dir/install.sh\" \"$@\" || status=$?; exit \"$status\"", "__ARCHIVE_BELOW__", ""]
     return "\n".join(lines).encode("utf-8")
 
 
@@ -853,7 +859,7 @@ def stage_system_config(stage, target_id, target, checksums, dry_run):
 def target_install(target_id, system_config_rel, common_rel, common, extras, runs, services,
                    startup_services=(), supervisor_startup=(), registrations=(), post_install=(), agent_service=None,
                    agent_payload=None, target_platform=None, release_tracking=False, service_priorities=None,
-                   disabled_services=()):
+                   disabled_services=(), remove_packages=()):
     # Native modules are also part of the installation lifecycle, even when
     # their units come from a DEB instead of a Middleware-format run archive.
     native_services = [
@@ -867,9 +873,18 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         raise BuildError(target_id + ": startup priority references unmanaged service: " +
                          ", ".join(sorted(unknown_priorities)))
     services = sorted(services, key=lambda service: (service_priorities.get(service, 100), service))
-    lines = ["#!/bin/bash", "set -euo pipefail", "umask 022", "root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../..\" && pwd)\"", "robot_type=\"$1\"", "(cd \"$root\" && sha256sum -c \"targets/{}/payloads.sha256\")".format(target_id)]
+    lines = [
+        "#!/bin/bash", "set -Eeuo pipefail", "umask 022",
+        "root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../..\" && pwd)\"", "robot_type=\"$1\"",
+        "install_stage='verifying payload checksums'",
+        "on_install_error() {", "  local status=$1 command=$2",
+        "  echo \"ERROR: installation failed during ${install_stage:-an unknown stage} (exit $status): $command\" >&2", "}",
+        "trap 'on_install_error \"$?\" \"$BASH_COMMAND\"' ERR",
+        "(cd \"$root\" && sha256sum -c \"targets/{}/payloads.sha256\")".format(target_id),
+    ]
     if target_platform is not None:
         expected_os, expected_version, expected_arch = target_platform
+        lines.append("install_stage='checking target platform'")
         lines.extend((
             "[[ -r /etc/os-release ]] || { echo 'ERROR: /etc/os-release is missing' >&2; exit 2; }",
             ". /etc/os-release",
@@ -887,6 +902,7 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         ))
     if release_tracking:
         lines.extend([
+            "install_stage='initializing release tracking'",
             "install -d -m 0755 /var/lib/naviai/release",
             "exec 9>/var/lib/naviai/release/install.lock",
             "flock -n 9 || { echo 'ERROR: another release installation is running' >&2; exit 1; }",
@@ -912,6 +928,15 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             'on_install_exit() { status=$?; if [[ "$install_complete" -ne 1 ]]; then navi_release fail || true; fi; exit "$status"; }',
             "trap on_install_exit EXIT",
         ])
+    if remove_packages:
+        lines.append("install_stage='removing retired compatibility packages'")
+        for package in remove_packages:
+            lines.extend((
+                "if dpkg-query -W -f='${{db:Status-Status}}' {} 2>/dev/null | grep -Fxq installed; then".format(shlex.quote(package)),
+                "  echo {}".format(shlex.quote("Removing retired compatibility package {}.".format(package))),
+                "  dpkg --remove {}".format(shlex.quote(package)),
+                "fi",
+            ))
     if system_config_rel:
         middleware_env = "/etc/nav01/Middleware.env" if target_id.startswith("pico-") else "/etc/naviai/Middleware.env"
         lines.extend([
@@ -925,13 +950,14 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             ),
             "  source {}".format(shlex.quote(middleware_env)),
             "}",
+            "install_stage='installing shared system configuration'",
             "install_system_config",
         ])
     elif isinstance(common, dict):
         tool = require(common.get("configure_tool"), "common.configure_tool")
         configure_target = require(common.get("configure_target"), "common.configure_target", safe=True)
         installer = require(common.get("installer"), "common.installer")
-        lines.extend(["dpkg -i \"$root/{}\"".format(common_rel), "python3 \"{}\" configure --target \"{}\" --robot-type \"$robot_type\"".format(tool, configure_target), "\"{}\"".format(installer)])
+        lines.extend(["install_stage='installing common dependencies'", "dpkg -i \"$root/{}\"".format(common_rel), "python3 \"{}\" configure --target \"{}\" --robot-type \"$robot_type\"".format(tool, configure_target), "\"{}\"".format(installer)])
     else:
         raise BuildError(target_id + " must configure system_config or common")
     # The vendor Robot unit chdirs before ExecStartPre, so its mkdir cannot
@@ -988,6 +1014,8 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         if group:
             seen_groups.add(group)
     for group, items in extra_groups:
+        install_stage = "installing Debian package group {}".format(group) if group else "installing Debian package {}".format(Path(items[0][0]).name)
+        lines.append("install_stage=" + shlex.quote(install_stage))
         environments = {tuple(item[2]) for item in items}
         if len(environments) != 1:
             raise BuildError(target_id + ": install_group must use one installation environment: " + str(group))
@@ -1037,6 +1065,7 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             ))
         environment = run[5] if len(run) > 5 else []
         prefix = "env " + " ".join(environment) + " " if environment else ""
+        lines.append("install_stage=" + shlex.quote("running module installer " + Path(item).name))
         if system_config_rel:
             # A vendor installer may alter Middleware.env (the Pico upperlimb
             # installer currently does).  Load the known-good carrier before
@@ -1054,7 +1083,10 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
     # port and business process.
     if disabled_services:
         lines.append("disable_replaced_services")
-    lines.append('if [[ -f "$root/targets/{0}/install-config-files.sh" ]]; then bash "$root/targets/{0}/install-config-files.sh"; fi'.format(target_id))
+    lines.extend((
+        "install_stage='installing configuration files'",
+        'if [[ -f "$root/targets/{0}/install-config-files.sh" ]]; then bash "$root/targets/{0}/install-config-files.sh"; fi'.format(target_id),
+    ))
     for _, launch_rel, service_rel, destination in startup_services:
         lines.extend((
             "install -d -m 0755 {}".format(shlex.quote(str(Path(destination).parent))),
@@ -1070,6 +1102,7 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             "install -m 0644 \"$root/{}\" /etc/systemd/system/{}".format(service_rel, shlex.quote(service)),
         ))
     if agent_payload:
+        lines.append("install_stage='installing Supervisor Agent'")
         agent_base = agent_payload["base"]
         destination = agent_payload["destination"]
         for retired_service in agent_payload.get("replaces_services", []):
@@ -1087,9 +1120,27 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             "install -m 0755 \"$root/{}/configure_native_rpc.py\" {}/configure_native_rpc.py".format(agent_base, shlex.quote(destination)),
             "install -m 0644 \"$root/{}/{}\" /etc/systemd/system/{}".format(agent_base, agent_payload["service"], shlex.quote(agent_payload["service"])),
         ))
-    if registrations:
-        lines.append("install -d -m 0755 {}".format(shlex.quote(agent_service["agent_modules_directory"])))
+    if agent_service:
+        modules_directory = agent_service["agent_modules_directory"]
+        declared_registrations = [destination for _, destination in registrations]
+        lines.extend((
+            "modules_directory={}".format(shlex.quote(modules_directory)),
+            "declared_modules=(" + " ".join(shlex.quote(item) for item in declared_registrations) + ")",
+            "prune_stale_module_registrations() {",
+            "  local module_file declared",
+            "  for module_file in \"$modules_directory\"/*.json; do",
+            "    [[ -e \"$module_file\" ]] || continue",
+            "    for declared in \"${declared_modules[@]}\"; do",
+            "      [[ \"$module_file\" == \"$declared\" ]] && continue 2",
+            "    done",
+            "    rm -f -- \"$module_file\"",
+            "  done",
+            "}",
+            "install -d -m 0755 \"$modules_directory\"",
+            "prune_stale_module_registrations",
+        ))
         lines.extend("install -m 0644 \"$root/{}\" {}".format(relpath, shlex.quote(destination)) for relpath, destination in registrations)
+        lines.append("prune_stale_module_registrations")
     # Restart declared native units once, in the same final pass as generated
     # units, after new unit files and shared credentials have been installed.
     lines.extend(command for command in post_install if not (
@@ -1097,6 +1148,7 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
     ))
     if services:
         lines.extend([
+            "install_stage='starting managed services'",
             "systemctl daemon-reload", "for unit in \"${managed_services[@]}\"; do",
             "  echo \"Starting $unit after lower-priority services are active\"",
             "  systemctl enable \"$unit\"", "  systemctl restart \"$unit\"",
@@ -1105,6 +1157,7 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         ])
     if agent_payload:
         lines.extend((
+            "install_stage='starting Supervisor Agent'",
             "systemctl daemon-reload", "systemctl enable {}".format(shlex.quote(agent_payload["service"])),
             "systemctl restart {}".format(shlex.quote(agent_payload["service"])),
         ))
@@ -1159,15 +1212,17 @@ def master_install(rows, version):
     table = "\\n".join("|".join(item) for item in rows)
     lines = [
         "#!/bin/bash", "set -euo pipefail", "root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"",
-        "target=\"\"", "robot_type=\"\"", "robot_type_source=\"\"", "robot_type_error=\"\"", "action=install",
+        "target=\"\"", "robot_type=\"\"", "robot_type_source=\"\"", "device_robot_type=\"\"", "robot_type_error=\"\"", "confirm_robot_type_change=0", "action=install",
         "while [[ $# -gt 0 ]]; do", "  case \"$1\" in", "    --) ;;",
         "    --target) shift; target=\"${1:?--target needs a value}\" ;;", "    --target=*) target=\"${1#--target=}\" ;;",
         "    --robot-type) shift; robot_type=\"${1:?--robot-type needs a value}\"; robot_type_source=argument ;;", "    --robot-type=*) robot_type=\"${1#--robot-type=}\"; robot_type_source=argument ;;",
-        "    --list-targets|--info|--verify|--pretest) action=\"$1\" ;;", "    -h|--help) echo \"Usage: $0 [--target TARGET] [--robot-type TYPE] [--pretest]\"; exit 0 ;;",
+        "    --confirm-robot-type-change) confirm_robot_type_change=1 ;;",
+        "    --list-targets|--info|--verify|--pretest) action=\"$1\" ;;", "    -h|--help) echo \"Usage: $0 [--target TARGET] [--robot-type TYPE] [--confirm-robot-type-change] [--pretest]\"; exit 0 ;;",
         "    *) echo \"ERROR: unknown argument: $1\" >&2; exit 2 ;;", "  esac", "  shift", "done",
-        "resolve_robot_type() {", "  local configured=\"\"", "  if [[ -n \"$robot_type\" ]]; then", "    [[ \"$robot_type\" =~ ^[A-Za-z0-9_-]+$ ]] || { robot_type_error=\"invalid --robot-type: $robot_type\"; return; }", "    return", "  fi",
-        "  if [[ -r /etc/zj_humanoid/device.env ]]; then", "    configured=$(sed -n 's/^ROBOT_TYPE=//p' /etc/zj_humanoid/device.env | head -n 1)",
-        "    if [[ -n \"$configured\" ]]; then", "      if [[ \"$configured\" =~ ^[A-Za-z0-9_-]+$ ]]; then robot_type=$configured; robot_type_source=device.env; else robot_type_error=\"invalid ROBOT_TYPE in /etc/zj_humanoid/device.env\"; fi", "    fi", "  fi", "}",
+        "resolve_robot_type() {", "  if [[ -r /etc/zj_humanoid/device.env ]]; then", "    device_robot_type=$(python3 - /etc/zj_humanoid/device.env <<'PY'", "import re", "import sys", "from pathlib import Path", "assignment = re.compile(r'^\\s*ROBOT_TYPE\\s*=\\s*(?:\\\"([^\\\"]*)\\\"|\\\'([^\\\']*)\\\'|([^\\s#;]+))\\s*(?:#.*)?$')", "value = ''", "for line in Path(sys.argv[1]).read_text(encoding='utf-8').splitlines():", "    match = assignment.match(line)", "    if match:", "        value = next(item for item in match.groups() if item is not None)", "if value and not value.startswith('${') and re.fullmatch(r'[A-Za-z0-9_-]+', value):", "    print(value)", "elif value:", "    raise SystemExit(1)", "PY", "    ) || { robot_type_error=\"invalid ROBOT_TYPE in /etc/zj_humanoid/device.env\"; return; }", "  fi",
+        "  if [[ -n \"$robot_type\" ]]; then", "    [[ \"$robot_type\" =~ ^[A-Za-z0-9_-]+$ ]] || { robot_type_error=\"invalid --robot-type: $robot_type\"; return; }", "    return", "  fi",
+        "  if [[ -n \"$device_robot_type\" ]]; then robot_type=$device_robot_type; robot_type_source=device.env; fi", "}",
+        "validate_robot_type_change() {", "  [[ \"$target\" == pico-* ]] || return 0", "  [[ \"$robot_type_source\" == argument ]] || { echo \"ERROR: Pico installation requires explicit --robot-type TYPE; refusing to reuse or overwrite /etc/zj_humanoid/device.env.\" >&2; return 1; }", "  if [[ -n \"$device_robot_type\" && \"$device_robot_type\" != \"$robot_type\" && \"$confirm_robot_type_change\" != 1 ]]; then", "    echo \"ERROR: existing ROBOT_TYPE=$device_robot_type differs from requested $robot_type. Refusing to change device identity without --confirm-robot-type-change.\" >&2; return 1", "  fi", "}",
         "table=$'{}'".format(table), "if [[ \"$action\" == --list-targets ]]; then printf '%s\\n' \"$table\" | tr '|' '\\t'; exit 0; fi",
         "if [[ \"$action\" == --info ]]; then echo \"Version: {}\"; printf '%s\\n' \"$table\" | tr '|' '\\t'; exit 0; fi".format(version),
         "if [[ \"$action\" == --verify ]]; then (cd \"$root\" && sha256sum -c payloads.sha256); exit $?; fi",
@@ -1176,8 +1231,8 @@ def master_install(rows, version):
         "  while IFS='|' read -r candidate candidate_os candidate_version candidate_arch; do", "    if [[ \"${os_id,,}\" == \"$candidate_os\" && \"$os_version\" == \"$candidate_version\" && \"$arch\" == \"$candidate_arch\" ]]; then target=\"$candidate\"; break; fi", "  done <<< \"$table\"", "fi",
         "[[ -n \"$target\" && -x \"$root/targets/$target/install.sh\" ]] || { echo \"ERROR: target unavailable: $target\" >&2; exit 2; }",
         "resolve_robot_type", "if [[ \"$action\" == --pretest ]]; then", "  if [[ -n \"$robot_type\" ]]; then echo \"Robot type: $robot_type ($robot_type_source)\"; else echo \"Robot type: not configured; bare device installation requires --robot-type TYPE\"; fi", "  [[ -z \"$robot_type_error\" ]] || echo \"WARN: $robot_type_error\" >&2", "  exec \"$root/targets/$target/pretest.sh\"", "fi",
-        "[[ $EUID -eq 0 ]] || { echo \"ERROR: run as root\" >&2; exit 1; }", "[[ -z \"$robot_type_error\" ]] || { echo \"ERROR: $robot_type_error\" >&2; exit 2; }", "[[ -n \"$robot_type\" ]] || { echo \"ERROR: bare device requires --robot-type TYPE\" >&2; exit 2; }",
-        "exec \"$root/targets/$target/install.sh\" \"$robot_type\"", "",
+        "[[ $EUID -eq 0 ]] || { echo \"ERROR: run as root\" >&2; exit 1; }", "[[ -z \"$robot_type_error\" ]] || { echo \"ERROR: $robot_type_error\" >&2; exit 2; }", "validate_robot_type_change || exit 2", "[[ -n \"$robot_type\" ]] || { echo \"ERROR: bare device requires --robot-type TYPE\" >&2; exit 2; }", "echo \"Existing ROBOT_TYPE: ${device_robot_type:-<none>}\"", "echo \"Requested ROBOT_TYPE: $robot_type\"",
+        "echo \"Robot type: $robot_type ($robot_type_source)\"", "exec \"$root/targets/$target/install.sh\" \"$robot_type\"", "",
     ]
     return "\n".join(lines)
 
@@ -1269,6 +1324,7 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
             service_priorities = supervisor_service_priorities(target_id, target)
             services.extend(supervisor_systemd_services(target_id, target))
             disabled_services = supervisor_disabled_services(target_id, target)
+            remove_packages = resolve_run_remove_packages(target.get("remove_packages"), target_id + ".remove_packages")
             supervisor_agent = stage_supervisor_agent(stage, target_id, supervisor_config, target_checksums, dry_run)
             services.extend(item[0] for item in supervisor_startup)
             for index, item in enumerate(target.get("extra_debs", [])):
@@ -1353,6 +1409,7 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                     startup_services, supervisor_startup, registrations, supervisor_post_install, supervisor_config,
                     supervisor_agent, (os_id, os_version, arch), release_tracking=True,
                     service_priorities=service_priorities, disabled_services=disabled_services,
+                    remove_packages=remove_packages,
                 ), encoding="utf-8"
             ); script.chmod(0o755)
             pretest = stage / "targets" / target_id / "pretest.sh"

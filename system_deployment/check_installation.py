@@ -39,7 +39,7 @@ MODULES = {
     },
     "orin-jazzy": {"vision": ("zj-humanoid-orin-vision-supervisor.service", 19005, True)},
     "pico-humble": {
-        "robot": ("navi-pico-robot-supervisor.service", 19002, False),
+        "robot": ("zj-humanoid-pico-robot-supervisor.service", 19002, False),
         "upperlimb": ("navi-pico-upperlimb.service", 19003, False),
         "display": ("zj-humanoid-pico-display-supervisor.service", 19004, True),
     },

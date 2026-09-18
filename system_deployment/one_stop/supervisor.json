@@ -310,7 +310,12 @@
           "mode": "external",
           "port": 19002,
           "startup_priority": 10,
-          "restart_service": "navi-pico-robot-supervisor.service"
+          "restart_service": "zj-humanoid-pico-robot-supervisor.service",
+          "disable_services": [
+            "navi-pico-robot-supervisor.service",
+            "navi-pico-legged-supervisor.service",
+            "zj_humanoid.service"
+          ]
         },
         {
           "id": "upperlimb",
@@ -338,7 +343,7 @@
         }
       ],
       "managed_services": [
-        "navi-pico-robot-supervisor.service",
+        "zj-humanoid-pico-robot-supervisor.service",
         "navi-pico-upperlimb.service"
       ]
     }

@@ -147,7 +147,7 @@ zj-humanoid-<platform>-<module>-supervisor.service
 | 目标 / 模块 | 原生服务名 |
 | --- | --- |
 | Orin Humble / Sensor | `navi-sensor-host.service` |
-| Pico Humble / Robot | `navi-pico-robot-supervisor.service` |
+| Pico Humble / Robot | `zj-humanoid-pico-robot-supervisor.service` |
 | Pico Humble / Upperlimb | `navi-pico-upperlimb.service` |
 
 所有旧 `navi-<platform>-*-supervisor.service` 和 `navi-<platform>-supervisor-agent.service` 都是迁移名称；
@@ -190,6 +190,8 @@ Supervisor。总包在共享凭据就绪后，备份原配置并补齐 Sensor �
 Pico Humble 注册两个原生模块：PICO Robot 使用 `192.168.217.66:19002`，上肢使用
 `192.168.217.66:19003`。两者的 Supervisor 配置和 systemd 服务分别由各自模块包维护；总包仅安装
 PICO Agent、写入模块注册并在共享凭据就绪后重启服务。端口可以与 Orin 重复，因为绑定在不同设备。
+PICO Robot 的原生服务名为 `zj-humanoid-pico-robot-supervisor.service`；安装新版模块时总包会停用
+迁移前的 `navi-pico-robot-supervisor.service`，避免两个服务争用 `19002`。
 Orin Agent 经由 PICO Agent（`192.168.217.66:9080`）汇总状态，界面显示为 `orin / robot` 与
 `pico / robot`，而非跨设备直接代理 PICO 的 XML-RPC。
 

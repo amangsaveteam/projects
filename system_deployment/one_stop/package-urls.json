@@ -318,6 +318,10 @@
         "configure_target": "pico-humble",
         "base_image_contract": "pico-humble"
       },
+      "remove_packages": [
+        "zj-humanoid-ros-humble-legged-nav2-bringup",
+        "zj-humanoid-ros-humble-legged-nav2-hw"
+      ],
       "extra_debs": [
         {
           "name": "pico-common",
@@ -365,7 +369,7 @@
           "name": "display",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/display/develop/navi_display_installer-2.0.0-release-humble-amd64.run",
           "sha256": "",
-          "arguments": []
+          "arguments": ["--install"]
         }
       ]
     },

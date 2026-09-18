@@ -199,7 +199,7 @@ Orin Humble 当前的导航、底盘与工具 DEB 会分别注册为 8 个 `mana
 {
   "id": "robot",
   "mode": "external",
-  "restart_service": "navi-pico-robot-supervisor.service",
+  "restart_service": "zj-humanoid-pico-robot-supervisor.service",
   "startup_priority": 10
 }
 ```

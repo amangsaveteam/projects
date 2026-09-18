@@ -22,7 +22,7 @@ _MANUAL_COMPOSE_PROFILES="${COMPOSE_PROFILES:-}"
 
 add_path() {
     local dir="$1"
-    [[ -n "$dir" && -d "$dir" ]] || return
+    [[ -n "$dir" && -d "$dir" ]] || return 0
     [[ ":$PATH:" == *":$dir:"* ]] || export PATH="$dir:$PATH"
 }
 

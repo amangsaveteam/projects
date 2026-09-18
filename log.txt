@@ -1,0 +1,161 @@
+nav01@000732c1d90e:~$ sudo ls -la /etc/nav01/supervisor-agent/modules.d
+total 24
+drwxr-xr-x 2 root root 4096 Sep 18 10:45 .
+drwxr-xr-x 3 root root 4096 Sep 18 10:45 ..
+-rw-r--r-- 1 root root   99 Sep 18 10:45 display.json
+-rw-r--r-- 1 root root   98 Sep  4 13:08 legged.json
+-rw-r--r-- 1 root root   97 Sep 18 10:45 robot.json
+-rw-r--r-- 1 root root  101 Sep 18 10:45 upperlimb.json
+nav01@000732c1d90e:~$ sudo sed -n '1,240p' /etc/nav01/supervisor-agent/modules.d/*.json 2>/dev/null
+{
+  "modules": {
+    "display": {
+      "endpoint": "http://192.168.217.66:19004/RPC2"
+    }
+  }
+}
+{
+  "modules": {
+    "legged": {
+      "endpoint": "http://192.168.217.66:19004/RPC2"
+    }
+  }
+}
+{
+  "modules": {
+    "robot": {
+      "endpoint": "http://192.168.217.66:19002/RPC2"
+    }
+  }
+}
+{
+  "modules": {
+    "upperlimb": {
+      "endpoint": "http://192.168.217.66:19003/RPC2"
+    }
+  }
+}
+nav01@000732c1d90e:~$ sudo cat /etc/nav01/supervisor-agent/supervisor-rpc.password
+1
+nav01@000732c1d90e:~$ 
+nav01@000732c1d90e:~$ # 2. display / legged 的 unit、端口占用者和其 Supervisor 配置
+nav01@000732c1d90e:~$ sudo systemctl status --no-pager --full \
+>   navi-pico-legged-supervisor.service \
+>   zj-humanoid-pico-display-supervisor.service
+● navi-pico-legged-supervisor.service - Navi Pico I2 legged base and joystick stack
+     Loaded: loaded (/etc/systemd/system/navi-pico-legged-supervisor.service; enabled; vendor preset: enabled)
+     Active: active (running) since Thu 2026-09-17 09:38:15 CST; 1 day 1h ago
+   Main PID: 1991 (supervisord)
+      Tasks: 1 (limit: 38156)
+     Memory: 20.6M
+     CGroup: /system.slice/navi-pico-legged-supervisor.service
+             └─1991 /usr/bin/python3 /usr/bin/supervisord -c /run/naviai/legged/supervisord.conf
+
+Sep 17 09:38:47 000732c1d90e bash[1991]: 2026-09-17 09:38:47,225 INFO exited: legged (exit status 1; not expected)
+Sep 17 09:38:54 000732c1d90e bash[1991]: 2026-09-17 09:38:54,233 INFO spawned: 'legged' with pid 5107
+Sep 17 09:38:56 000732c1d90e bash[1991]: 2026-09-17 09:38:56,311 INFO exited: legged (exit status 1; not expected)
+Sep 17 09:39:04 000732c1d90e bash[1991]: 2026-09-17 09:39:04,320 INFO spawned: 'legged' with pid 5623
+Sep 17 09:39:06 000732c1d90e bash[1991]: 2026-09-17 09:39:06,209 INFO exited: legged (exit status 1; not expected)
+Sep 17 09:39:15 000732c1d90e bash[1991]: 2026-09-17 09:39:15,219 INFO spawned: 'legged' with pid 6147
+Sep 17 09:39:17 000732c1d90e bash[1991]: 2026-09-17 09:39:17,186 INFO exited: legged (exit status 1; not expected)
+Sep 17 09:39:27 000732c1d90e bash[1991]: 2026-09-17 09:39:27,198 INFO spawned: 'legged' with pid 6868
+Sep 17 09:39:29 000732c1d90e bash[1991]: 2026-09-17 09:39:29,291 INFO exited: legged (exit status 1; not expected)
+Sep 17 09:39:30 000732c1d90e bash[1991]: 2026-09-17 09:39:30,293 INFO gave up: legged entered FATAL state, too many start retries too quickly
+
+● zj-humanoid-pico-display-supervisor.service - Navi PICO display media player
+     Loaded: loaded (/etc/systemd/system/zj-humanoid-pico-display-supervisor.service; enabled; vendor preset: enabled)
+     Active: inactive (dead) since Fri 2026-09-18 11:01:54 CST; 20min ago
+   Main PID: 1050433 (code=exited, status=2)
+
+Sep 18 11:01:54 000732c1d90e systemd[1]: Stopped Navi PICO display media player.
+nav01@000732c1d90e:~$ 
+nav01@000732c1d90e:~$ sudo ps -o pid,ppid,user,lstart,cmd -p 1991
+    PID    PPID USER                      STARTED CMD
+   1991       1 root     Thu Sep 17 09:38:14 2026 /usr/bin/python3 /usr/bin/supervisor
+nav01@000732c1d90e:~$ sudo cat /proc/1991/cgroup
+12:freezer:/
+11:rdma:/
+10:perf_event:/
+9:cpuset:/
+8:pids:/system.slice/navi-pico-legged-supervisor.service
+7:memory:/system.slice/navi-pico-legged-supervisor.service
+6:hugetlb:/
+5:devices:/system.slice/navi-pico-legged-supervisor.service
+4:blkio:/system.slice/navi-pico-legged-supervisor.service
+3:cpu,cpuacct:/system.slice/navi-pico-legged-supervisor.service
+2:net_cls,net_prio:/
+1:name=systemd:/system.slice/navi-pico-legged-supervisor.service
+0::/system.slice/navi-pico-legged-supervisor.service
+nav01@000732c1d90e:~$ sudo tr '\0' ' ' </proc/1991/cmdline; echo
+/usr/bin/python3 /usr/bin/supervisord -c /run/naviai/legged/supervisord.conf 
+nav01@000732c1d90e:~$ 
+nav01@000732c1d90e:~$ sudo sed -n '1,240p' /run/naviai/legged/supervisord.conf 2>/dev/null
+[supervisord]
+nodaemon=true
+user=root
+logfile=/var/log/naviai/legged/supervisord.log
+pidfile=/run/naviai/legged/supervisord.pid
+
+[unix_http_server]
+file=/run/naviai/legged/supervisor.sock
+chmod=0700
+
+[inet_http_server]
+port=192.168.217.66:19004
+username=agent
+password=6fb874df5ea5fe7800079557b8952feb40ebcb61198424bd0b4b728b96ed1297
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory=supervisor.rpcinterface:make_main_rpcinterface
+
+[program:legged]
+command=/bin/bash /etc/nav01/supervised-stack/legged/launch.sh
+directory=/opt/naviai/legged-i2
+autostart=true
+autorestart=true
+exitcodes=0
+startsecs=3
+startretries=10
+stopasgroup=true
+killasgroup=true
+redirect_stderr=true
+stdout_logfile=/var/log/naviai/legged/legged.log
+stdout_logfile_maxbytes=10MB
+stdout_logfile_backups=5
+nav01@000732c1d90e:~$ sudo sed -n '1,240p' /run/naviai/display/supervisord.conf 2>/dev/null
+[supervisord]
+nodaemon=true
+user=root
+logfile=/var/log/naviai/display/supervisord.log
+pidfile=/run/naviai/display/supervisord.pid
+
+[unix_http_server]
+file=/run/naviai/display/supervisor.sock
+chmod=0700
+
+[inet_http_server]
+port=192.168.217.66:19004
+username=agent
+password=1
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory=supervisor.rpcinterface:make_main_rpcinterface
+
+[program:display]
+command=/bin/bash /etc/nav01/supervised-stack/display/launch.sh
+directory=/opt/navi_display
+autostart=true
+autorestart=true
+exitcodes=0
+startsecs=0
+startretries=3
+stopasgroup=true
+killasgroup=true
+redirect_stderr=true
+stdout_logfile=/var/log/naviai/display/display.log
+stdout_logfile_maxbytes=10MB
+stdout_logfile_backups=5
+nav01@000732c1d90e:~$ 
+nav01@000732c1d90e:~$ # 3. 当前聚合 API 返回的实际状态
+nav01@000732c1d90e:~$ curl -sS http://127.0.0.1:9080/api/v1/modules
+{"device": "pico", "modules": [{"name": "display", "reachable": false, "error": "http://192.168.217.66:19004/RPC2: <ProtocolError for agent:1@192.168.217.66:19004/RPC2: 401 Unauthorized>", "processes": [], "id": "display", "device": "pico"}, {"name": "legged", "reachable": false, "error": "http://192.168.217.66:19004/RPC2: <ProtocolError for agent:1@192.168.217.66:19004/RPC2: 401 Unauthorized>", "processes": [], "id": "legged", "device": "pico"}, {"name": "robot", "reachable": true, "processes": [{"name": "robot", "state": "RUNNING", "pid": 1060387, "description": "pid 1060387, uptime 0:10:34", "exit_status": 0, "spawn_error": ""}], "id": "robot", "device": "pico"}, {"name": "upperlimb", "reachable": false, "error": "http://192.168.217.66:19003/RPC2: [Errno 111] Connection refused", "processes": [], "id": "upperlimb", "device": "pico"}]}nav01@000732c1d90e:~$ 

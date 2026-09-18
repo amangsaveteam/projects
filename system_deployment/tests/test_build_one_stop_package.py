@@ -144,6 +144,20 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             "navi_pico_common_dep-2.0.0-release-humble-amd64.deb",
         )
 
+    def test_pico_payload_removes_retired_navigation_packages_before_dependencies(self) -> None:
+        script = builder.target_install(
+            "pico-humble", "payloads/pico-humble/system-config", "", None, [], [], [],
+            remove_packages=[
+                "zj-humanoid-ros-humble-legged-nav2-bringup",
+                "zj-humanoid-ros-humble-legged-nav2-hw",
+            ],
+        )
+
+        self.assertIn("removing retired compatibility packages", script)
+        self.assertIn("dpkg --remove zj-humanoid-ros-humble-legged-nav2-bringup", script)
+        self.assertIn("dpkg --remove zj-humanoid-ros-humble-legged-nav2-hw", script)
+        self.assertLess(script.index("dpkg --remove zj-humanoid-ros-humble-legged-nav2-bringup"), script.index("install-system-config.sh"))
+
     def test_pico_payload_has_a_runtime_platform_guard(self) -> None:
         script = builder.target_install(
             "pico-humble", "payloads/pico-humble/system-config", "", None,
@@ -159,6 +173,49 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             script.index("pico-humble payloads require"),
             script.index('dpkg -i "$root/payloads/pico-humble/extra-00.deb"'),
         )
+
+    def test_pico_install_requires_an_explicit_robot_type_and_blocks_identity_changes(self) -> None:
+        script = builder.master_install([("pico-humble", "ubuntu", "20.04", "amd64")], "2.0.0")
+
+        self.assertIn("Pico installation requires explicit --robot-type TYPE", script)
+        self.assertIn("existing ROBOT_TYPE=$device_robot_type differs from requested $robot_type", script)
+        self.assertIn("--confirm-robot-type-change", script)
+        self.assertIn("validate_robot_type_change || exit 2", script)
+        self.assertIn("Existing ROBOT_TYPE: ${device_robot_type:-<none>}", script)
+        self.assertIn("Requested ROBOT_TYPE: $robot_type", script)
+        self.assertNotIn("sed -n 's/^ROBOT_TYPE=//p'", script)
+        self.assertIn("python3 - /etc/zj_humanoid/device.env", script)
+        self.assertLess(script.index("validate_robot_type_change || exit 2"), script.index("install.sh\" \"$robot_type\""))
+
+    def test_pico_install_refuses_implicit_robot_type_before_writing_configuration(self) -> None:
+        script = builder.master_install([("pico-humble", "ubuntu", "20.04", "amd64")], "2.0.0")
+        script = script.replace(
+            '[[ $EUID -eq 0 ]] || { echo "ERROR: run as root" >&2; exit 1; }', ":"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            install = root / "install.sh"
+            target = root / "targets/pico-humble"
+            target.mkdir(parents=True)
+            install.write_text(script, encoding="utf-8")
+            install.chmod(0o755)
+            marker = root / "device-env-written"
+            target_install = target / "install.sh"
+            target_install.write_text(
+                f"#!/bin/bash\\ntouch {marker}\\n", encoding="utf-8"
+            )
+            target_install.chmod(0o755)
+
+            result = subprocess.run(
+                ["bash", str(install), "--target", "pico-humble"],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("Pico installation requires explicit --robot-type TYPE", result.stderr)
+            self.assertFalse(marker.exists())
 
     def test_environment_and_robot_type_are_configured_before_common_payloads(self) -> None:
         setup = builder.system_config_installer(
@@ -214,7 +271,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             for item in config["targets"]["pico-jazzy"]["runs"]
         }
         robot_type_arguments = ["--", "--robot-type", "{robot_type}"]
-        self.assertEqual(humble, {"robot": [], "upperlimb": robot_type_arguments, "display": []})
+        self.assertEqual(humble, {"robot": [], "upperlimb": robot_type_arguments, "display": ["--install"]})
         self.assertEqual(jazzy["upperlimb"], robot_type_arguments)
 
     def test_vendor_runs_inherit_and_cannot_replace_pico_shared_middleware(self) -> None:
@@ -406,7 +463,8 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("payloads/pico-jazzy/system-config/deploy_common.py", target_manifest)
         self.assertNotIn("payloads/orin-humble/", target_manifest)
         self.assertIn("System configuration: deploy/update", pretest)
-        self.assertIn("configured=$(sed -n 's/^ROBOT_TYPE=//p' /etc/zj_humanoid/device.env", master_install)
+        self.assertIn("device_robot_type=$(python3 - /etc/zj_humanoid/device.env", master_install)
+        self.assertNotIn("sed -n 's/^ROBOT_TYPE=//p'", master_install)
         self.assertIn("bare device requires --robot-type TYPE", master_install)
         self.assertIn("Robot type: not configured", master_install)
         self.assertNotIn("managed_services=(", install)
@@ -478,6 +536,8 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertLess(install.index("systemctl stop \"$unit\""), install.index("install-system-config.sh"))
         self.assertLess(install.index("install-system-config.sh"), install.index("systemctl restart \"$unit\""))
         self.assertIn("managed services are being kept stopped", install)
+        self.assertIn("installation failed during ${install_stage:-an unknown stage}", install)
+        self.assertIn("install_stage='starting managed services'", install)
 
     def test_vision_supervisor_uses_the_documented_isolated_dds_environment(self):
         target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-jazzy"]
@@ -592,6 +652,8 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             },
         )
         self.assertIn("port=192.168.217.100:19002", robot_entrypoint)
+        self.assertIn('ss -H -ltnp "sport = :19002"', robot_entrypoint)
+        self.assertIn("Supervisor RPC port 19002 is already in use", robot_entrypoint)
         self.assertIn("supervisor.rpcinterface:make_main_rpcinterface", robot_entrypoint)
         self.assertIn("unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH", audio_launch)
         self.assertIn("source /opt/naviai/venvs/audio/bin/activate", audio_launch)
@@ -617,6 +679,8 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("Disabling vendor service replaced by Supervisor: $unit", script)
         self.assertIn("zj-humanoid-chassis.service", script)
         self.assertNotIn('[[ -f "/etc/systemd/system/$unit" ]]', script)
+        self.assertIn("navi-orin-robot-supervisor.service", script)
+        self.assertIn('systemctl disable --now "$unit"', script)
         self.assertIn("systemctl restart zj-humanoid-orin-supervisor-agent.service", script)
         self.assertTrue(agent_unit_exists)
         self.assertIn("Conflicts=navi-orin-supervisor-agent.service navi-supervisor-agent.service", agent_unit)
@@ -715,6 +779,38 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
                 if agent_status:
                     self.assertIn("managed services are being kept stopped", result.stderr)
 
+    def test_module_registration_installation_prunes_stale_json_files(self) -> None:
+        paths = {"agent_modules_directory": "/etc/nav01/supervisor-agent/modules.d"}
+        script = builder.target_install(
+            "pico-humble", "payloads/pico-humble/system-config", "", None, [], [], [],
+            registrations=[
+                ("targets/pico-humble/supervisor/modules/robot.json", "/etc/nav01/supervisor-agent/modules.d/robot.json"),
+            ],
+            agent_service=paths,
+        )
+
+        self.assertIn('for module_file in "$modules_directory"/*.json; do', script)
+        self.assertIn('[[ -e "$module_file" ]] || continue', script)
+        self.assertIn('rm -f -- "$module_file"', script)
+        self.assertIn('declared_modules=(/etc/nav01/supervisor-agent/modules.d/robot.json)', script)
+        self.assertLess(script.index("/etc/nav01/supervisor-agent/modules.d/robot.json"),
+                        script.rindex("prune_stale_module_registrations"))
+
+    def test_build_rejects_duplicate_supervisor_ports_on_one_target(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            supervisor = json.loads((ROOT / "one_stop/supervisor.json").read_text(encoding="utf-8"))
+            modules = supervisor["targets"]["pico-humble"]["supervisor_modules"]
+            next(module for module in modules if module["id"] == "display")["port"] = 19002
+            supervisor_path = directory / "supervisor.json"
+            supervisor_path.write_text(json.dumps(supervisor), encoding="utf-8")
+
+            with self.assertRaisesRegex(builder.BuildError, "duplicate Supervisor port in pico-humble"):
+                builder.build(
+                    ROOT / "one_stop/version.json", ROOT / "one_stop/package-urls.json",
+                    directory / "out", supervisor_file=supervisor_path,
+                )
+
     def test_pico_native_supervisor_modules_are_registered_without_config_injection(self) -> None:
         config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
         target = config["targets"]["pico-humble"]
@@ -729,6 +825,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
                 "pico-humble", "payloads/pico-humble/system-config", "", None, [], [],
                 target["managed_services"], supervisor_startup=startup, registrations=registrations,
                 post_install=post_install, agent_service=paths, agent_payload=agent,
+                disabled_services=builder.supervisor_disabled_services("pico-humble", target),
             )
             robot = (stage / "targets/pico-humble/supervisor/modules/robot.json").read_text(encoding="utf-8")
             upperlimb = (stage / "targets/pico-humble/supervisor/modules/upperlimb.json").read_text(encoding="utf-8")
@@ -747,7 +844,11 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             json.loads(upperlimb)["modules"]["upperlimb"]["endpoint"],
             "http://192.168.217.66:19003/RPC2",
         )
+        self.assertIn("zj-humanoid-pico-robot-supervisor.service", script)
         self.assertIn("navi-pico-robot-supervisor.service", script)
+        self.assertIn("navi-pico-legged-supervisor.service", script)
+        self.assertIn("zj_humanoid.service", script)
+        self.assertIn('systemctl disable --now "$unit"', script)
         self.assertIn("navi-pico-upperlimb.service", script)
         self.assertIn("/etc/nav01/supervisor-agent/modules.d/robot.json", script)
         self.assertIn("/etc/nav01/supervisor-agent/modules.d/upperlimb.json", script)
@@ -760,7 +861,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             "pico-humble", "payloads/pico-humble/system-config", "", None, [], [],
             target["managed_services"] + ["zj-humanoid-pico-display-supervisor.service"], service_priorities=priorities,
         )
-        robot = "navi-pico-robot-supervisor.service"
+        robot = "zj-humanoid-pico-robot-supervisor.service"
         upperlimb = "navi-pico-upperlimb.service"
         self.assertEqual(priorities[robot], 10)
         self.assertEqual(priorities[upperlimb], 20)
