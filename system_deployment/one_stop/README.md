@@ -1,6 +1,6 @@
 # 唯一总安装包入口
 
-本目录是唯一面向使用者的部署配置与构建入口：分别编辑安装配置 `package-urls.json` 和运行配置 `supervisor.json`，只运行 `build_release.sh`。不要使用或创建单独平台、单独模块的打包清单。
+本目录是唯一面向部署人员的配置与构建入口：分别编辑安装配置 `package-urls.json` 和运行配置 `supervisor.json`，只运行 `build_release.sh`。不要使用或创建单独平台、单独模块的打包清单。设备使用者请阅读 [USER_GUIDE.md](USER_GUIDE.md)。
 
 ```bash
 ./system_deployment/one_stop/build_release.sh

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install vendor Vision while leaving an installed shared message package owned by its provider."""
+"""Adapt Vision transactions that share an installed upperlimb message package."""
 import argparse
 from pathlib import Path
 import subprocess
@@ -15,11 +15,28 @@ else
   readonly ROS_PACKAGES=(ros-humble-navi-vision-msgs ros-humble-upperlimb-msgs ros-humble-navi-vision-pkg)
 fi'''
 
+SAME_RELEASE_PREVIOUS = '''  elif [[ -n "${old_release_id}" && -d "${old_venv}" && -d "${old_runtime}" &&
+          "${old_venv##*/}" == "vision-${old_release_id}" &&
+          "${old_runtime##*/}" == "${old_release_id}" ]]; then'''
+SAME_RELEASE_REPLACEMENT = '''  elif [[ "${old_release_id}" != "${release_id}" && -n "${old_release_id}" && -d "${old_venv}" && -d "${old_runtime}" &&
+          "${old_venv##*/}" == "vision-${old_release_id}" &&
+          "${old_runtime##*/}" == "${old_release_id}" ]]; then'''
+
+
+def replace_once(text, declaration, replacement, description):
+    if text.count(declaration) != 1:
+        raise RuntimeError('unsupported Vision installer: expected one ' + description)
+    return text.replace(declaration, replacement, 1)
+
 
 def adapt_installer(text):
-    if text.splitlines().count(DECLARATION) != 1:
-        raise RuntimeError('unsupported Vision installer: expected one ROS_PACKAGES declaration')
-    return text.replace(DECLARATION, REPLACEMENT, 1)
+    text = replace_once(text, DECLARATION, REPLACEMENT, 'ROS_PACKAGES declaration')
+    return replace_once(
+        text,
+        SAME_RELEASE_PREVIOUS,
+        SAME_RELEASE_REPLACEMENT,
+        'same-release previous-release branch',
+    )
 
 
 def main():
