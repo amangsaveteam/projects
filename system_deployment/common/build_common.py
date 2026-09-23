@@ -35,13 +35,9 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
-    legacy_builder = DEPLOYMENT_ROOT.parent / "scripts/build/build_dependency_deb.py"
-    if legacy_builder.is_file():
-        command = [sys.executable, str(legacy_builder), *sys.argv[1:]]
-    else:
-        config_path = COMMON_DIR / "configs" / f"{config}.json"
-        command = [sys.executable, str(COMMON_DIR / "build_offline_common_bundle.py"), "--config", str(config_path)]
-        print("INFO: legacy builder is unavailable; using the local offline common carrier builder.")
+    config_path = COMMON_DIR / "configs" / f"{config}.json"
+    command = [sys.executable, str(COMMON_DIR / "build_offline_common_bundle.py"), "--config", str(config_path)]
+    print("INFO: using the repository-controlled offline common carrier builder.")
     environment = os.environ.copy()
     environment["NAVI_SYSTEM_DEPLOYMENT_COMMON_BUILDER"] = "1"
     return subprocess.run(command, env=environment, check=False).returncode

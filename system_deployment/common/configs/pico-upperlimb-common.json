@@ -23,30 +23,13 @@
     "dpkg (>= 1.19)",
     "apt (>= 2.0)"
   ],
-  "parent_packages": ["navi-pico-common-dep"],
-  "installer_aliases": ["install_pico_upperlimb_common_deps.sh"],
+  "parent_packages": [
+    "navi-pico-common-dep"
+  ],
+  "installer_aliases": [
+    "install_pico_upperlimb_common_deps.sh"
+  ],
   "exact_packages": [],
   "vendor_debs": [],
-  "extra_files": [
-    {
-      "source": "common/deploy_common.py",
-      "destination": "usr/lib/navi-pico-upperlimb-common-dep/deploy_common.py",
-      "mode": "0755"
-    },
-    {
-      "source": "common/configs/targets.json",
-      "destination": "usr/lib/navi-pico-upperlimb-common-dep/configs/targets.json",
-      "mode": "0644"
-    },
-    {
-      "source": "common/configs/robot-types.json",
-      "destination": "usr/lib/navi-pico-upperlimb-common-dep/configs/robot-types.json",
-      "mode": "0644"
-    },
-    {
-      "source": "packages/upperlimb/common/README.md",
-      "destination": "usr/share/doc/navi-pico-upperlimb-common-dep/USAGE.md",
-      "mode": "0644"
-    }
-  ]
+  "extra_files": []
 }

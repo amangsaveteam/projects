@@ -25,6 +25,82 @@ HELPER_SPEC.loader.exec_module(audio_install_helper)
 
 
 class OneStopPackageTest(unittest.TestCase):
+    def test_missing_host_packages_fail_before_services_are_stopped(self):
+        script = builder.target_install(
+            "orin-humble", "config", "", None, [], [], ["example.service"],
+            required_host_packages=["python3.10-venv", "libzstd-dev"],
+        )
+        start = script.index("install_stage='checking required host packages'")
+        end = script.index("managed_services=(", start)
+        check = script[start:end]
+        for installed in (True, False):
+            stub = 'dpkg-query() { printf installed; }\n' if installed else 'dpkg-query() { return 1; }\n'
+            result = subprocess.run(['bash', '-c', 'set -euo pipefail\n' + stub + check + '\necho reached-service-stage'],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0 if installed else 1)
+            self.assertEqual('reached-service-stage' in result.stdout, installed)
+            if not installed:
+                self.assertIn('python3.10-venv libzstd-dev', result.stderr)
+
+    def test_special_navigation_dependencies_precede_function_packages(self):
+        config = builder.load_delivery(
+            ROOT / "one_stop/special-wa-t-jk2-v1-package-urls.json",
+            ROOT / "one_stop/special-wa-t-jk2-v1-supervisor.json",
+        )
+        extras = config["targets"]["orin-humble"]["extra_debs"]
+        first_module_dependency = next(i for i, item in enumerate(extras)
+                                       if item["name"] == "sensor-common-dep")
+        dds = [item for item in extras[:first_module_dependency]
+               if item.get("install_group") == "orin-dds-dependencies"]
+        self.assertEqual({item["name"] for item in dds}, {
+            "libacl1-dev", "libattr1", "libattr1-dev", "ros-humble-cyclonedds",
+            "ros-humble-iceoryx-binding-c", "ros-humble-iceoryx-hoofs",
+            "ros-humble-iceoryx-posh", "ros-humble-rmw-cyclonedds-cpp",
+        })
+        for item in dds:
+            self.assertRegex(item["sha256"], r"^[a-f0-9]{64}$")
+            self.assertNotIn("robot_types", item)
+        first_navigation = next(i for i, item in enumerate(extras)
+                                if item.get("install_group") == "wa-navigation")
+        required = {"ros-humble-mcap-vendor", "ros-humble-rosbag2-storage-mcap",
+                    "ros-humble-zstd-vendor", "ros-humble-octomap-server",
+                    "ros-humble-octomap-msgs", "ros-humble-octomap-ros",
+                    "ros-humble-pcl-ros", "liboctomap-dev", "liboctomap1.9",
+                    "libsdl-image1.2", "libsdl-image1.2-dev", "libsdl1.2-dev",
+                    "libsdl1.2debian", "libcaca0", "libcaca-dev", "libslang2-dev"}
+        dependencies = [item for item in extras[:first_navigation]
+                        if item.get("install_group") == "wa-navigation-dependencies"]
+        self.assertEqual({item["name"] for item in dependencies}, required)
+        for item in dependencies:
+            self.assertRegex(item["sha256"], r"^[a-f0-9]{64}$")
+            self.assertTrue(item["version"])
+            self.assertEqual(item["robot_types"], ["WA-T"])
+
+    def test_orin_deliveries_share_rpc_address_and_retire_conflicting_units(self):
+        for prefix in ("", "special-wa-t-jk2-v1-"):
+            target = builder.load_delivery(
+                ROOT / ("one_stop/" + prefix + "package-urls.json"),
+                ROOT / ("one_stop/" + prefix + "supervisor.json"),
+            )["targets"]["orin-humble"]
+            self.assertEqual(target["supervisor"]["internal_ip"], "192.168.217.100")
+            retired = builder.supervisor_disabled_services("orin-humble", target)
+            self.assertIn("navi-orin-chassis.service", retired)
+            self.assertIn("navi-sensor-host.service", retired)
+
+    def test_special_audio_install_defers_launch_to_supervisor(self):
+        config = builder.load_delivery(
+            ROOT / "one_stop/special-wa-t-jk2-v1-package-urls.json",
+            ROOT / "one_stop/special-wa-t-jk2-v1-supervisor.json",
+        )
+        audio = next(item for item in config["targets"]["orin-humble"]["runs"]
+                     if item["name"] == "audio")
+        self.assertEqual(audio["start_policy"], "supervisor")
+        command = builder.render_run_command(
+            "payloads/orin-humble/run-02.run", audio["arguments"],
+            audio["start_policy"], "targets/orin-humble/helpers/install_run_without_final_exec.py",
+        )
+        self.assertTrue(command.startswith('python3 "$root/targets/orin-humble/helpers/'))
+
     def test_archive_wrapper_cleans_extraction_on_success_and_failure(self):
         for status in (0, 17):
             with self.subTest(status=status), tempfile.TemporaryDirectory() as temporary:
@@ -315,7 +391,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         )
 
         self.assertIn(
-            'env PIP_NO_BUILD_ISOLATION=1 "/usr/lib/orin-robot-common-deb/install_robot_deps.sh"',
+            "run_package_command /bin/bash -c 'env PIP_NO_BUILD_ISOLATION=1 /usr/lib/orin-robot-common-deb/install_robot_deps.sh'",
             script,
         )
         self.assertEqual(builder.resolve_environment({"PIP_NO_BUILD_ISOLATION": "1"}, "test"), ["PIP_NO_BUILD_ISOLATION=1"])
@@ -360,7 +436,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/"
             "orin_common_deb_2.0.0-release-humble-arm64.deb",
         )
-        self.assertEqual(extras[1]["skip_if_package_installed"], "orin-common-deb")
+        self.assertNotIn("skip_if_package_installed", extras[1])
         log = next(item for item in extras if item["name"] == "naviai-log")
         self.assertTrue(log["force_overwrite"])
         self.assertNotIn("install_group", log)
@@ -380,6 +456,8 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             install.index('dpkg -i "$root/payloads/orin-humble/extra-01.deb"'),
             install.index('/usr/lib/orin-sensor-common-deb/install_deps.sh'),
         )
+        self.assertIn('dpkg -i "$root/payloads/orin-humble/extra-01.deb"', install)
+        self.assertNotIn("Keeping installed orin-common-deb", install)
 
     def test_force_overwrite_is_limited_to_an_ungrouped_deb(self) -> None:
         install = builder.target_install(
@@ -537,6 +615,8 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertLess(install.index("install-system-config.sh"), install.index("systemctl restart \"$unit\""))
         self.assertIn("managed services are being kept stopped", install)
         self.assertIn("installation failed during ${install_stage:-an unknown stage}", install)
+        self.assertIn("run_package_command()", install)
+        self.assertIn("if \"$@\" 2>&1 | tee \"$output\"; then", install)
         self.assertIn("install_stage='starting managed services'", install)
 
     def test_vision_supervisor_uses_the_documented_isolated_dds_environment(self):
@@ -672,10 +752,10 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("source /etc/naviai/Middleware.env", manip_lingbot_launch)
         self.assertIn("exec /bin/bash /opt/naviai/manip/functions/bin/start-lingbot.sh", manip_lingbot_launch)
         self.assertNotIn("env ROS_DOMAIN_ID=72", manip_lingbot_launch)
-        self.assertIn("After=network-online.target zj-humanoid-orin-supervisor-agent.service navi-sensor-host.service", manip_lingbot_unit)
+        self.assertIn("After=network-online.target zj-humanoid-orin-supervisor-agent.service zj-humanoid-sensor.service", manip_lingbot_unit)
         self.assertIn("/etc/naviai/supervisor-agent/modules.d/robot.json", script)
         self.assertNotIn("configure_sensor_rpc.py", script)
-        self.assertIn('"navi-sensor-host.service"', script)
+        self.assertIn('"zj-humanoid-sensor.service"', script)
         self.assertIn("Disabling vendor service replaced by Supervisor: $unit", script)
         self.assertIn("zj-humanoid-chassis.service", script)
         self.assertNotIn('[[ -f "/etc/systemd/system/$unit" ]]', script)
@@ -692,12 +772,12 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("/etc/naviai/supervisor-agent/modules.d/vision.json", script)
         self.assertIn("configure_native_rpc.py /etc/naviai/navi-sensor-host-supervisor.conf", script)
         self.assertNotIn("/bin/bash -lc", audio_launch)
-        self.assertIn("exec ros2 launch navi_audio_pkg audio_bringup.launch.py", audio_launch)
+        self.assertIn("exec /bin/bash /usr/lib/naviai/audio/start_audio.sh", audio_launch)
 
     def test_lingbot_waits_for_sensor_and_restarts_while_camera_initializes(self) -> None:
         target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
         lingbot = next(module for module in target["supervisor_modules"] if module["id"] == "manip-lingbot")
-        self.assertEqual(lingbot["after_services"], ["navi-sensor-host.service"])
+        self.assertEqual(lingbot["after_services"], ["zj-humanoid-sensor.service"])
         self.assertEqual(lingbot["startup_priority"], 110)
         self.assertEqual(lingbot["autorestart"], "true")
 
@@ -716,7 +796,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         chassis = next(module for module in target["supervisor_modules"] if module["id"] == "chassis")
         self.assertEqual(chassis["mode"], "managed")
         self.assertEqual(chassis["port"], 19004)
-        self.assertEqual(chassis["disable_services"], ["zj-humanoid-chassis.service"])
+        self.assertEqual(chassis["disable_services"], ["zj-humanoid-chassis.service", "navi-orin-chassis.service"])
         vision = next(module for module in target["supervisor_modules"] if module["id"] == "vision")
         self.assertEqual(vision["disable_services"], ["navi-vision.service", "navi-vision-supervisor.service"])
         services = builder.supervisor_systemd_services("orin-humble", target)

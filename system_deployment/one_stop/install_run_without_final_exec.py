@@ -21,6 +21,22 @@ FINAL_LAUNCH = re.compile(
 )
 
 
+def allow_speaker_only_install(installer: str) -> str:
+    """Finish after package/layout verification when capture is explicitly disabled."""
+    anchor = "\nload_audio_environment\n"
+    if installer.count(anchor) != 1:
+        # Other vendor versions still use the existing full-install behavior.
+        return installer
+    branch = '''
+if [[ "${AUDIO_MODE:-full}" == speaker-only ]]; then
+    [[ -n "${SPK_DEVICE:-}" ]] || die "speaker-only mode requires SPK_DEVICE in ${ENV_FILE}"
+    echo "Audio speaker-only installation completed; playback and TTS are managed by Supervisor"
+    exit 0
+fi
+'''
+    return installer.replace(anchor, anchor + branch, 1)
+
+
 def suppress_final_audio_launch(installer: str) -> str:
     matches = list(FINAL_LAUNCH.finditer(installer))
     if len(matches) != 1:
@@ -76,7 +92,8 @@ def main() -> int:
         payload = workspace / "payload"
         subprocess.run(["/bin/bash", str(args.run), "--noexec", "--target", str(payload)], check=True)
         installer = payload / "install.sh"
-        text = installer.read_text(encoding="utf-8")
+        text = allow_speaker_only_install(installer.read_text(encoding="utf-8"))
+        installer.write_text(text, encoding="utf-8")
         try:
             installer.write_text(suppress_final_audio_launch(text), encoding="utf-8")
         except RuntimeError as error:

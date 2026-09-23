@@ -4,7 +4,7 @@
     "orin-humble": {
       "supervisor": {
         "internal_ip": "192.168.217.100",
-        "agent_service": "zj-humanoid-orin-supervisor-agent.service",
+        "agent_service": "zj-humanoid-supervisor-agent.service",
         "agent_modules_directory": "/etc/naviai/supervisor-agent/modules.d",
         "agent_password_file": "/etc/naviai/supervisor-agent/supervisor-rpc.password",
         "module_root": "/etc/naviai/supervised-stack",
@@ -13,165 +13,176 @@
       },
       "supervisor_modules": [
         {
-          "id": "manip-segmentation",
-          "package": "manip",
-          "description": "Manip segmentation",
-          "mode": "managed",
-          "port": 19013,
-          "working_directory": "/opt/naviai/manip/functions/bin",
-          "source_files": ["/etc/naviai/Middleware.env"],
-          "command": "/bin/bash /opt/naviai/manip/functions/bin/start-segmentation.sh",
-          "autorestart": "unexpected",
-          "startsecs": 5
-        },
-        {
-          "id": "manip-sam6d",
-          "package": "manip",
-          "description": "Manip sam6d",
-          "mode": "managed",
-          "port": 19014,
-          "working_directory": "/opt/naviai/manip/functions/bin",
-          "source_files": ["/etc/naviai/Middleware.env"],
-          "command": "/bin/bash /opt/naviai/manip/functions/bin/start-sam6d.sh",
-          "autorestart": "unexpected",
-          "startsecs": 5
-        },
-        {
-          "id": "manip-lingbot",
-          "package": "manip",
-          "description": "Manip lingbot",
-          "mode": "managed",
-          "port": 19015,
-          "working_directory": "/opt/naviai/manip/functions/bin",
-          "source_files": ["/etc/naviai/Middleware.env"],
-          "command": "/bin/bash /opt/naviai/manip/functions/bin/start-lingbot.sh",
-          "after_services": ["zj-humanoid-sensor.service"],
-          "startup_priority": 110,
-          "autorestart": "true",
-          "startsecs": 5
-        },
-        {
-          "id": "manip-hand-detect",
-          "package": "manip",
-          "description": "Manip hand-detect",
-          "mode": "managed",
-          "port": 19016,
-          "working_directory": "/opt/naviai/manip/functions/bin",
-          "source_files": ["/etc/naviai/Middleware.env"],
-          "command": "/bin/bash /opt/naviai/manip/functions/bin/start-hand-detect.sh",
-          "autorestart": "unexpected",
-          "startsecs": 5
-        },
-        {
           "id": "chassis",
-          "package": "chassis",
-          "description": "底盘 ROS 2 节点",
+          "description": "\u5e95\u76d8 ROS 2 \u8282\u70b9",
           "mode": "managed",
           "port": 19004,
           "working_directory": "/home/naviai",
-          "source_files": ["/etc/naviai/Middleware.env"],
-          "prelude": ["install -d -o naviai -g naviai -m 0755 /var/log/naviai/chassis /var/log/naviai/chassis/ros"],
+          "source_files": [
+            "/etc/naviai/Middleware.env"
+          ],
+          "prelude": [
+            "install -d -o naviai -g naviai -m 0755 /var/log/naviai/chassis /var/log/naviai/chassis/ros"
+          ],
           "command": "runuser -u naviai -- /bin/bash -c 'set -e; source /etc/naviai/Middleware.env; export HOME=/home/naviai ROS_LOG_DIR=/var/log/naviai/chassis/ros; exec ros2 launch chassis chassis.launch.py'",
-          "disable_services": ["zj-humanoid-chassis.service", "navi-orin-chassis.service"],
-          "startup_priority": 10
+          "disable_services": [
+            "zj-humanoid-chassis.service",
+            "navi-orin-chassis.service"
+          ],
+          "startup_priority": 10,
+          "robot_types": [
+            "WA-T"
+          ]
         },
         {
           "id": "vanjee-lidar",
-          "package": "vanjee-lidar",
-          "description": "万集 716 mini 雷达",
+          "description": "\u4e07\u96c6 716 mini \u96f7\u8fbe",
           "mode": "managed",
           "port": 19006,
           "working_directory": "/home/naviai",
-          "source_files": ["/etc/naviai/Middleware.env"],
-          "prelude": ["install -d -o naviai -g naviai -m 0755 /var/log/naviai/vanjee-lidar /var/log/naviai/vanjee-lidar/ros"],
+          "source_files": [
+            "/etc/naviai/Middleware.env"
+          ],
+          "prelude": [
+            "install -d -o naviai -g naviai -m 0755 /var/log/naviai/vanjee-lidar /var/log/naviai/vanjee-lidar/ros"
+          ],
           "command": "runuser -u naviai -- /bin/bash -c 'set -e; source /etc/naviai/Middleware.env; export HOME=/home/naviai AMENT_PREFIX_PATH=/opt/zj_humanoid:${AMENT_PREFIX_PATH:-} ROS_LOG_DIR=/var/log/naviai/vanjee-lidar/ros; exec ros2 launch vanjee_716mini_lidar vanjee_716mini_lidar_01.launch.py'",
-          "disable_services": ["zj-humanoid-vanjee-lidar.service"],
-          "startup_priority": 10
+          "disable_services": [
+            "zj-humanoid-vanjee-lidar.service"
+          ],
+          "startup_priority": 10,
+          "robot_types": [
+            "WA-T"
+          ]
         },
         {
           "id": "livox-lidar",
-          "package": "livox-lidar",
-          "description": "Livox 雷达",
+          "description": "Livox \u96f7\u8fbe",
           "mode": "managed",
           "port": 19007,
           "working_directory": "/home/naviai",
-          "source_files": ["/etc/naviai/Middleware.env"],
+          "source_files": [
+            "/etc/naviai/Middleware.env"
+          ],
           "prelude": [
             "install -d -o naviai -g naviai -m 0755 /var/log/naviai/livox-lidar /var/log/naviai/livox-lidar/ros",
             "if ! /usr/bin/python3 /usr/lib/naviai/detect_livox_model.py --lidar-ip \"${LIVOX_LIDAR_IP:-192.168.217.17}\" --timeout 4; then echo 'Livox model discovery unavailable; using manual or cached LIDAR_3D_TYPE if present' >&2; fi"
           ],
           "command": "runuser -u naviai -- /bin/bash -c 'set -e; source /etc/naviai/Middleware.env; export HOME=/home/naviai AMENT_PREFIX_PATH=/opt/zj_humanoid:${AMENT_PREFIX_PATH:-} ROS_LOG_DIR=/var/log/naviai/livox-lidar/ros; exec ros2 launch livox_lidar msg_lidar_launch.py'",
-          "disable_services": ["zj-humanoid-livox-lidar.service"],
-          "startup_priority": 10
+          "disable_services": [
+            "zj-humanoid-livox-lidar.service"
+          ],
+          "startup_priority": 10,
+          "robot_types": [
+            "WA-T"
+          ]
         },
         {
           "id": "naviai-nav2",
-          "package": "naviai-nav2",
           "description": "Nav2 bringup",
           "mode": "managed",
           "port": 19008,
           "working_directory": "/home/naviai",
-          "source_files": ["/etc/naviai/Middleware.env"],
-          "prelude": ["install -d -o naviai -g naviai -m 0755 /var/log/naviai/naviai-nav2 /var/log/naviai/naviai-nav2/ros"],
+          "source_files": [
+            "/etc/naviai/Middleware.env"
+          ],
+          "prelude": [
+            "install -d -o naviai -g naviai -m 0755 /var/log/naviai/naviai-nav2 /var/log/naviai/naviai-nav2/ros"
+          ],
           "command": "runuser -u naviai -- /bin/bash -c 'set -e; source /etc/naviai/Middleware.env; export HOME=/home/naviai ROS_LOG_DIR=/var/log/naviai/naviai-nav2/ros; for attempt in $(seq 1 120); do if ros2 pkg prefix naviai_nav2_bringup >/dev/null 2>&1; then exec ros2 launch naviai_nav2_bringup nav2_stack.launch.py; fi; sleep 1; done; echo naviai_nav2_bringup-not-installed >&2; exit 1'",
-          "disable_services": ["zj-humanoid-naviai-nav2.service"],
+          "disable_services": [
+            "zj-humanoid-naviai-nav2.service"
+          ],
           "startup_priority": 30,
-          "startsecs": 5
+          "startsecs": 5,
+          "robot_types": [
+            "WA-T"
+          ]
         },
         {
           "id": "navigation",
-          "package": "navigation",
-          "description": "统一导航核心",
+          "description": "\u7edf\u4e00\u5bfc\u822a\u6838\u5fc3",
           "mode": "managed",
           "port": 19009,
           "working_directory": "/home/naviai",
-          "source_files": ["/etc/naviai/Middleware.env"],
-          "prelude": ["install -d -o naviai -g naviai -m 0755 /var/log/naviai/navigation /var/log/naviai/navigation/ros"],
+          "source_files": [
+            "/etc/naviai/Middleware.env"
+          ],
+          "prelude": [
+            "install -d -o naviai -g naviai -m 0755 /var/log/naviai/navigation /var/log/naviai/navigation/ros"
+          ],
           "command": "runuser -u naviai -- /bin/bash -c 'set -e; source /etc/naviai/Middleware.env; export HOME=/home/naviai ROS_LOG_DIR=/var/log/naviai/navigation/ros NAVIGATION_ROBOT_MODEL=${NAVIGATION_ROBOT_MODEL:-${COMPOSE_PROFILES:-wa2}} ROBOT_NAME=${ROBOT_NAME:-zj_humanoid} NAVIGATION_CONFIG_PATH=${NAVIGATION_CONFIG_PATH:-/home/naviai/navi_project/config/navigation}; exec /opt/ros/humble/share/navigation/scripts/launch.sh'",
-          "disable_services": ["zj-humanoid-navigation.service"],
-          "startup_priority": 20
+          "disable_services": [
+            "zj-humanoid-navigation.service"
+          ],
+          "startup_priority": 20,
+          "robot_types": [
+            "WA-T"
+          ]
         },
         {
           "id": "naviai-nav2-rawdata",
-          "package": "naviai-nav2-rawdata",
-          "description": "导航原始数据记录",
+          "description": "\u5bfc\u822a\u539f\u59cb\u6570\u636e\u8bb0\u5f55",
           "mode": "managed",
           "port": 19010,
           "working_directory": "/home/naviai",
-          "source_files": ["/etc/naviai/Middleware.env"],
-          "prelude": ["install -d -o naviai -g naviai -m 0755 /var/log/naviai/naviai-nav2-rawdata /var/log/naviai/naviai-nav2-rawdata/ros /var/log/zj_humanoid /var/log/zj_humanoid/l2_raw_log/data"],
+          "source_files": [
+            "/etc/naviai/Middleware.env"
+          ],
+          "prelude": [
+            "install -d -o naviai -g naviai -m 0755 /var/log/naviai/naviai-nav2-rawdata /var/log/naviai/naviai-nav2-rawdata/ros /var/log/zj_humanoid /var/log/zj_humanoid/l2_raw_log/data"
+          ],
           "command": "runuser -u naviai -- /bin/bash -c 'set -e; source /etc/naviai/Middleware.env; export HOME=/home/naviai AMENT_PREFIX_PATH=/opt/zj_humanoid:${AMENT_PREFIX_PATH:-} ROS_LOG_DIR=/var/log/naviai/naviai-nav2-rawdata/ros; exec ros2 launch naviai_nav2_rawdata recorder.launch.py'",
-          "disable_services": ["zj-humanoid-naviai-nav2-rawdata.service"],
-          "startup_priority": 40
+          "disable_services": [
+            "zj-humanoid-naviai-nav2-rawdata.service"
+          ],
+          "startup_priority": 40,
+          "robot_types": [
+            "WA-T"
+          ]
         },
         {
           "id": "diagnosis-system",
-          "package": "diagnosis-system",
-          "description": "诊断系统",
+          "description": "\u8bca\u65ad\u7cfb\u7edf",
           "mode": "managed",
           "port": 19011,
           "working_directory": "/home/naviai",
-          "source_files": ["/etc/naviai/Middleware.env"],
-          "prelude": ["install -d -o naviai -g naviai -m 0755 /var/log/naviai/diagnosis-system /var/log/naviai/diagnosis-system/ros"],
+          "source_files": [
+            "/etc/naviai/Middleware.env"
+          ],
+          "prelude": [
+            "install -d -o naviai -g naviai -m 0755 /var/log/naviai/diagnosis-system /var/log/naviai/diagnosis-system/ros"
+          ],
           "command": "runuser -u naviai -- /bin/bash -c 'set -e; source /etc/naviai/Middleware.env; export HOME=/home/naviai ROS_LOG_DIR=/var/log/naviai/diagnosis-system/ros; exec ros2 launch diagnosis_system diagnosis.launch.py'",
-          "disable_services": ["zj-humanoid-diagnosis-system.service"],
-          "startup_priority": 50
+          "disable_services": [
+            "zj-humanoid-diagnosis-system.service"
+          ],
+          "startup_priority": 50,
+          "robot_types": [
+            "WA-T"
+          ]
         },
         {
           "id": "web-rviz",
-          "package": "web-rviz",
-          "description": "Web RViz 页面服务",
+          "description": "Web RViz \u9875\u9762\u670d\u52a1",
           "mode": "managed",
           "port": 19012,
           "working_directory": "/opt/zj_humanoid/lib/web_rviz_ros2",
-          "source_files": ["/etc/naviai/Middleware.env"],
+          "source_files": [
+            "/etc/naviai/Middleware.env"
+          ],
           "prelude": [
             "export ROS_LOG_DIR=/var/log/naviai/web-rviz/ros",
             "install -d -m 0755 /var/log/naviai/web-rviz/ros /var/log/zj_humanoid/web_rviz_ros2"
           ],
           "command": "/opt/zj_humanoid/lib/web_rviz_ros2/start_web_navigation.sh",
-          "disable_services": ["zj-humanoid-web-rviz-ros2.service"],
-          "startup_priority": 60
+          "disable_services": [
+            "zj-humanoid-web-rviz-ros2.service"
+          ],
+          "startup_priority": 60,
+          "robot_types": [
+            "WA-T"
+          ]
         },
         {
           "id": "sensor",
@@ -179,7 +190,9 @@
           "mode": "external",
           "port": 19001,
           "restart_service": "zj-humanoid-sensor.service",
-          "disable_services": ["navi-sensor-host.service"],
+          "disable_services": [
+            "navi-sensor-host.service"
+          ],
           "native_rpc_config": "/etc/naviai/navi-sensor-host-supervisor.conf"
         },
         {
@@ -205,13 +218,11 @@
           "command": "ros2 launch orin_robot orin_robot.launch.py",
           "autorestart": "unexpected",
           "startsecs": 3,
-          "timeout_stop_seconds": 20,
-          "remove_packages": [
-            "navi-robot-state"
-          ]
+          "timeout_stop_seconds": 20
         },
         {
           "id": "audio",
+          "start_policy": "supervisor",
           "description": "Jetson Orin Audio ROS 2 stack (Supervisor)",
           "mode": "managed",
           "port": 19003,
@@ -238,58 +249,29 @@
           ],
           "command": "/bin/bash /usr/lib/naviai/audio/start_audio.sh intent_router_mode:=bt enable_face_bridge:=true voiceprint_adapter_mode:=real gesture_backend:=pico pico_gateway_url:=ws://192.168.217.66:8765 enable_background_task_test:=true",
           "autorestart": "unexpected",
-          "startsecs": 5,
-          "start_policy": "supervisor"
+          "startsecs": 5
         },
         {
-          "id": "vision",
-          "description": "Navi Vision Humble",
+          "id": "orbbec-camera",
+          "description": "Orbbec Gemini 305g \u53cc\u8155\u76f8\u673a",
           "mode": "managed",
-          "port": 19005,
-          "working_directory": "/var/lib/navi-vision/supervised",
+          "port": 19013,
+          "working_directory": "/var/lib/navi-sensor",
+          "source_files": [
+            "/etc/naviai/Middleware.env",
+            "/opt/ros/humble/setup.bash"
+          ],
           "prelude": [
-            "install -d -o naviai -g naviai -m 0750 /var/log/naviai/vision",
-            "install -d -o naviai -g naviai -m 0755 /var/lib/navi-vision/supervised /var/lib/navi-vision/supervised/ros /var/lib/navi-vision/supervised/ultralytics /var/log/naviai/vision/ros"
+            "install -d -m 0755 /var/lib/navi-sensor /var/log/naviai/orbbec-wrist/ros",
+            "export ROS_LOG_DIR=/var/log/naviai/orbbec-wrist/ros"
           ],
-          "command": "runuser -u naviai -- /bin/bash -c 'set -e; export HOME=/home/naviai; source /etc/naviai/Middleware.env; source /usr/lib/orin-vision-common-deb/vision_environment.sh; set +u; export ROS_HOME=/var/lib/navi-vision/supervised/ros ROS_LOG_DIR=/var/log/naviai/vision/ros YOLO_CONFIG_DIR=/var/lib/navi-vision/supervised/ultralytics; exec ros2 launch navi_vision_pkg face_detection_node.launch.py selected_camera:=auto camera_auto_timeout_sec:=8.0'",
-          "startsecs": 20,
-          "after_services": [
-            "zj-humanoid-sensor.service"
-          ],
-          "disable_services": [
-            "navi-vision.service",
-            "navi-vision-supervisor.service"
-          ],
-          "start_policy": "vision-preserve-shared"
-        }
-      ]
-    },
-    "orin-jazzy": {
-      "supervisor": {
-        "internal_ip": "192.168.217.100",
-        "agent_service": "zj-humanoid-orin-supervisor-agent.service",
-        "agent_modules_directory": "/etc/naviai/supervisor-agent/modules.d",
-        "agent_password_file": "/etc/naviai/supervisor-agent/supervisor-rpc.password",
-        "module_root": "/etc/naviai/supervised-stack",
-        "runtime_root": "/run/naviai",
-        "log_root": "/var/log/naviai"
-      },
-      "supervisor_modules": [
-        {
-          "id": "vision",
-          "description": "Navi Vision Jazzy",
-          "mode": "managed",
-          "service_name": "zj-humanoid-orin-vision-supervisor",
-          "port": 19005,
-          "working_directory": "/var/lib/navi-vision/supervised",
-          "prelude": [
-            "install -d -o naviai -g naviai -m 0750 /var/log/naviai/vision",
-            "install -d -o naviai -g naviai -m 0755 /var/lib/navi-vision/supervised /var/lib/navi-vision/supervised/ros /var/lib/navi-vision/supervised/ultralytics /var/log/naviai/vision/ros"
-          ],
-          "command": "runuser -u naviai -- /bin/bash -c 'set -e; unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH; source /etc/naviai/Middleware.env; unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH; source /opt/ros/jazzy/setup.bash; source /opt/naviai/venvs/vision/bin/activate; export HOME=/home/naviai ROS_HOME=/var/lib/navi-vision/supervised/ros ROS_LOG_DIR=/var/log/naviai/vision/ros YOLO_CONFIG_DIR=/var/lib/navi-vision/supervised/ultralytics ROS_DOMAIN_ID=72 ROS_LOCALHOST_ONLY=0 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp; unset CYCLONEDDS_URI; exec ros2 launch navi_vision_pkg face_detection_node.launch.py selected_camera:=auto camera_auto_timeout_sec:=8.0'",
-          "startsecs": 20,
-          "after_services": [
-            "zj-humanoid-sensor.service"
+          "command": "/bin/bash -lc 'source /etc/naviai/Middleware.env; source /opt/ros/humble/setup.bash; export ROS_LOG_DIR=/var/log/naviai/orbbec-wrist/ros; exec python3 /usr/lib/naviai/sensor/orbbec_wrist_supervisor.py --config /etc/naviai/sensor/orb_config.yaml'",
+          "local_log_file": "/var/log/naviai/orbbec-camera/orbbec-camera.log",
+          "autorestart": "unexpected",
+          "startsecs": 5,
+          "startup_priority": 30,
+          "robot_types": [
+            "WA-T"
           ]
         }
       ]
@@ -339,27 +321,8 @@
           "startsecs": 0,
           "disable_services": [
             "navi-pico-upperlimb.service"
-          ]
-        },
-        {
-          "id": "display",
-          "description": "Navi PICO display media player",
-          "mode": "managed",
-          "port": 19004,
-          "startup_priority": 1,
-          "working_directory": "/opt/navi_display",
-          "source_files": [
-            "/etc/nav01/Middleware.env",
-            "/opt/ros/humble/setup.bash",
-            "/opt/navi_display/ros/setup.bash"
           ],
-          "prelude": [
-            "export HOME=/var/lib/navi-display ROS_HOME=/var/lib/navi-display/ros ROS_LOG_DIR=/var/log/naviai/display/ros",
-            "install -d -m 0755 /var/lib/navi-display /var/lib/navi-display/ros /var/log/naviai/display/ros"
-          ],
-          "command": "ros2 launch media_play media_play.launch.py",
-          "autorestart": "true",
-          "startsecs": 0
+          "package": "upperlimb-common"
         }
       ],
       "managed_services": [

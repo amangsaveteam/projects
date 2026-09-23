@@ -24,7 +24,7 @@ MODULES = {
         "manip-sam6d": ("zj-humanoid-orin-manip-sam6d-supervisor.service", 19014, True),
         "manip-lingbot": ("zj-humanoid-orin-manip-lingbot-supervisor.service", 19015, True),
         "manip-hand-detect": ("zj-humanoid-orin-manip-hand-detect-supervisor.service", 19016, True),
-        "sensor": ("navi-sensor-host.service", 19001, False),
+        "sensor": ("zj-humanoid-sensor.service", 19001, False),
         "robot": ("zj-humanoid-orin-robot-supervisor.service", 19002, True),
         "audio": ("zj-humanoid-orin-audio-supervisor.service", 19003, True),
         "chassis": ("zj-humanoid-orin-chassis-supervisor.service", 19004, True),

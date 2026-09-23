@@ -1,0 +1,645 @@
+{
+  "schema_version": 1,
+  "targets": {
+    "orin-humble": {
+      "required_host_packages": [
+        "python3.10-venv",
+        "libzstd-dev"
+      ],
+      "config_files": [
+        {
+          "source": "system_deployment/one_stop/audio",
+          "destination": "/usr/lib/naviai/audio",
+          "owner": "root"
+        },
+        {
+          "source": "system_deployment/one_stop/assets/orin-humble/navigation/config",
+          "destination": "/home/naviai/navi_project/config/navigation/config",
+          "owner": "naviai",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "source": "system_deployment/one_stop/environment-defaults/orin-humble",
+          "destination": "/etc/naviai/navigation",
+          "owner": "root",
+          "overwrite": false,
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "source": "system_deployment/one_stop/tools/orin-humble",
+          "destination": "/usr/lib/naviai",
+          "owner": "root",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "source": "system_deployment/one_stop/assets/orin-humble/perception/config",
+          "destination": "/home/naviai/navi_project/config/perception",
+          "owner": "naviai",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "source": "system_deployment/one_stop/assets/orin-humble/shared/schema",
+          "destination": "/home/naviai/navi_project/schema",
+          "owner": "naviai",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "source": "system_deployment/one_stop/assets/orin-humble/diangosis/config",
+          "destination": "/home/naviai/navi_project/tool/diangosis",
+          "owner": "naviai",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "source": "system_deployment/one_stop/sensor",
+          "destination": "/usr/lib/naviai/sensor",
+          "owner": "root",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "source": "system_deployment/one_stop/sensor_config",
+          "destination": "/etc/naviai/sensor",
+          "owner": "root",
+          "robot_types": [
+            "WA-T"
+          ]
+        }
+      ],
+      "device": "ORIN",
+      "os_id": "ubuntu",
+      "os_version": "22.04",
+      "architecture": "arm64",
+      "system_config": {
+        "configure_target": "orin-humble",
+        "base_image_contract": "orin-humble"
+      },
+      "extra_debs": [
+        {
+          "name": "libacl1-dev",
+          "version": "2.3.1-1",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/main/a/acl/libacl1-dev_2.3.1-1_arm64.deb",
+          "sha256": "14b5da3c83a57999aeee9f48159f96ebff5008fd178cce7258db8ddea72a3814",
+          "installers": [],
+          "install_group": "orin-dds-dependencies"
+        },
+        {
+          "name": "libattr1",
+          "version": "1:2.5.1-1ubuntu0.1",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/main/a/attr/libattr1_2.5.1-1ubuntu0.1_arm64.deb",
+          "sha256": "11c3e5e0ed9c29349a9be201d52b9bdf0cb6a42e31d353031aabf2fe5d17b03e",
+          "installers": [],
+          "install_group": "orin-dds-dependencies"
+        },
+        {
+          "name": "libattr1-dev",
+          "version": "1:2.5.1-1ubuntu0.1",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/main/a/attr/libattr1-dev_2.5.1-1ubuntu0.1_arm64.deb",
+          "sha256": "646d42dc39548d49e698d6e7f714f19a679076d15a8d88b6e436e01b6eb95c1d",
+          "installers": [],
+          "install_group": "orin-dds-dependencies"
+        },
+        {
+          "name": "ros-humble-cyclonedds",
+          "version": "0.10.5-2jammy.20260307.131623",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-cyclonedds/ros-humble-cyclonedds_0.10.5-2jammy.20260307.131623_arm64.deb",
+          "sha256": "a748f2fa849e28ba958215c7143cfd22dae8f5f68cd1a4618f7f350a9d1c1a95",
+          "installers": [],
+          "install_group": "orin-dds-dependencies"
+        },
+        {
+          "name": "ros-humble-iceoryx-binding-c",
+          "version": "2.0.5-1jammy.20260307.124407",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-iceoryx-binding-c/ros-humble-iceoryx-binding-c_2.0.5-1jammy.20260307.124407_arm64.deb",
+          "sha256": "80d4890812a5a88cf275c0279e3a0faded3ad696b69463cb6ccf4f6b9cc24f71",
+          "installers": [],
+          "install_group": "orin-dds-dependencies"
+        },
+        {
+          "name": "ros-humble-iceoryx-hoofs",
+          "version": "2.0.5-1jammy.20260306.225532",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-iceoryx-hoofs/ros-humble-iceoryx-hoofs_2.0.5-1jammy.20260306.225532_arm64.deb",
+          "sha256": "6af712f584ee7a1d58f30daa0ff5fe23d2dfe581bde342ff4998eb21be7d057b",
+          "installers": [],
+          "install_group": "orin-dds-dependencies"
+        },
+        {
+          "name": "ros-humble-iceoryx-posh",
+          "version": "2.0.5-1jammy.20260307.123554",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-iceoryx-posh/ros-humble-iceoryx-posh_2.0.5-1jammy.20260307.123554_arm64.deb",
+          "sha256": "485b467d82fb2814fd633086857f9dd0b32d298f6b1ffbd6c4612c83bfad488f",
+          "installers": [],
+          "install_group": "orin-dds-dependencies"
+        },
+        {
+          "name": "ros-humble-rmw-cyclonedds-cpp",
+          "version": "1.3.5-1jammy.20260907.211615",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-rmw-cyclonedds-cpp/ros-humble-rmw-cyclonedds-cpp_1.3.5-1jammy.20260907.211615_arm64.deb",
+          "sha256": "af267584e98d93de4c6f693db91570542c61b739618b5bfbd3a3f711ebe5e2c0",
+          "installers": [],
+          "install_group": "orin-dds-dependencies"
+        },
+        {
+          "name": "sensor-common-dep",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/sensor/navi_sensor_dep-2.0.0-release-humble-arm64.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "robot-common-dep",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/develop/navi_robot_dep-2.0.0-release-humble-arm64.deb",
+          "sha256": "",
+          "installers": [
+            "auto"
+          ],
+          "environment": {
+            "PIP_NO_BUILD_ISOLATION": "1"
+          }
+        },
+        {
+          "name": "libslang2-dev",
+          "version": "2.3.2-5build4",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/main/s/slang2/libslang2-dev_2.3.2-5build4_arm64.deb",
+          "sha256": "df7c3a8586551ac8f6bba60bb732c3f15dc29fd6c36ed4d10b8ca66de80476dc",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "liboctomap-dev",
+          "version": "1.9.7+dfsg-3",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/universe/o/octomap/liboctomap-dev_1.9.7%2bdfsg-3_arm64.deb",
+          "sha256": "0c2bd6f95053a606d436a8426411402c776731c9117e4be75160e66390ff52c4",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "liboctomap1.9",
+          "version": "1.9.7+dfsg-3",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/universe/o/octomap/liboctomap1.9_1.9.7%2bdfsg-3_arm64.deb",
+          "sha256": "41ff906e38834ff9832bc29861d649f48953d2b42fc12cf7e95d0aa3c59f7eb5",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "libsdl-image1.2",
+          "version": "1.2.12-13build1",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/universe/s/sdl-image1.2/libsdl-image1.2_1.2.12-13build1_arm64.deb",
+          "sha256": "077de775fd6093c85f2ca2c37b9de241c1439cfac8a8fb3710aedeb9b9837d63",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "libsdl-image1.2-dev",
+          "version": "1.2.12-13build1",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/universe/s/sdl-image1.2/libsdl-image1.2-dev_1.2.12-13build1_arm64.deb",
+          "sha256": "4e8730f2bc4431b6ac493ad1d4dc61018f63d0cade63a53289c7724ba9adc388",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "libsdl1.2-dev",
+          "version": "1.2.15+dfsg2-6",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/universe/libs/libsdl1.2/libsdl1.2-dev_1.2.15%2bdfsg2-6_arm64.deb",
+          "sha256": "f4cb8b244cb1c7e9efe00ea89a7a071ed4004a9462eea68ea5b5c7a6a1f23510",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "libsdl1.2debian",
+          "version": "1.2.15+dfsg2-6",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/universe/libs/libsdl1.2/libsdl1.2debian_1.2.15%2bdfsg2-6_arm64.deb",
+          "sha256": "b83c22219fd6c7f386c2b141b3530bc30a618d1008d7afaa75812781e5b57756",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "libcaca-dev",
+          "version": "0.99.beta19-2.2ubuntu4.2",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/main/libc/libcaca/libcaca-dev_0.99.beta19-2.2ubuntu4.2_arm64.deb",
+          "sha256": "3477fd246a10e1d0231da237742fa329898bd8d4d89a896c0f28fcf2c71bb33f",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "libcaca0",
+          "version": "0.99.beta19-2.2ubuntu4.2",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/main/libc/libcaca/libcaca0_0.99.beta19-2.2ubuntu4.2_arm64.deb",
+          "sha256": "c89079fd2008424498b34ffb38d8205137e303013d51609e82664c0e22ca2be4",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "ros-humble-octomap-msgs",
+          "version": "2.0.1-1jammy.20260907.224844",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-octomap-msgs/ros-humble-octomap-msgs_2.0.1-1jammy.20260907.224844_arm64.deb",
+          "sha256": "3099468b8d507197c035a717c7c0e58de4581cd5d0387c2b370cdaccf07f32b2",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "ros-humble-octomap-ros",
+          "version": "0.4.4-1jammy.20260907.233001",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-octomap-ros/ros-humble-octomap-ros_0.4.4-1jammy.20260907.233001_arm64.deb",
+          "sha256": "3fc4cf5a69d8e04291f665d6fc9fa26174643c2d723864cd059660ad3a82d776",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "ros-humble-octomap-server",
+          "version": "2.3.1-1jammy.20260909.192858",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-octomap-server/ros-humble-octomap-server_2.3.1-1jammy.20260909.192858_arm64.deb",
+          "sha256": "9bb772a9ba917a149ff0525e90484f38fc4e7c385a3c6cd2b5be2b7c5ba974fe",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "ros-humble-pcl-ros",
+          "version": "2.4.5-2jammy.20260909.191842",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-pcl-ros/ros-humble-pcl-ros_2.4.5-2jammy.20260909.191842_arm64.deb",
+          "sha256": "f1a4622de40a85d4dd1b04817be994b60bbb335a6940292af3e23c2b7a417347",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "ros-humble-zstd-vendor",
+          "version": "0.15.17-1jammy.20260909.220545",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-zstd-vendor/ros-humble-zstd-vendor_0.15.17-1jammy.20260909.220545_arm64.deb",
+          "sha256": "332546ddc7d6c5ce6d962dd0c8a4ae33427707636c0cd7716ed00d2519ddaa42",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "ros-humble-mcap-vendor",
+          "version": "0.15.17-1jammy.20260909.220900",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-mcap-vendor/ros-humble-mcap-vendor_0.15.17-1jammy.20260909.220900_arm64.deb",
+          "sha256": "39f7e20a6b5f39e39e84cffc2332c347cb5a873c63b6d3052e6c512a9139cf5f",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "ros-humble-rosbag2-storage-mcap",
+          "version": "0.15.17-1jammy.20260909.221142",
+          "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-rosbag2-storage-mcap/ros-humble-rosbag2-storage-mcap_0.15.17-1jammy.20260909.221142_arm64.deb",
+          "sha256": "9230f98f5bdc972762a7ecd378c9191f08354dca22ea6fdab2a89a58ad23f38d",
+          "installers": [],
+          "install_group": "wa-navigation-dependencies",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "naviai-log",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/log/L3/release/zj_humanoid-naviai-log_2204%2Blatest-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "force_overwrite": true,
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "chassis-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/chassis/release/msg_ros2/zj-humanoid-ros-humble-chassis-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "lidar-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/msg_ros2/zj-humanoid-ros-humble-lidar-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "map-server-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/map_server/release/msg_ros2/zj-humanoid-ros-humble-map-server-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "module-common-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/msg_ros2/zj-humanoid-ros-humble-module-common-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "naviai-localization-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/perception/release/msg_ros2/zj-humanoid-ros-humble-naviai-localization-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "navigation-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/navigation/release/msg_ros2/zj-humanoid-ros-humble-navigation-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "navigation-dbg-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/navigation/release/msg_ros2/zj-humanoid-ros-humble-navigation-dbg-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "diagnosis-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/diagnosis/msg_ros2/zj-humanoid-ros-humble-diagnosis-msgs_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "livox-sdk",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/livox_sdk/zj-humanoid-livox-sdk_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "chassis",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/chassis/release/chassis_ros2/zj-humanoid-ros-humble-chassis_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "vanjee-lidar",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/vanjee716/ros2/zj-humanoid-ros-humble-vanjee-716mini-lidar_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "livox-lidar",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/livox_lidar/ros2/zj-humanoid-ros-humble-livox-lidar_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "naviai-nav2",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_nav2/release/zj-humanoid-ros-humble-naviai-nav2_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "wait_for_packages": [
+            "zj-humanoid-ros-humble-naviai-nav2-bringup"
+          ],
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "navigation",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/navigation/release/navigation_ros2/zj-humanoid-ros-humble-navigation_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "naviai-nav2-rawdata",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_nav2_rawdata/release/zj-humanoid-ros-humble-naviai-nav2-rawdata_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "diagnosis-system",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/diagnosis/release/zj-humanoid-ros-humble-diagnosis-system_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "web-rviz",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/tool/web_rviz/release/zj-humanoid-web-rviz_2.0.0-0jammy_arm64.deb",
+          "sha256": "",
+          "installers": [],
+          "install_group": "wa-navigation",
+          "robot_types": [
+            "WA-T"
+          ]
+        }
+      ],
+      "runs": [
+        {
+          "name": "sensor",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/sensor/develop/navi_sensor_installer-2.0.0-release-humble-arm64.run",
+          "sha256": "",
+          "arguments": []
+        },
+        {
+          "name": "robot",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/develop/navi_robot_installer-2.0.0-release-humble-arm64.run",
+          "start_policy": "robot-verify-fix",
+          "sha256": "",
+          "arguments": []
+        },
+        {
+          "name": "audio",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/humble/navi_audio_installer-2.0.0-release-humble-arm64.run",
+          "sha256": "",
+          "arguments": []
+        }
+      ]
+    },
+    "pico-humble": {
+      "device": "PICO",
+      "os_id": "ubuntu",
+      "os_version": "20.04",
+      "architecture": "amd64",
+      "system_config": {
+        "configure_target": "pico-humble",
+        "base_image_contract": "pico-humble"
+      },
+      "config_files": [
+        {
+          "source": "system_deployment/one_stop/pico_upperlimb",
+          "destination": "/etc/nav01/upperlimb",
+          "owner": "root",
+          "robot_types": ["WA-T"]
+        }
+      ],
+      "remove_packages": [
+        "zj-humanoid-ros-humble-legged-nav2-bringup",
+        "zj-humanoid-ros-humble-legged-nav2-hw"
+      ],
+      "extra_debs": [
+        {
+          "name": "pico-common",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/pico/develop/navi_pico_common_dep-2.0.0-release-humble-amd64.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "robot-common-dep",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/robot/develop/navi_pico_robot_dep-2.0.0-release-humble-amd64.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "upperlimb-common",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/upperlimb/develop/navi_pico_upperlimb_common_dep-2.0.0-release-humble-amd64.deb",
+          "sha256": "",
+          "installers": [
+            "auto"
+          ],
+          "robot_types": [
+            "JK2-V1"
+          ]
+        },
+        {
+          "name": "upperlimb-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules2/upperlimb_msgs/develop/zj-humanoid-ros-humble-upperlimb-msgs_2.0.0-featwat%2B533.c9959d2focal_amd64.deb",
+          "sha256": "",
+          "installers": [],
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "uplimb-runtime",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/uplimb_runtime/develop/zj-humanoid-uplimb-runtime_1.4.2-featwat%2B82.69910a4focal_amd64.deb",
+          "sha256": "",
+          "installers": [],
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "rtipc-runtime",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/rtipc_runtime/release/zj-humanoid-rtipc-runtime_1.4.4focal_amd64.deb",
+          "sha256": "",
+          "installers": [],
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "name": "uplimb-interface",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules2/uplimb_interface/develop/zj-humanoid-ros-humble-uplimb-interface_2.0.2-featwat%2B533.c9959d2focal_amd64.deb",
+          "sha256": "",
+          "installers": [],
+          "robot_types": [
+            "WA-T"
+          ]
+        }
+      ],
+      "runs": [
+        {
+          "name": "robot",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/robot/develop/navi_pico_robot_installer-2.0.0-release-humble-amd64.run",
+          "sha256": "",
+          "arguments": []
+        }
+      ]
+    }
+  }
+}

@@ -32,15 +32,21 @@ class OfflineCommonBundleTest(unittest.TestCase):
             self.assertTrue(wrapper.stat().st_mode & 0o111)
             self.assertIn(f"--config {config}", wrapper.read_text(encoding="utf-8"))
 
-    def test_orin_humble_common_owns_the_sensor_legacy_verifier(self) -> None:
-        config = (ROOT / "common/configs/orin-common-humble.json").read_text(encoding="utf-8")
-        self.assertIn("usr/lib/orin-common-deb/install_deps.sh", config)
-        verifier = ROOT / "common/files/usr/lib/orin-common-deb/install_deps.sh"
-        self.assertTrue(verifier.is_file())
-        self.assertTrue(verifier.stat().st_mode & 0o111)
-        contents = verifier.read_text(encoding="utf-8")
-        self.assertIn("--verify-only", contents)
-        self.assertIn("/usr/sbin/install_common_deps.sh", contents)
+    def test_common_configs_carry_only_offline_dependencies(self) -> None:
+        environment_paths = {
+            "etc/profile.d/zj_humanoid.sh",
+            "etc/zj_humanoid/cyclonedds.xml",
+            "etc/zj_humanoid/device.env",
+        }
+        for config_path in (ROOT / "common/configs").glob("*-common.json"):
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            self.assertEqual(config["extra_files"], [], config_path.name)
+            self.assertNotIn("environment_only", config, config_path.name)
+            self.assertFalse(
+                environment_paths & {item["destination"] for item in config["extra_files"]},
+                config_path.name,
+            )
+
 
     def test_compatibility_deb_installs_the_legacy_robot_package_name(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -78,7 +84,7 @@ class OfflineCommonBundleTest(unittest.TestCase):
             staging = Path(temporary)
             (staging / "DEBIAN").mkdir()
             common_builder.write_installer(
-                staging, "navi-common-dep", ["install_common_deps.sh"], "orin-humble"
+                staging, "navi-common-dep", ["install_common_deps.sh"]
             )
             installer = (staging / "usr/sbin/install_common_deps.sh").read_text(encoding="utf-8")
 
@@ -92,6 +98,20 @@ class OfflineCommonBundleTest(unittest.TestCase):
         )
         self.assertNotIn('install "${payloads[@]}"', installer)
         self.assertNotIn("--allow-downgrades", installer)
+        self.assertNotIn("validate-config", installer)
+        self.assertNotIn("ROBOT_TYPE", installer)
+        self.assertNotIn("deploy_common.py", installer)
+
+    def test_common_carrier_guard_rejects_device_configuration_and_robot_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            staging = Path(temporary)
+            (staging / "usr/sbin").mkdir(parents=True)
+            (staging / "usr/sbin/install_common_deps.sh").write_text(
+                "python3 deploy_common.py validate-config --target orin-humble\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(RuntimeError, "must not depend on device configuration"):
+                common_builder.verify_common_carrier(staging)
 
     def test_local_repository_contains_full_closure_but_only_records_roots(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

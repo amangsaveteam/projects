@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "orin-orbbec-humble",
+  "package_name": "navi-orbbec-dep",
+  "release_version": "2.9.3-1",
+  "description": "Orbbec Humble ARM64 offline dependencies",
+  "target": {
+    "os_id": "ubuntu",
+    "os_version": "22.04",
+    "architecture": "arm64",
+    "machine": "aarch64"
+  },
+  "manifest": "common/manifests/orin-orbbec-humble/apt-packages.tsv",
+  "output_dir": "../dist/common/orin/sensor",
+  "artifact_filename": "navi_orbbec_dep-2.9.3-humble-arm64.deb",
+  "deb_depends": [
+    "bash",
+    "coreutils",
+    "dpkg",
+    "apt"
+  ],
+  "installer_aliases": [
+    "install_orbbec_deps.sh"
+  ],
+  "extra_files": [],
+  "isolated_humble_arm64_apt": true
+}

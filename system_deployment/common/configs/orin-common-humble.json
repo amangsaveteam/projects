@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "orin-common-humble",
   "package_name": "navi-common-dep",
-  "release_version": "2.0.0~humble+23",
+  "release_version": "2.0.0~humble+24",
   "device_config_target": "orin-humble",
   "description": "Native Orin Humble offline common dependency bootstrap",
   "target": {
@@ -22,7 +22,7 @@
     {
       "package_name": "orin-common-deb",
       "artifact_filename": "orin_common_deb_2.0.0-release-humble-arm64.deb",
-      "depends": ["navi-common-dep (= 2.0.0~humble+23)"],
+      "depends": ["navi-common-dep (= 2.0.0~humble+24)"],
       "description": "Compatibility identity for legacy Orin Sensor and Robot installers"
     }
   ],
@@ -30,50 +30,7 @@
   "installer_aliases": ["install_common_deps.sh"],
   "exact_packages": [],
   "vendor_debs": [],
-  "extra_files": [
-    {
-      "source": "common/files/etc/profile.d/zj_humanoid.sh",
-      "destination": "etc/profile.d/zj_humanoid.sh",
-      "mode": "0644"
-    },
-    {
-      "source": "common/templates/Middleware.orin.env",
-      "destination": "etc/naviai/Middleware.env",
-      "mode": "0644",
-      "conffile": true
-    },
-    {
-      "source": "common/files/etc/zj_humanoid/cyclonedds.xml",
-      "destination": "etc/zj_humanoid/cyclonedds.xml",
-      "mode": "0644",
-      "conffile": true
-    },
-    {
-      "source": "common/deploy_common.py",
-      "destination": "usr/lib/navi-common-dep/deploy_common.py",
-      "mode": "0755"
-    },
-    {
-      "source": "common/files/usr/lib/orin-common-deb/install_deps.sh",
-      "destination": "usr/lib/orin-common-deb/install_deps.sh",
-      "mode": "0755"
-    },
-    {
-      "source": "common/configs/targets.json",
-      "destination": "usr/lib/navi-common-dep/configs/targets.json",
-      "mode": "0644"
-    },
-    {
-      "source": "common/configs/robot-types.json",
-      "destination": "usr/lib/navi-common-dep/configs/robot-types.json",
-      "mode": "0644"
-    },
-    {
-      "source": "COMMON_DEB_USAGE.md",
-      "destination": "usr/share/doc/navi-common-dep/USAGE.md",
-      "mode": "0644"
-    }
-  ],
+  "extra_files": [],
   "publish": {
     "directory": "/ros2_modules/common/orin/develop/",
     "remote_name": "navi_common_dep-2.0.0-release-humble-arm64.deb"

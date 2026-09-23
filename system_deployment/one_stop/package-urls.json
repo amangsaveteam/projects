@@ -3,6 +3,7 @@
   "targets": {
     "orin-humble": {
       "config_files": [
+        {"source": "system_deployment/one_stop/audio", "destination": "/usr/lib/naviai/audio", "owner": "root"},
         {"source": "system_deployment/one_stop/assets/orin-humble/navigation/config", "destination": "/home/naviai/navi_project/config/navigation/config", "owner": "naviai"},
         {"source": "system_deployment/one_stop/environment-defaults/orin-humble", "destination": "/etc/naviai/navigation", "owner": "root", "overwrite": false},
         {"source": "system_deployment/one_stop/tools/orin-humble", "destination": "/usr/lib/naviai", "owner": "root"},
@@ -31,8 +32,7 @@
           "name": "orin-common-compat",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/orin_common_deb_2.0.0-release-humble-arm64.deb",
           "sha256": "",
-          "installers": [],
-          "skip_if_package_installed": "orin-common-deb"
+          "installers": []
         },
         {
           "name": "sensor-common-dep",
@@ -221,6 +221,7 @@
         {
           "name": "robot",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/orin_robot/develop/navi_robot_installer-2.0.0-release-humble-arm64.run",
+          "start_policy": "robot-verify-fix",
           "sha256": "",
           "arguments": []
         },

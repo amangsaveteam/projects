@@ -24,9 +24,11 @@
     "WA2-S": {"compose_profile": "wa2"},
     "WA2-P": {"compose_profile": "wa2"},
     "WA2-D": {"compose_profile": "wa2"},
+    "WA-T": {"compose_profile": "wa"},
     "ZYD": {"compose_profile": "zyd"},
     "ZYD_V1": {"compose_profile": "zyd"},
     "JK": {"compose_profile": "zyd"},
-    "JK2_V1": {"compose_profile": "zyd"}
+    "JK2_V1": {"compose_profile": "zyd"},
+    "JK2-V1": {"compose_profile": "jk"}
   }
 }

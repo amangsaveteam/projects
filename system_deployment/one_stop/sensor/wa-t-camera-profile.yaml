@@ -1,0 +1,18 @@
+# WA-T camera deployment contract.
+# Manual mapping is optional. Leave ports empty to use deterministic auto mapping.
+robot_type: WA-T
+head:
+  driver: realsense2_camera
+  usb_port_id: '2-3'
+wrists:
+  driver: orbbec_camera
+  model: Gemini 305g
+  transport: GMSL
+  launch_file: gemini_301_series.launch.py
+  # manual: bind these fields to the physical left/right GMSL links.
+  # auto: enumerate exactly two Gemini 305g devices and sort by GMSL port.
+  assignment_mode: manual
+  left_gmsl_port: gmsl2-7
+  right_gmsl_port: gmsl2-6
+  # Where the resolved mapping is recorded for diagnostics.
+  resolved_mapping_file: /run/navi-sensor-host/orbbec-wrist-mapping.yaml

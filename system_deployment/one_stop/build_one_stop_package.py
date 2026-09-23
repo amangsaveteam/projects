@@ -13,6 +13,7 @@ import sys
 import tarfile
 import time
 import tempfile
+import urllib.error
 import urllib.request
 import uuid
 from pathlib import Path
@@ -93,25 +94,43 @@ def download(url, destination, expected, dry_run, retries=3):
     if dry_run:
         print("Would download {}".format(url))
         return
-    print("Download {}".format(url))
-    request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    candidates = [url]
+    # Only substitute known repository roots when the manifest pins the bytes.
+    if expected:
+        for prefix, mirrors in (
+            ("https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/", (
+                "https://ports.ubuntu.com/ubuntu-ports/",
+                "https://mirrors.ustc.edu.cn/ubuntu-ports/")),
+            ("https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/", (
+                "https://repo.huaweicloud.com/ros2/ubuntu/",
+                "https://mirrors.ustc.edu.cn/ros2/ubuntu/",
+                "https://packages.ros.org/ros2/ubuntu/")),
+        ):
+            if url.startswith(prefix):
+                candidates.extend(root + url[len(prefix):] for root in mirrors)
     last_error = None
-    for attempt in range(1, retries + 1):
-        try:
-            with urllib.request.urlopen(request, timeout=120) as source, destination.open("wb") as output:
-                shutil.copyfileobj(source, output)
-            last_error = None
-            break
-        except OSError as error:
-            last_error = error
-            if attempt < retries:
-                print("  retry {}/{} for {}: {}".format(attempt, retries, url, error))
-                time.sleep(2 * attempt)
-    if last_error:
-        raise BuildError("download failed for {}: {}".format(url, last_error)) from last_error
-    actual = file_sha256(destination)
-    if expected and actual != expected.lower():
-        raise BuildError("SHA256 mismatch for {}".format(url))
+    for candidate in candidates:
+        print("Download {}".format(candidate))
+        request = urllib.request.Request(candidate, headers={"User-Agent": "Mozilla/5.0"})
+        for attempt in range(1, retries + 1):
+            try:
+                with urllib.request.urlopen(request, timeout=120) as source, destination.open("wb") as output:
+                    shutil.copyfileobj(source, output)
+                if expected and file_sha256(destination) != expected.lower():
+                    raise BuildError("SHA256 mismatch for {}".format(candidate))
+                return
+            except (OSError, BuildError) as error:
+                last_error = error
+                if isinstance(error, BuildError) or (
+                    isinstance(error, urllib.error.HTTPError) and error.code in (403, 404)
+                ):
+                    break
+                if attempt < retries:
+                    print("  retry {}/{} for {}: {}".format(attempt, retries, candidate, error))
+                    time.sleep(2 * attempt)
+        print("  download rejected or exhausted: {}".format(last_error))
+        destination.unlink(missing_ok=True)
+    raise BuildError("download failed for {}: {}".format(url, last_error)) from last_error
 
 
 def resolve_installers(deb_path, values, field, dry_run):
@@ -332,8 +351,8 @@ def resolve_run_start_policy(value, field):
     """Return how a vendor run package is started after its installation phase."""
     if value is None:
         return "vendor"
-    if value not in {"vendor", "supervisor", "vision-preserve-shared"}:
-        raise BuildError(field + ".start_policy must be vendor, supervisor or vision-preserve-shared")
+    if value not in {"vendor", "supervisor", "vision-preserve-shared", "robot-verify-fix"}:
+        raise BuildError(field + ".start_policy must be vendor, supervisor, vision-preserve-shared or robot-verify-fix")
     return value
 
 
@@ -355,12 +374,37 @@ def resolve_force_overwrite(value, field):
     return True
 
 
+def resolve_robot_types(values, field):
+    """Validate an optional robot-model allowlist for a delivery item."""
+    if values is None:
+        return []
+    if (not isinstance(values, list) or not values or
+            not all(isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_-]+", value) for value in values)):
+        raise BuildError(field + ".robot_types must be a non-empty robot-type list")
+    if len(set(values)) != len(values):
+        raise BuildError(field + ".robot_types must not contain duplicates")
+    return values
+
+
+def robot_type_condition(robot_types):
+    if not robot_types:
+        return None
+    return '[[ " {} " == *" $robot_type "* ]]'.format(" ".join(robot_types))
+
+
+def conditional_lines(robot_types, lines):
+    condition = robot_type_condition(robot_types)
+    if condition is None:
+        return lines
+    return ["if {}; then".format(condition), *("  " + line for line in lines), "fi"]
+
+
 def render_run_command(relpath, arguments, start_policy="vendor", helper_rel=None):
     rendered = []
     for argument in arguments:
         rendered.append('"$robot_type"' if argument == "{robot_type}" else shlex.quote(argument))
     suffix = " " + " ".join(rendered) if rendered else ""
-    if start_policy in {"supervisor", "vision-preserve-shared"}:
+    if start_policy in {"supervisor", "vision-preserve-shared", "robot-verify-fix"}:
         if helper_rel is None:
             raise BuildError("a supervisor-managed run requires its installer helper")
         return 'python3 "$root/{}" "$root/{}"{}'.format(helper_rel, relpath, suffix)
@@ -400,12 +444,13 @@ def supervisor_module(target_id, index, value):
         "working_directory", "source_files", "unset_environment", "environment", "prelude",
         "autorestart", "exitcodes", "startsecs", "startretries", "timeout_stop_seconds", "readiness_command", "local_log_file",
         "after_services", "part_of_services", "disable_services", "log_maxbytes", "log_backups", "native_rpc_config",
-        "startup_priority",
+        "startup_priority", "robot_types",
     }
     unknown = set(value) - allowed
     if unknown:
         raise BuildError(field + " has unsupported keys: " + ", ".join(sorted(unknown)))
     result = dict(value)
+    result["robot_types"] = resolve_robot_types(result.get("robot_types"), field)
     identifier = require(result.get("id"), field + ".id")
     if not MODULE_ID.fullmatch(identifier):
         raise BuildError(field + ".id is invalid")
@@ -580,7 +625,7 @@ def stage_supervisor_modules(stage, target_id, target, checksums, dry_run):
                     specification["local_log_file"] = module["local_log_file"]
                 destination.write_text(json.dumps({"modules": {identifier: specification}}, indent=2) + "\n", encoding="utf-8")
                 checksums.append((file_sha256(destination), relpath))
-            registrations.append((relpath, "{}/{}.json".format(paths["agent_modules_directory"], identifier)))
+            registrations.append((relpath, "{}/{}.json".format(paths["agent_modules_directory"], identifier), module["robot_types"]))
         if module["mode"] != "managed":
             continue
         base = "targets/{}/supervisor/{}".format(target_id, identifier)
@@ -595,7 +640,7 @@ def stage_supervisor_modules(stage, target_id, target, checksums, dry_run):
             unit.write_text(supervisor_systemd_service(module, paths), encoding="utf-8")
             launch.chmod(0o755); entrypoint.chmod(0o755); unit.chmod(0o644)
             checksums.extend(((file_sha256(launch), launch_rel), (file_sha256(entrypoint), entrypoint_rel), (file_sha256(unit), unit_rel)))
-        startup.append((module["service_name"], launch_rel, entrypoint_rel, unit_rel, identifier))
+        startup.append((module["service_name"], launch_rel, entrypoint_rel, unit_rel, identifier, module["robot_types"]))
     # Native module packages own their Supervisor configuration.  The total
     # installer only provisions the shared Agent credential and restarts the
     # declared native service afterwards so it can reread that credential.
@@ -773,11 +818,13 @@ def system_config_installer(target_id, configure_target, config_rel):
 def stage_config_files(stage, target_id, target, checksums, dry_run):
     """Bundle repository directories; deploy after module installers, preserving backups."""
     lines = ["#!/bin/bash", "set -euo pipefail",
-             'root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"']
+             'root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"',
+             'robot_type="${1:?robot type is required}"']
     for index, item in enumerate(target.get("config_files", [])):
         field = "{}.config_files[{}]".format(target_id, index)
-        if not isinstance(item, dict) or set(item) - {"source", "destination", "owner", "group", "overwrite"}:
+        if not isinstance(item, dict) or set(item) - {"source", "destination", "owner", "group", "overwrite", "robot_types"}:
             raise BuildError(field + " contains unsupported fields")
+        robot_types = resolve_robot_types(item.get("robot_types"), field)
         source_value = item.get("source")
         destination_value = item.get("destination")
         if not isinstance(source_value, str) or not isinstance(destination_value, str):
@@ -808,15 +855,15 @@ def stage_config_files(stage, target_id, target, checksums, dry_run):
                 output.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(file, output)
                 checksums.append((file_sha256(output), payload.as_posix()))
-            lines.append("install -d -o {} -g {} -m 0755 {}".format(
-                owner, group, shlex.quote(str(dst.parent))))
+            file_lines = ["install -d -o {} -g {} -m 0755 {}".format(
+                owner, group, shlex.quote(str(dst.parent)))]
             if overwrite:
-                lines += [
+                file_lines += [
                     "cp --backup=numbered -- \"$root/{}\" {}".format(payload.as_posix(), shlex.quote(str(dst))),
                     "chown {}:{} -- {}".format(owner, group, shlex.quote(str(dst))),
                 ]
             else:
-                lines += [
+                file_lines += [
                     "if [[ ! -e {} ]]; then".format(shlex.quote(str(dst))),
                     "  install -o {} -g {} -m 0644 \"$root/{}\" {}".format(
                         owner, group, payload.as_posix(), shlex.quote(str(dst))),
@@ -824,6 +871,7 @@ def stage_config_files(stage, target_id, target, checksums, dry_run):
                     "  echo \"Keeping local configuration: {}\"".format(dst),
                     "fi",
                 ]
+            lines.extend(conditional_lines(robot_types, file_lines))
     if not dry_run:
         script = stage / "targets" / target_id / "install-config-files.sh"
         script.parent.mkdir(parents=True, exist_ok=True)
@@ -874,7 +922,8 @@ def stage_system_config(stage, target_id, target, checksums, dry_run):
 def target_install(target_id, system_config_rel, common_rel, common, extras, runs, services,
                    startup_services=(), supervisor_startup=(), registrations=(), post_install=(), agent_service=None,
                    agent_payload=None, target_platform=None, release_tracking=False, service_priorities=None,
-                   disabled_services=(), remove_packages=()):
+                   disabled_services=(), remove_packages=(), service_robot_types=None,
+                   required_host_packages=()):
     # Native modules are also part of the installation lifecycle, even when
     # their units come from a DEB instead of a Middleware-format run archive.
     native_services = [
@@ -882,6 +931,7 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         if command.startswith("systemctl restart ") and len(shlex.split(command)) == 3
     ]
     services = sorted(set(services) | set(native_services))
+    service_robot_types = service_robot_types or {}
     service_priorities = service_priorities or {}
     unknown_priorities = set(service_priorities) - set(services)
     if unknown_priorities:
@@ -895,6 +945,39 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         "on_install_error() {", "  local status=$1 command=$2",
         "  echo \"ERROR: installation failed during ${install_stage:-an unknown stage} (exit $status): $command\" >&2", "}",
         "trap 'on_install_error \"$?\" \"$BASH_COMMAND\"' ERR",
+        "wait_for_dpkg_lock() {",
+        "  local retries=600 lock holder",
+        "  while (( retries > 0 )); do",
+        "    holder=''",
+        "    for lock in /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/lock; do",
+        "      if [[ -e \"$lock\" ]] && fuser -s \"$lock\" 2>/dev/null; then holder=$lock; break; fi",
+        "    done",
+        "    [[ -z $holder ]] && return 0",
+        "    echo \"Waiting for package manager lock held by: $(fuser \"$holder\" 2>/dev/null || true)\" >&2",
+        "    sleep 1",
+        "    retries=$((retries - 1))",
+        "  done",
+        "  echo 'ERROR: timed out waiting for the package manager lock' >&2",
+        "  return 1",
+        "}",
+        "run_package_command() {",
+        "  local attempt=1 output status",
+        "  while (( attempt <= 600 )); do",
+        "    wait_for_dpkg_lock || return 1",
+        "    output=$(mktemp)",
+        "    if \"$@\" 2>&1 | tee \"$output\"; then status=0; else status=${PIPESTATUS[0]}; fi",
+        "    if (( status == 0 )); then rm -f \"$output\"; return 0; fi",
+        "    if grep -Fq 'dpkg frontend lock was locked by another process' \"$output\" || grep -Fq 'dpkg database lock was locked by another process' \"$output\"; then",
+        "      rm -f \"$output\"",
+        "      echo \"Waiting for package manager lock before retrying package command ($attempt/600)\" >&2",
+        "      sleep 1; attempt=$((attempt + 1)); continue",
+        "    fi",
+        "    rm -f \"$output\"; return \"$status\"",
+        "  done",
+        "  echo 'ERROR: timed out retrying package command after package manager lock conflicts' >&2",
+        "  return 2",
+        "}",
+        "run_module_installer() { run_package_command \"$@\"; }", 
         "(cd \"$root\" && sha256sum -c \"targets/{}/payloads.sha256\")".format(target_id),
     ]
     if target_platform is not None:
@@ -915,6 +998,20 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             "  exit 2",
             "fi",
         ))
+    if required_host_packages:
+        lines.extend([
+            "install_stage='checking required host packages'",
+            "missing_host_packages=()",
+            "for package in " + " ".join(shlex.quote(package) for package in required_host_packages) + "; do",
+            "  if ! dpkg-query -W -f='${db:Status-Status}' \"$package\" 2>/dev/null | grep -Fxq installed; then",
+            "    missing_host_packages+=(\"$package\")",
+            "  fi",
+            "done",
+            'if (( ${#missing_host_packages[@]} )); then',
+            '  echo "ERROR: base image is missing required packages: ${missing_host_packages[*]}. Install them before retrying; no services have been stopped." >&2',
+            '  exit 1',
+            'fi',
+        ])
     if release_tracking:
         lines.extend([
             "install_stage='initializing release tracking'",
@@ -949,7 +1046,7 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             lines.extend((
                 "if dpkg-query -W -f='${{db:Status-Status}}' {} 2>/dev/null | grep -Fxq installed; then".format(shlex.quote(package)),
                 "  echo {}".format(shlex.quote("Removing retired compatibility package {}.".format(package))),
-                "  dpkg --remove {}".format(shlex.quote(package)),
+                "  run_package_command dpkg --remove {}".format(shlex.quote(package)),
                 "fi",
             ))
     if system_config_rel:
@@ -1012,10 +1109,11 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         wait_packages = extra[5] if len(extra) > 5 else []
         skip_if_installed = extra[6] if len(extra) > 6 else None
         force_overwrite = extra[7] if len(extra) > 7 else False
+        robot_types = extra[8] if len(extra) > 8 else []
         # An omitted group preserves the historical one-DEB-at-a-time
         # behaviour.  Only a named group forms a shared dpkg transaction.
         if group is None:
-            extra_groups.append((None, [(relpath, installers, environment, contract, wait_packages, skip_if_installed, force_overwrite)]))
+            extra_groups.append((None, [(relpath, installers, environment, contract, wait_packages, skip_if_installed, force_overwrite, robot_types)]))
             continue
         if skip_if_installed:
             raise BuildError(target_id + ": skip_if_package_installed cannot be used with install_group")
@@ -1025,10 +1123,16 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             raise BuildError(target_id + ": install_group entries must be contiguous: " + group)
         if not extra_groups or extra_groups[-1][0] != group:
             extra_groups.append((group, []))
-        extra_groups[-1][1].append((relpath, installers, environment, contract, wait_packages, skip_if_installed, force_overwrite))
+        extra_groups[-1][1].append((relpath, installers, environment, contract, wait_packages, skip_if_installed, force_overwrite, robot_types))
         if group:
             seen_groups.add(group)
     for group, items in extra_groups:
+        robot_type_sets = {tuple(item[7]) for item in items}
+        if len(robot_type_sets) != 1:
+            raise BuildError(target_id + ": install_group must use one robot_types allowlist: " + str(group))
+        condition = robot_type_condition(items[0][7])
+        if condition:
+            lines.append("if {}; then".format(condition))
         install_stage = "installing Debian package group {}".format(group) if group else "installing Debian package {}".format(Path(items[0][0]).name)
         lines.append("install_stage=" + shlex.quote(install_stage))
         environments = {tuple(item[2]) for item in items}
@@ -1036,10 +1140,10 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             raise BuildError(target_id + ": install_group must use one installation environment: " + str(group))
         environment = items[0][2]
         prefix = "env " + " ".join(environment) + " " if environment else ""
-        for _, _, _, contract, _, _, _ in items:
+        for _, _, _, contract, *_ in items:
             lines.extend(system_python_contract_check(contract))
         if group is None and items[0][5]:
-            relpath, installers, _, _, _, skip_if_installed, force_overwrite = items[0]
+            relpath, installers, _, _, _, skip_if_installed, force_overwrite, _ = items[0]
             if force_overwrite:
                 raise BuildError(target_id + ": force_overwrite cannot be combined with skip_if_package_installed")
             lines.extend((
@@ -1048,22 +1152,28 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
                     "Keeping installed {} instead of replacing it with the transitional compatibility package.".format(skip_if_installed)
                 )),
                 "else",
-                prefix + "  dpkg -i \"$root/{}\"".format(relpath),
-                *(prefix + "  \"{}\"".format(item) for item in installers),
+                "  run_package_command " + prefix + "dpkg -i \"$root/{}\"".format(relpath),
+                *("  run_package_command /bin/bash -c " + shlex.quote(prefix + item) for item in installers),
                 "fi",
             ))
+            if condition:
+                lines.append("fi")
             continue
         if group is None and items[0][6]:
-            relpath, installers, _, _, _, _, _ = items[0]
-            lines.append(prefix + "dpkg --force-overwrite -i \"$root/{}\"".format(relpath))
-            lines.extend(prefix + "\"{}\"".format(item) for item in installers)
+            relpath, installers, _, _, _, _, _, _ = items[0]
+            lines.append("run_package_command " + prefix + "dpkg --force-overwrite -i \"$root/{}\"".format(relpath))
+            lines.extend("run_package_command /bin/bash -c " + shlex.quote(prefix + item) for item in installers)
+            if condition:
+                lines.append("fi")
             continue
         paths = " ".join('\"$root/{}\"'.format(item[0]) for item in items)
-        lines.append(prefix + "dpkg -i " + paths)
-        for _, installers, _, _, _, _, _ in items:
-            lines.extend(prefix + "\"{}\"".format(item) for item in installers)
-        for package in sorted({package for _, _, _, _, packages, _, _ in items for package in packages}):
+        lines.append("run_package_command " + prefix + "dpkg -i " + paths)
+        for _, installers, _, _, _, _, _, _ in items:
+            lines.extend("run_package_command /bin/bash -c " + shlex.quote(prefix + item) for item in installers)
+        for package in sorted({package for _, _, _, _, packages, *_ in items for package in packages}):
             lines.append("wait_for_debian_package {}".format(shlex.quote(package)))
+        if condition:
+            lines.append("fi")
     for run in runs:
         item, arguments = run[:2]
         start_policy = run[2] if len(run) > 2 else "vendor"
@@ -1075,12 +1185,17 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
                 "  echo {}".format(shlex.quote(
                     "Removing retired package {} before installing its replacement.".format(package)
                 )),
-                "  dpkg --remove {}".format(shlex.quote(package)),
+                "  run_package_command dpkg --remove {}".format(shlex.quote(package)),
                 "fi",
             ))
         environment = run[5] if len(run) > 5 else []
+        robot_types = run[6] if len(run) > 6 else []
+        condition = robot_type_condition(robot_types)
+        if condition:
+            lines.append("if {}; then".format(condition))
         prefix = "env " + " ".join(environment) + " " if environment else ""
         lines.append("install_stage=" + shlex.quote("running module installer " + Path(item).name))
+        lines.append("wait_for_dpkg_lock")
         if system_config_rel:
             # A vendor installer may alter Middleware.env (the Pico upperlimb
             # installer currently does).  Load the known-good carrier before
@@ -1088,11 +1203,22 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             # following installers and generated services share one ROS/DDS
             # identity.
             lines.append("load_shared_middleware")
-        lines.append(prefix + render_run_command(item, arguments, start_policy, helper_rel))
+        module_command = "run_module_installer " + prefix + render_run_command(item, arguments, start_policy, helper_rel)
+        lines.extend((
+            "if " + module_command + "; then",
+            "  :",
+            "else",
+            "  status=$?",
+            "  echo \"ERROR: module installer {} failed (exit $status)\" >&2".format(Path(item).name),
+            "  exit \"$status\"",
+            "fi",
+        ))
         if system_config_rel:
             lines.extend(("install_system_config", "load_shared_middleware"))
         if services:
             lines.append("stop_managed_services")
+        if condition:
+            lines.append("fi")
     # Vendor RUN packages may enable or start their own units while installing.
     # Retire them again before the generated Supervisor units claim the same
     # port and business process.
@@ -1100,7 +1226,7 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         lines.append("disable_replaced_services")
     lines.extend((
         "install_stage='installing configuration files'",
-        'if [[ -f "$root/targets/{0}/install-config-files.sh" ]]; then bash "$root/targets/{0}/install-config-files.sh"; fi'.format(target_id),
+        'if [[ -f "$root/targets/{0}/install-config-files.sh" ]]; then bash "$root/targets/{0}/install-config-files.sh" "$robot_type"; fi'.format(target_id),
     ))
     for _, launch_rel, service_rel, destination in startup_services:
         lines.extend((
@@ -1108,14 +1234,19 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             "install -m 0755 \"$root/{}\" {}".format(launch_rel, shlex.quote(destination)),
             "install -m 0644 \"$root/{}\" /etc/systemd/system/{}".format(service_rel, shlex.quote(Path(service_rel).name)),
         ))
-    for service, launch_rel, entrypoint_rel, service_rel, identifier in supervisor_startup:
-        module_root = Path(agent_service["module_root"]) / identifier
-        lines.extend((
-            "install -d -m 0755 {}".format(shlex.quote(str(module_root))),
-            "install -m 0755 \"$root/{}\" {}".format(launch_rel, shlex.quote(str(module_root / "launch.sh"))),
-            "install -m 0755 \"$root/{}\" {}".format(entrypoint_rel, shlex.quote(str(module_root / "supervisor-entrypoint.sh"))),
+    for service, launch_rel, entrypoint_rel, service_rel, identifier, robot_types in supervisor_startup:
+        install_lines = (
+            "install -d -m 0755 {}".format(shlex.quote(str(Path(agent_service["module_root"]) / identifier))),
+            "install -m 0755 \"$root/{}\" {}".format(launch_rel, shlex.quote(str(Path(agent_service["module_root"]) / identifier / "launch.sh"))),
+            "install -m 0755 \"$root/{}\" {}".format(entrypoint_rel, shlex.quote(str(Path(agent_service["module_root"]) / identifier / "supervisor-entrypoint.sh"))),
             "install -m 0644 \"$root/{}\" /etc/systemd/system/{}".format(service_rel, shlex.quote(service)),
-        ))
+        )
+        condition = robot_type_condition(robot_types)
+        if condition:
+            lines.append("if {}; then".format(condition))
+        lines.extend(install_lines)
+        if condition:
+            lines.append("fi")
     if agent_payload:
         lines.append("install_stage='installing Supervisor Agent'")
         agent_base = agent_payload["base"]
@@ -1137,7 +1268,7 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         ))
     if agent_service:
         modules_directory = agent_service["agent_modules_directory"]
-        declared_registrations = [destination for _, destination in registrations]
+        declared_registrations = [item[1] for item in registrations]
         lines.extend((
             "modules_directory={}".format(shlex.quote(modules_directory)),
             "declared_modules=(" + " ".join(shlex.quote(item) for item in declared_registrations) + ")",
@@ -1154,7 +1285,15 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             "install -d -m 0755 \"$modules_directory\"",
             "prune_stale_module_registrations",
         ))
-        lines.extend("install -m 0644 \"$root/{}\" {}".format(relpath, shlex.quote(destination)) for relpath, destination in registrations)
+        for registration in registrations:
+            relpath, destination = registration[:2]
+            robot_types = registration[2] if len(registration) > 2 else []
+            condition = robot_type_condition(robot_types)
+            if condition:
+                lines.append("if {}; then".format(condition))
+            lines.append("install -m 0644 \"$root/{}\" {}".format(relpath, shlex.quote(destination)))
+            if condition:
+                lines.append("fi")
         lines.append("prune_stale_module_registrations")
     # Restart declared native units once, in the same final pass as generated
     # units, after new unit files and shared credentials have been installed.
@@ -1165,6 +1304,14 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         lines.extend([
             "install_stage='starting managed services'",
             "systemctl daemon-reload", "for unit in \"${managed_services[@]}\"; do",
+            "  case \"$unit\" in",
+        ])
+        for service, robot_types in sorted(service_robot_types.items()):
+            condition = robot_type_condition(robot_types)
+            if condition:
+                lines.append("    {}) if ! {}; then continue; fi ;;".format(service, condition))
+        lines.extend([
+            "  esac",
             "  echo \"Starting $unit after lower-priority services are active\"",
             "  systemctl enable \"$unit\"", "  systemctl restart \"$unit\"",
             "  systemctl is-active --quiet \"$unit\" || { echo \"ERROR: $unit did not become active\" >&2; exit 1; }",
@@ -1250,6 +1397,15 @@ def master_install(rows, version):
         "echo \"Robot type: $robot_type ($robot_type_source)\"", "exec \"$root/targets/$target/install.sh\" \"$robot_type\"", "",
     ]
     return "\n".join(lines)
+
+
+def validate_staged_shell_scripts(stage):
+    """Reject malformed generated scripts before publishing an installer."""
+    for script in sorted((stage / "targets").rglob("*.sh")):
+        result = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
+        if result.returncode:
+            raise BuildError("invalid shell script {}: {}".format(
+                script.relative_to(stage), result.stderr.strip()))
 
 
 def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=None):
@@ -1338,6 +1494,12 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
             }
             service_priorities = supervisor_service_priorities(target_id, target)
             services.extend(supervisor_systemd_services(target_id, target))
+            service_robot_types = {
+                module["service_name"]: module["robot_types"]
+                for index, value in enumerate(target.get("supervisor_modules", []))
+                for module in [supervisor_module(target_id, index, value)]
+                if module["mode"] == "managed"
+            }
             disabled_services = supervisor_disabled_services(target_id, target)
             remove_packages = resolve_run_remove_packages(target.get("remove_packages"), target_id + ".remove_packages")
             supervisor_agent = stage_supervisor_agent(stage, target_id, supervisor_config, target_checksums, dry_run)
@@ -1358,6 +1520,7 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                     resolve_wait_packages(item.get("wait_for_packages"), target_id + ".extra"),
                     resolve_skip_if_package_installed(item.get("skip_if_package_installed"), target_id + ".extra"),
                     resolve_force_overwrite(item.get("force_overwrite"), target_id + ".extra"),
+                    resolve_robot_types(item.get("robot_types"), target_id + ".extra"),
                 ))
             requires_no_final_exec_helper = False
             for index, item in enumerate(target.get("runs", [])):
@@ -1381,13 +1544,20 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                     helper.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(Path(__file__).resolve().parent / "install_vision_preserving_shared.py", helper)
                     target_checksums.append((file_sha256(helper), vision_helper_rel))
+                robot_helper_rel = "targets/{}/helpers/install_robot_with_verify_fix.py".format(target_id)
+                if start_policy == "robot-verify-fix" and not dry_run:
+                    helper = stage / robot_helper_rel
+                    helper.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(Path(__file__).resolve().parent / "install_robot_with_verify_fix.py", helper)
+                    target_checksums.append((file_sha256(helper), robot_helper_rel))
                 runs.append((
                     relpath,
                     resolve_run_arguments(item.get("arguments"), target_id + ".run"),
                     start_policy,
-                    "targets/{}/helpers/install_run_without_final_exec.py".format(target_id) if start_policy == "supervisor" else (vision_helper_rel if start_policy == "vision-preserve-shared" else None),
+                    "targets/{}/helpers/install_run_without_final_exec.py".format(target_id) if start_policy == "supervisor" else (vision_helper_rel if start_policy == "vision-preserve-shared" else (robot_helper_rel if start_policy == "robot-verify-fix" else None)),
                     resolve_run_remove_packages(item.get("remove_packages"), target_id + ".run"),
                     resolve_environment(item.get("environment"), target_id + ".run.environment"),
+                    resolve_robot_types(item.get("robot_types"), target_id + ".run"),
                 ))
             if requires_no_final_exec_helper and not dry_run:
                 helper_source = Path(__file__).resolve().parent / "install_run_without_final_exec.py"
@@ -1424,7 +1594,9 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                     startup_services, supervisor_startup, registrations, supervisor_post_install, supervisor_config,
                     supervisor_agent, (os_id, os_version, arch), release_tracking=True,
                     service_priorities=service_priorities, disabled_services=disabled_services,
-                    remove_packages=remove_packages,
+                    remove_packages=remove_packages, service_robot_types=service_robot_types,
+                    required_host_packages=resolve_run_remove_packages(
+                        target.get("required_host_packages"), target_id + ".required_host_packages"),
                 ), encoding="utf-8"
             ); script.chmod(0o755)
             pretest = stage / "targets" / target_id / "pretest.sh"
@@ -1436,6 +1608,7 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                 checksums.extend(target_checksums)
             rows.append((target_id, os_id, os_version, arch))
         if not rows: raise BuildError("no target has common.url configured")
+        validate_staged_shell_scripts(stage)
         output = output_dir / (output_name + ".run")
         if dry_run:
             print("Configured targets: " + ", ".join(item[0] for item in rows)); return output

@@ -1,0 +1,4 @@
+# package	minimum-version	purpose
+ros-humble-orbbec-camera	2.9.3	Gemini 305g GMSL camera driver
+ros-humble-orbbec-description	2.9.3	Orbbec robot description
+ros-humble-orbbec-camera-msgs	2.9.3	Orbbec camera interfaces

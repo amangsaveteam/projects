@@ -1,0 +1,20 @@
+# Gemini 305g wrist camera deployment settings.
+camera_config_file: /opt/ros/humble/share/orbbec_camera/config/camera_secondary_params.yaml
+# The supervisor prelude applies these values to the vendor parameter file
+# before launching both cameras.
+streams:
+  color:
+    width: 1280
+    height: 720
+    fps: 30
+  depth:
+    width: 1280
+    height: 720
+    fps: 30
+  depth_registration: true
+launch_delay_sec: 5.0
+wrists:
+  assignment_mode: manual
+  left_gmsl_port: gmsl2-6
+  right_gmsl_port: gmsl2-7
+  resolved_mapping_file: /run/navi-sensor-host/orbbec-wrist-mapping.yaml

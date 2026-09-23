@@ -1,371 +1,208 @@
-nav01@000732c1d90e:~$ sudo tail -n 300 /var/log/naviai/upperlimb/upperlimb.log
-[sudo] password for nav01: 
-Sorry, try again.
-[sudo] password for nav01: 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713077.472260931] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1268740, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_ahxwouol'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-20-758381-000732c1d90e-1268745
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1268833]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713080.918854106] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1268833, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_zi1nh81t'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-24-165459-000732c1d90e-1268838
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1268926]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713084.326203123] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1268926, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_hb2y3v9a'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-27-562362-000732c1d90e-1268931
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1269019]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713087.722184307] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1269019, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_zgc382bi'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-31-082090-000732c1d90e-1269024
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1269112]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713091.243451502] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1269112, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_1h1aos4u'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-34-411950-000732c1d90e-1269117
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1269205]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713094.572813537] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1269205, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_h4vniwbx'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-37-870582-000732c1d90e-1269210
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1269298]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713098.031243220] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1269298, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_8uionblq'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-41-410868-000732c1d90e-1269303
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1269391]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713101.571024247] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1269391, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_q99w6zcr'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-44-786031-000732c1d90e-1269396
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1269485]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713104.948013043] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1269485, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_9seli1lf'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-48-295936-000732c1d90e-1269491
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1269579]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713108.456813421] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1269579, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_ooxgiz15'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-51-739181-000732c1d90e-1269584
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1269672]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713111.899360657] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1269672, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_ks727gvi'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-55-165731-000732c1d90e-1269677
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1269765]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713115.326358076] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1269765, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_3n3gifs1'].
-WARNING: optional upperlimb library directory is unavailable: /home/nav01/CodeFiles/xenomaixddpproject/test_new_lib/lib/pinocchio
-RTIPC SyncFromAlgThread CPU: 9
-[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-18-14-31-58-764045-000732c1d90e-1269772
-[INFO] [launch]: Default logging verbosity is set to INFO
-Using params_file: /opt/ros/humble/share/uplimb_interface/config/ros2.yaml
-Using parameter overrides: {'robot_name': 'zj_humanoid', 'robot_type': 'WA1-S', 'log_dir': '/home/nav01/zj_humanoid', 'controller': 'V1', 'zmq_plot_endpoint': 'tcp://*:9873'}
-Using executable: uplimb_interface_node (controller=v1, runtime_controller=V1)
-[INFO] [uplimb_interface_node-1]: process started with pid [1269860]
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] >>> [rcutils|error_handling.c:108] rcutils_set_error_state()
-[uplimb_interface_node-1] This error state is being overwritten:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'rcutils_expand_user failed, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_interface/src/logging_dir.c:81'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] with this new error message:
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1]   'Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131'
-[uplimb_interface_node-1] 
-[uplimb_interface_node-1] rcutils_reset_error() should be called after error handling to avoid this.
-[uplimb_interface_node-1] <<<
-[uplimb_interface_node-1] [ERROR] [1789713118.924497738] [rclcpp]: rcl context unexpectedly not shutdown during cleanup
-[uplimb_interface_node-1] terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
-[uplimb_interface_node-1]   what():  failed to configure logging: Failed to get logging directory, at /home/nav01/ros2_humble/src/ros2/rcl_logging/rcl_logging_spdlog/src/rcl_logging_spdlog.cpp:131
-[ERROR] [uplimb_interface_node-1]: process has died [pid 1269860, exit code -6, cmd '/opt/ros/humble/lib/uplimb_interface/uplimb_interface_node --ros-args -r __node:=upperlimb -r __ns:=/zj_humanoid --params-file /opt/ros/humble/share/uplimb_interface/config/ros2.yaml --params-file /tmp/launch_params_t33kipdm'].
-nav01@000732c1d90e:~$ 
-nav01@000732c1d90e:~$ sudo sed -n '1,260p' \
->   /etc/nav01/supervised-stack/upperlimb/launch.sh
-#!/bin/bash
-# Generated from one_stop/package-urls.json.
-set -eo pipefail
-source /etc/nav01/Middleware.env
-cd /etc/nav01/upperlimb
-exec /bin/bash /etc/nav01/upperlimb/navi-pico-upperlimb-start.sh
-nav01@000732c1d90e:~$ 
-nav01@000732c1d90e:~$ # 3. 读取供应商的上肢启动脚本。
-nav01@000732c1d90e:~$ sudo sed -n '1,320p' \
->   /etc/nav01/upperlimb/navi-pico-upperlimb-start.sh
-#!/bin/bash
-# Generated by Middleware run package; do not edit this generated file.
-set -e
-. /etc/nav01/Middleware.env
-exec /bin/bash -c '/bin/bash /etc/nav01/upperlimb/upperlimb-launch.sh'
-nav01@000732c1d90e:~$ 
-nav01@000732c1d90e:~$ # 4. 查看当前 Supervisor 进程定义及其退出策略。
-nav01@000732c1d90e:~$ sudo sed -n '1,260p' \
->   /run/naviai/upperlimb/supervisord.conf
-[supervisord]
-nodaemon=true
-user=root
-logfile=/var/log/naviai/upperlimb/supervisord.log
-pidfile=/run/naviai/upperlimb/supervisord.pid
+naviai@1422622058177:/tmp$ sudo sh -c '
+naviai@1422622058177:/tmp$ sudo sh -c '
+for file in \vi-vision/current_release \
+  /var/lib/navi-vision/current_release \27c204/release.env \
+  /var/lib/navi-vision/releases/2.0.0-8027c204/release.env \t.env \
+  /var/lib/navi-vision/releases/2.0.0-8027c204/build-manifest.env \
+  /var/lib/navi-vision/releases/2.0.0-8027c204/runtime.path \
+  /var/lib/navi-vision/releases/2.0.0-8027c204/venv.path \ase.lock.json \
+  /var/lib/navi-vision/releases/2.0.0-8027c204/vision.release.lock.json \
+  /var/lib/navi-vision/releases/2.0.0-8027c204/rollback/transaction.state
+doecho "===== $file ====="
+  echo "===== $file ====="
+  cat "$file" 2>&1
+  echo
+done
+'
+===== /var/lib/navi-vision/current_release =====
+2.0.0-8027c204
 
-[unix_http_server]
-file=/run/naviai/upperlimb/supervisor.sock
-chmod=0700
+===== /var/lib/navi-vision/releases/2.0.0-8027c204/release.env =====
+VISION_RELEASE_ID='2.0.0-8027c204'
+VISION_RELEASE_VERSION='2.0.0'
+VISION_COMMIT8='8027c204'
+NAVI_GIT_COMMIT='8027c204aac2c003b6c664a4675f5efbf0708a1a'
+NAVI_GIT_BRANCH=''
+NAVI_JENKINS_BUILD='1'
+VISION_BUILD_TIMESTAMP_UTC='2026-09-09T03:13:15Z'
 
-[inet_http_server]
-port=192.168.217.66:19003
-username=agent
-password=1
+===== /var/lib/navi-vision/releases/2.0.0-8027c204/build-manifest.env =====
+VISION_RELEASE_ID='2.0.0-8027c204'
+VISION_RELEASE_VERSION='2.0.0'
+VISION_COMMIT='8027c204aac2c003b6c664a4675f5efbf0708a1a'
+VISION_COMMIT8='8027c204'
+VISION_BRANCH=''
+JENKINS_BUILD_NUMBER=''
+VISION_TARGET_PROFILE='ubuntu22.04-humble-py310-aarch64-jp6.2.1-l4t36.4.4-cuda12.6-sm87'
+BUILD_TIMESTAMP_UTC='2026-09-09T03:13:15Z'
+RUN_FILE='navi_vision_installer-2.0.0-release-humble-arm64.run'
 
-[rpcinterface:supervisor]
-supervisor.rpcinterface_factory=supervisor.rpcinterface:make_main_rpcinterface
+===== /var/lib/navi-vision/releases/2.0.0-8027c204/runtime.path =====
+/opt/naviai/runtime/vision-releases/2.0.0-8027c204
 
-[program:upperlimb]
-command=/bin/bash /etc/nav01/supervised-stack/upperlimb/launch.sh
-directory=/etc/nav01/upperlimb
-autostart=true
-autorestart=true
-exitcodes=0
-startsecs=0
-startretries=3
-stopasgroup=true
-killasgroup=true
-redirect_stderr=true
-stdout_logfile=/var/log/naviai/upperlimb/upperlimb.log
-stdout_logfile_maxbytes=10MB
-stdout_logfile_backups=5
-nav01@000732c1d90e:~$ 
-nav01@000732c1d90e:~$ # 5. 直接查询该 program 的状态、退出码及日志。
-nav01@000732c1d90e:~$ sudo supervisorctl \
->   -s http://agent:1@192.168.217.66:19003/RPC2 \
->   status upperlimb
-error: <class 'socket.gaierror'>, [Errno -2] Name or service not known: file: /usr/lib/python3.8/socket.py line: 918
-nav01@000732c1d90e:~$ 
-nav01@000732c1d90e:~$ sudo grep -RnsE \
->   'exit|return|exec|systemctl|service|hardware_body|ros2 launch' \
->   /etc/nav01/upperlimb/navi-pico-upperlimb-start.sh \
->   /etc/nav01/supervised-stack/upperlimb/launch.sh
-/etc/nav01/upperlimb/navi-pico-upperlimb-start.sh:5:exec /bin/bash -c '/bin/bash /etc/nav01/upperlimb/upperlimb-launch.sh'
-/etc/nav01/supervised-stack/upperlimb/launch.sh:6:exec /bin/bash /etc/nav01/upperlimb/navi-pico-upperlimb-start.sh
+===== /var/lib/navi-vision/releases/2.0.0-8027c204/venv.path =====
+/opt/naviai/venvs/vision-2.0.0-8027c204
+
+===== /var/lib/navi-vision/releases/2.0.0-8027c204/vision.release.lock.json =====
+{
+  "schema_version": 1,
+  "release": "vision-runtime",
+  "release_status": "ready",
+  "evidence_date": "2026-08-26",
+  "target": {
+    "os": "Ubuntu",
+    "os_version": "22.04",
+    "ros_distro": "Humble",
+    "python": "3.10",
+    "architecture": "aarch64",
+    "jetpack": "6.2.1",
+    "l4t": "R36.4.4",
+    "cuda": "12.6",
+    "gpu_arch": "sm87"
+  },
+  "base_environment": {
+    "cuda": "12.6",
+    "torch": "2.5.0a0+872d972e41.nv24.08",
+    "python": "3.10",
+    "provider": "orin-motherboard"
+  },
+  "policy": {
+    "online_pip_fallback": false,
+    "sdist_build_at_install": false,
+    "allow_unhashed_input": false,
+    "allow_x86_64": false,
+    "allow_cp312": false,
+    "venv_system_site_packages": true,
+    "python_no_user_site": false
+  },
+  "pip_check_exceptions": [
+    {
+      "source_package": "fdop-face-perception",
+      "source_version": "0.1.1",
+      "dependency": "torch",
+      "actual_package": "torch",
+      "requirement": ">=2.2,<2.5",
+      "actual_version": "2.5.0a0+872d972e41.nv24.08"
+    },
+    {
+      "source_package": "fdop-face-perception",
+      "source_version": "0.1.1",
+      "dependency": "torchvision",
+      "actual_package": "torchvision",
+      "requirement": ">=0.17,<0.20",
+      "actual_version": "0.20.0a0+afc54f7"
+    }
+  ],
+  "system_site_contract": [
+    {"package":"ros-humble-rclpy","version":"3.3.21-1jammy.20260725.140712","python_module":"rclpy","python_version":"3.3.21","source_path":"/opt/ros/humble/local/lib/python3.10/dist-packages"},
+    {"package":"ros-humble-cv-bridge","version":"3.2.1-1jammy.20260717.004638","python_module":"cv_bridge","python_version":"3.2.1","source_path":"/opt/ros/humble/local/lib/python3.10/dist-packages"},
+    {"package":"python3-yaml","version":"5.4.1-1ubuntu1","python_module":"yaml","python_version":"5.4.1","source_path":"/usr/lib/python3/dist-packages"},
+    {"package":"python3-dateutil","version":"2.8.1-6","python_module":"dateutil","python_version":"2.8.1","source_path":"/usr/lib/python3/dist-packages"},
+    {"package":"python3-six","version":"1.16.0-3ubuntu1","python_module":"six","python_version":"1.16.0","source_path":"/usr/lib/python3/dist-packages"},
+    {"package":"python3-tqdm","version":"4.57.0-2","python_module":"tqdm","python_version":"4.57.0","source_path":"/usr/lib/python3/dist-packages"}
+  ],
+  "wheels": [
+    {"package":"certifi","version":"2024.8.30","filename":"certifi-2024.8.30-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"922820b53db7a7257ffbda3f597266d435245903d80737e34f8a45ff3e3230d8","source":"https://files.pythonhosted.org/packages/12/90/3c9ff0512038035f59d279fddeb79f5f1eccd8859f06d6163c58798b9487/certifi-2024.8.30-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"charset-normalizer","version":"3.3.2","filename":"charset_normalizer-3.3.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","python_tag":"cp310","abi_tag":"cp310","platform_tag":"manylinux_2_17_aarch64.manylinux2014_aarch64","architecture":"aarch64","sha256":"6897af51655e3691ff853668779c7bad41579facacf5fd7253b0133308cf000d","source":"https://files.pythonhosted.org/packages/b8/60/e2f67915a51be59d4539ed189eb0a2b0d292bf79270410746becb32bc2c3/charset_normalizer-3.3.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"contourpy","version":"1.3.2","filename":"contourpy-1.3.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","python_tag":"cp310","abi_tag":"cp310","platform_tag":"manylinux_2_17_aarch64.manylinux2014_aarch64","architecture":"aarch64","sha256":"9be002b31c558d1ddf1b9b415b162c603405414bacd6932d031c5b5a8b757f0d","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/contourpy-1.3.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"cycler","version":"0.12.1","filename":"cycler-0.12.1-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/cycler-0.12.1-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"fdop-face-perception","version":"0.1.1","filename":"fdop_face_perception-0.1.1-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"7082ca3bdb74a16603dc4e67f77618fbbb1a57035f711b4240f374b3e7295cba","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_sdk/0.1.0/fdop_face_perception-0.1.1-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"fdop-gesture-recognition","version":"0.1.1","filename":"fdop_gesture_recognition-0.1.1-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"78a73b9b403c635bd6203c1a6fc3b9ad90189ac041aafaea84e0502978beaa4e","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_sdk/0.1.0/fdop_gesture_recognition-0.1.1-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"fdop-head-control","version":"0.1.1","filename":"fdop_head_control-0.1.1-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"932979abc4def40622c94a8707a209a04b4928b43c44cb395dfeb8e912d59de2","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_sdk/0.1.0/fdop_head_control-0.1.1-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"fdop-preprocess","version":"0.1.1","filename":"fdop_preprocess-0.1.1-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"b1f6d3d74ab791bc99030f702b1a129dc537818e9a9a2e57698381c9076c2a22","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_sdk/0.1.0/fdop_preprocess-0.1.1-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"fdop-visualization","version":"0.1.1","filename":"fdop_visualization-0.1.1-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"5e613153374d74f2c87b906d37f98607dce933ef302afe3fc088597a095d3265","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_sdk/0.1.0/fdop_visualization-0.1.1-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"filelock","version":"3.16.1","filename":"filelock-3.16.1-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"2082e5703d51fbf98ea75855d9d5527e33d8ff23099bec374a134febee6946b0","source":"https://files.pythonhosted.org/packages/b9/f8/feced7779d755758a52d1f6635d990b8d98dc0a29fa568bbe0625f18fdf3/filelock-3.16.1-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"fonttools","version":"4.62.1","filename":"fonttools-4.62.1-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl","python_tag":"cp310","abi_tag":"cp310","platform_tag":"manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64","architecture":"aarch64","sha256":"c9b9e288b4da2f64fd6180644221749de651703e8d0c16bd4b719533a3a7d6e3","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/fonttools-4.62.1-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"fsspec","version":"2024.9.0","filename":"fsspec-2024.9.0-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"a0947d552d8a6efa72cc2c730b12c41d043509156966cca4fb157b0f2a0c574b","source":"https://files.pythonhosted.org/packages/1d/a0/6aaea0c2fbea2f89bfd5db25fb1e3481896a423002ebe4e55288907a97a3/fsspec-2024.9.0-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"idna","version":"3.10","filename":"idna-3.10-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3","source":"https://files.pythonhosted.org/packages/76/c6/c88e154df9c4e1a2a66ccf0005a88dfb2650c1dffb6f5ce603dfbd452ce3/idna-3.10-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"Jinja2","version":"3.1.4","filename":"jinja2-3.1.4-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"bc5dd2abb727a5319567b7a813e6a2e7318c39f4f487cfe6c89c6f9c7d25197d","source":"https://files.pythonhosted.org/packages/31/80/3a54838c3fb461f6fec263ebf3a3a41771bd05190238de3486aae8540c36/jinja2-3.1.4-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"kiwisolver","version":"1.5.0","filename":"kiwisolver-1.5.0-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl","python_tag":"cp310","abi_tag":"cp310","platform_tag":"manylinux_2_24_aarch64.manylinux_2_28_aarch64","architecture":"aarch64","sha256":"9190426b7aa26c5229501fa297b8d0653cfd3f5a36f7990c264e157cbf886b3b","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/kiwisolver-1.5.0-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"MarkupSafe","version":"2.1.5","filename":"MarkupSafe-2.1.5-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","python_tag":"cp310","abi_tag":"cp310","platform_tag":"manylinux_2_17_aarch64.manylinux2014_aarch64","architecture":"aarch64","sha256":"e61659ba32cf2cf1481e575d0462554625196a1f2fc06a1c777d3f48e8865d46","source":"https://files.pythonhosted.org/packages/0a/7b/85681ae3c33c385b10ac0f8dd025c30af83c78cec1c37a6aa3b55e67f5ec/MarkupSafe-2.1.5-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"matplotlib","version":"3.10.8","filename":"matplotlib-3.10.8-cp310-cp310-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl","python_tag":"cp310","abi_tag":"cp310","platform_tag":"manylinux_2_27_aarch64.manylinux_2_28_aarch64","architecture":"aarch64","sha256":"a48f2b74020919552ea25d222d5cc6af9ca3f4eb43a93e14d068457f545c2a17","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/matplotlib-3.10.8-cp310-cp310-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"mpmath","version":"1.3.0","filename":"mpmath-1.3.0-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c","source":"https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"networkx","version":"3.3","filename":"networkx-3.3-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"28575580c6ebdaf4505b22c6256a2b9de86b316dc63ba9e93abde3d78dfdbcf2","source":"https://files.pythonhosted.org/packages/38/e9/5f72929373e1a0e8d142a130f3f97e6ff920070f87f91c4e13e40e0fba5a/networkx-3.3-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"numpy","version":"1.26.4","filename":"numpy-1.26.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","python_tag":"cp310","abi_tag":"cp310","platform_tag":"manylinux_2_17_aarch64.manylinux2014_aarch64","architecture":"aarch64","sha256":"d209d8969599b27ad20994c8e41936ee0964e6da07478d6c35016bc386b66ad4","source":"http://10.51.33.211:10000/chfs/shared/PyPI/manipulation/naviai_manipulation_requirements/numpy-1.26.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"opencv-python","version":"4.11.0.86","filename":"opencv_python-4.11.0.86-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","python_tag":"cp37","abi_tag":"abi3","platform_tag":"manylinux_2_17_aarch64.manylinux2014_aarch64","architecture":"aarch64","sha256":"1b92ae2c8852208817e6776ba1ea0d6b1e0a1b5431e971a2a0ddd2a8cc398202","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/opencv_python-4.11.0.86-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"packaging","version":"24.1","filename":"packaging-24.1-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124","source":"https://files.pythonhosted.org/packages/08/aa/cc0199a5f0ad350994d660967a8efb233fe0416e4639146c089643407ce6/packaging-24.1-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"pillow","version":"10.4.0","filename":"pillow-10.4.0-cp310-cp310-manylinux_2_28_aarch64.whl","python_tag":"cp310","abi_tag":"cp310","platform_tag":"manylinux_2_28_aarch64","architecture":"aarch64","sha256":"6c762a5b0997f5659a5ef2266abc1d8851ad7749ad9a6a5506eb23d314e4f46b","source":"https://files.pythonhosted.org/packages/b1/84/9a15cc5726cbbfe7f9f90bfb11f5d028586595907cd093815ca6644932e3/pillow-10.4.0-cp310-cp310-manylinux_2_28_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"polars","version":"1.39.0","filename":"polars-1.39.0-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"4d1198b41bc47561673d9f54d0f595125202a3f53e3502821802958d3e60efe9","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/polars-1.39.0-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"polars-runtime-32","version":"1.39.0","filename":"polars_runtime_32-1.39.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","python_tag":"cp310","abi_tag":"abi3","platform_tag":"manylinux_2_17_aarch64.manylinux2014_aarch64","architecture":"aarch64","sha256":"8ded58f1c28e17ecbff8625cb1ad93016761260348acb79b1a4cd077970e89e5","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/polars_runtime_32-1.39.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"psutil","version":"6.0.0","filename":"psutil-6.0.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","python_tag":"cp36","abi_tag":"abi3","platform_tag":"manylinux_2_17_aarch64.manylinux2014_aarch64","architecture":"aarch64","sha256":"e2e8d0054fc88153ca0544f5c4d554d42e33df2e009c4ff42284ac9ebdef4132","source":"https://files.pythonhosted.org/packages/cd/5f/60038e277ff0a9cc8f0c9ea3d0c5eb6ee1d2470ea3f9389d776432888e47/psutil-6.0.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"pyparsing","version":"3.3.2","filename":"pyparsing-3.3.2-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/pyparsing-3.3.2-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"requests","version":"2.32.3","filename":"requests-2.32.3-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6","source":"https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"scipy","version":"1.15.3","filename":"scipy-1.15.3-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","python_tag":"cp310","abi_tag":"cp310","platform_tag":"manylinux_2_17_aarch64.manylinux2014_aarch64","architecture":"aarch64","sha256":"263961f658ce2165bbd7b99fa5135195c3a12d9bef045345016b8b50c315cb82","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/scipy-1.15.3-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"sympy","version":"1.13.1","filename":"sympy-1.13.1-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"db36cdc64bf61b9b24578b6f7bab1ecdd2452cf008f34faa33776680c26d66f8","source":"https://files.pythonhosted.org/packages/b2/fe/81695a1aa331a842b582453b605175f419fe8540355886031328089d840a/sympy-1.13.1-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"torchvision","version":"0.20.0a0+afc54f7","filename":"torchvision-0.20.0a0+afc54f7-cp310-cp310-linux_aarch64.whl","python_tag":"cp310","abi_tag":"cp310","platform_tag":"linux_aarch64","architecture":"aarch64","sha256":"e7c1f76f2eb085eff8284cc71f0198d79b6bd1360646b7298f0a2b7103096dc0","source":"http://10.51.33.211:10000/chfs/shared/PyPI/pytorch/torchvision-0.20.0a0%2Bafc54f7-cp310-cp310-linux_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"typing_extensions","version":"4.16.0","filename":"typing_extensions-4.16.0-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8","source":"https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"ultralytics","version":"8.4.22","filename":"ultralytics-8.4.22-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"10babe59ee978dda404084ab36097890a50f8e0c85c0b714c44849f831a618b5","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/ultralytics-8.4.22-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"ultralytics-thop","version":"2.0.18","filename":"ultralytics_thop-2.0.18-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"2bb44851ad224b116c3995b02dd5e474a5ccf00acf237fe0edb9e1506ede04ec","source":"http://10.51.33.211:10000/chfs/shared/PyPI/vision/naviai_vision_requirements/ultralytics_thop-2.0.18-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"urllib3","version":"2.2.3","filename":"urllib3-2.2.3-py3-none-any.whl","python_tag":"py3","abi_tag":"none","platform_tag":"any","architecture":"any","sha256":"ca899ca043dcb1bafa3e262d73aa25c465bfb49e0bd9dd5d59f1d0acba2f8fac","source":"https://files.pythonhosted.org/packages/ce/d9/5f4c13cecde62396b0d3fe530a50ccea91e7dfc1ccf0e09c228841bb5ba8/urllib3-2.2.3-py3-none-any.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true},
+    {"package":"websockets","version":"10.4","filename":"websockets-10.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","python_tag":"cp310","abi_tag":"cp310","platform_tag":"manylinux_2_17_aarch64.manylinux2014_aarch64","architecture":"aarch64","sha256":"33d69ca7612f0ddff3316b0c7b33ca180d464ecac2d115805c044bf0a3b0d032","source":"https://files.pythonhosted.org/packages/25/a7/4e32f8edfc26339d8d170fe539e0b83a329c42d974dacfe07a0566390aef/websockets-10.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl","runtime_scope":"vision-venv","availability":"recovered","record_verified":true,"metadata_verified":true,"wheel_tag_verified":true}
+  ],
+  "assets": [
+    {"package":"vision-model-face","version":"1","filename":"yolov11n-face.pt","architecture":"any","sha256":"9420a9d4933940d2202f511d45df1750e3c1546dd9efc7a3985caae3bbbf7ed2","source":"http://10.51.33.211:10000/chfs/shared/modules2/models/vision/face/yolov11n-face.pt","runtime_scope":"vision-model-assets","install_path":"/opt/naviai/runtime/vision/assets/models/face/yolov11n-face.pt"},
+    {"package":"vision-model-gesture","version":"1","filename":"yolov10m-gesture.pt","architecture":"any","sha256":"eb32aa3169de29829e0eb8f2410b4bb7f865ddf87ba09eea5f88bdac148242f1","source":"http://10.51.33.211:10000/chfs/shared/modules2/models/vision/gesture/yolov10m-gesture.pt","runtime_scope":"vision-model-assets","install_path":"/opt/naviai/runtime/vision/assets/models/gesture/yolov10m-gesture.pt"}
+  ],
+  "audit": {
+    "recovered_wheels": 36,
+    "required_wheels": 36,
+    "record_verified": 36,
+    "wheel_tag_verified": 36,
+    "native_members_in_wheels": 238,
+    "wheel_audit_errors": 0,
+    "wheel_audit_warnings": [
+      "fdop-face-perception METADATA documentation contains an obsolete developer-home example path; runtime Python modules do not contain it",
+      "fdop-gesture-recognition METADATA documentation contains an obsolete developer-home example path; runtime Python modules do not contain it",
+      "fdop-face-perception 0.1.1 is an external immutable wheel with pre-motherboard torch/torchvision bounds; exact pip-check exceptions are recorded"
+    ],
+    "installed_poc_native_shared_objects": 243,
+    "installed_poc_elf_architecture": "aarch64",
+    "installed_poc_ldd_not_found": 0,
+    "installed_poc_forbidden_rpath_runpath": 0,
+    "installed_poc_forbidden_runtime_paths": 0
+  },
+  "verification": {
+    "host_profile": "Ubuntu 22.04.5 / ROS Humble / Python 3.10.12 / aarch64 / JetPack 6.2.1 / L4T R36.4.4",
+    "base_environment_provider": "orin-motherboard",
+    "torch_import": "motherboard-contract",
+    "torch_cuda_available": true,
+    "torch_version": "2.5.0a0+872d972e41.nv24.08",
+    "torch_version_cuda": "12.6",
+    "torch_cudnn_version": 90300,
+    "torchvision_import": "motherboard-contract",
+    "torchvision_nms_cpu": "passed",
+    "torchvision_nms_cuda": "passed",
+    "fdop_imports": "5/5 passed",
+    "cv2_cv_bridge_roundtrip": "passed",
+    "face_cuda_dummy_inference": "passed",
+    "gesture_cuda_dummy_inference": "passed",
+    "pip_check": "passed_with_normalized_external_fdop_metadata_exceptions",
+    "native_audit": "243 regular ELF files; aarch64=243; ldd not found=0; forbidden RPATH/RUNPATH=0"
+  },
+  "runtime_dependency_closure": {
+    "environment_markers": "python_version == '3.10' and sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "extras_enabled": [],
+    "system_site_dependencies": ["rclpy", "cv_bridge", "PyYAML", "python-dateutil", "six", "tqdm"],
+    "host_native_dependencies": ["CUDA 12.6", "NVIDIA driver/L4T R36.4.4", "glibc/libstdc++ from Ubuntu 22.04", "zlib1g"],
+    "private_native_dependencies": [],
+    "unresolved_release_inputs": []
+  }
+}
+
+===== /var/lib/navi-vision/releases/2.0.0-8027c204/rollback/transaction.state =====
+COMMITTED
+
+naviai@1422622058177:/tmp$ dpkg-query -W -f='${Package}\t${Version}\t${db:Status-Status}\n' \
+  orin-vision-common-deb \
+  navi-vision-runtime-assets \
+  navi-vision-models \
+  ros-humble-navi-vision-msgs \
+  ros-humble-navi-vision-pkg \
+  ros-humble-upperlimb-msgs 2>&1
+navi-vision-models      2.0.0+8027c204  installed
+navi-vision-runtime-assets      2.0.0+8027c204  installed
+orin-vision-common-deb  2.0.0+8027c204  installed
+ros-humble-navi-vision-msgs     0.1.0-visionros2+20260909-8027c204jammy installed
+ros-humble-navi-vision-pkg      0.0.1-visionros2+20260909-8027c204jammy installed
+ros-humble-upperlimb-msgs       2.0.0-devaudioros2+20260908-cd81d4ab    installed
+naviai@1422622058177:/tmp$ 

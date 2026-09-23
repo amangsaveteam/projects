@@ -19,7 +19,7 @@ DEPLOYMENT_ROOT = COMMON_DIR.parent
 UBUNTU_BASELINE_PRIORITIES = {"required", "important", "standard"}
 
 
-def parse_manifest(manifest_path: Path, *, allow_empty: bool = False) -> list[tuple[str, str]]:
+def parse_manifest(manifest_path: Path) -> list[tuple[str, str]]:
     packages: list[tuple[str, str]] = []
     for line_number, line in enumerate(manifest_path.read_text(encoding="utf-8").splitlines(), 1):
         if not line or line.startswith("#"):
@@ -28,7 +28,7 @@ def parse_manifest(manifest_path: Path, *, allow_empty: bool = False) -> list[tu
         if len(fields) != 3:
             raise ValueError(f"{manifest_path}:{line_number}: expected three TAB-separated fields")
         packages.append((fields[0], fields[1]))
-    if not packages and not allow_empty:
+    if not packages:
         raise ValueError(f"{manifest_path}: contains no packages")
     return packages
 
@@ -203,38 +203,14 @@ def build_compatibility_debs(
     return artifacts
 
 
-def write_installer(staging: Path, package_name: str, aliases: list[str], device_config_target: str, *, environment_only: bool = False) -> None:
+def write_installer(staging: Path, package_name: str, aliases: list[str]) -> None:
     payload_directory = f"/usr/lib/{package_name}/payload"
-    config_tool = f"/usr/lib/{package_name}/deploy_common.py"
     script = f'''#!/bin/bash
 set -euo pipefail
 
 if [[ $EUID -ne 0 ]]; then
     echo "Run this installer as root, for example: sudo $0" >&2
     exit 1
-fi
-
-if ! python3 {config_tool} validate-config --target {device_config_target}; then
-    echo "ROBOT_TYPE must be configured before using this common carrier." >&2
-    echo "Run: sudo python3 {config_tool} configure --target {device_config_target} --robot-type <model>" >&2
-    exit 2
-fi
-'''
-    if environment_only:
-        script += '''echo "Environment-only carrier: device configuration and ROS environment are ready; no dependency payloads were installed."
-    exit 0
-'''
-    else:
-        script += f'''
-shopt -s nullglob
-payloads=({payload_directory}/*.deb)
-if (( ${{#payloads[@]}} == 0 )); then
-    echo "No offline payloads found in {payload_directory}" >&2
-    exit 1
-fi
-
-if [[ -f {payload_directory}/payloads.sha256 ]]; then
-    (cd {payload_directory} && sha256sum -c payloads.sha256)
 fi
 
 requested_packages_file={payload_directory}/requested-packages.tsv
@@ -249,12 +225,6 @@ while IFS=$'\t' read -r package_name payload_version; do
     [[ -n "$package_name" && -n "$payload_version" ]] || continue
     installed_status="$(dpkg-query -W -f='${{db:Status-Status}}' "$package_name" 2>/dev/null || true)"
     installed_version="$(dpkg-query -W -f='${{Version}}' "$package_name" 2>/dev/null || true)"
-
-    # Request only the manifest's top-level packages.  The remaining .debs
-    # are candidates in the local APT repository, rather than explicit install
-    # targets.  This lets a newer package already on the robot satisfy a
-    # versioned dependency (for example network-manager/libnm0) without APT
-    # being forced to downgrade it to the carrier's paired version.
     if [[ "$installed_status" == "installed" ]] && dpkg --compare-versions "$installed_version" ge "$payload_version"; then
         echo "Keeping $package_name $installed_version (carrier provides $payload_version)"
     else
@@ -268,12 +238,6 @@ if (( ${{#required_packages[@]}} == 0 )); then
     exit 0
 fi
 
-# Use the bundled archives as an isolated local APT repository.  Passing all
-# archives directly to ``apt-get install`` makes every transitive dependency a
-# forced target and can therefore cause a downgrade.  The isolated index gives
-# APT the full offline dependency closure while preserving newer installed
-# packages. No system APT source or network repository is used here, and a
-# downgrade is never permitted.
 apt_state="$(mktemp -d /tmp/{package_name}-apt.XXXXXX)"
 trap 'rm -rf "$apt_state"' EXIT
 mkdir -p "$apt_state/lists/partial"
@@ -298,52 +262,7 @@ apt-get -y --no-download --no-install-recommends "${{apt_options[@]}}" install "
         os.chmod(target, 0o755)
 
 
-def write_bash_startup_hook(staging: Path) -> None:
-    """Load the shared profile in every new interactive system Bash.
-
-    profile.d is loaded by login shells only. Ubuntu's /etc/bash.bashrc is the
-    system-wide hook for non-login interactive Bash sessions, so keep a small
-    managed source block there instead of editing any user's ~/.bashrc.
-    """
-    postinst = '''#!/bin/sh
-set -eu
-
-bashrc=/etc/bash.bashrc
-begin='# BEGIN zj-humanoid common environment'
-end='# END zj-humanoid common environment'
-
-[ -e "$bashrc" ] || : > "$bashrc"
-if ! grep -Fqx "$begin" "$bashrc"; then
-    cat >> "$bashrc" <<'EOF'
-
-# BEGIN zj-humanoid common environment
-if [ -r /etc/profile.d/zj_humanoid.sh ]; then
-    . /etc/profile.d/zj_humanoid.sh
-fi
-# END zj-humanoid common environment
-EOF
-fi
-'''
-    postrm = '''#!/bin/sh
-set -eu
-
-if [ "${1:-}" = purge ] && [ -f /etc/bash.bashrc ]; then
-    temporary=$(mktemp /etc/bash.bashrc.zj-humanoid.XXXXXX)
-    sed '/^# BEGIN zj-humanoid common environment$/,/^# END zj-humanoid common environment$/d' \\
-        /etc/bash.bashrc > "$temporary"
-    cat "$temporary" > /etc/bash.bashrc
-    rm -f "$temporary"
-fi
-'''
-    postinst_path = staging / "DEBIAN/postinst"
-    postinst_path.write_text(postinst, encoding="utf-8")
-    os.chmod(postinst_path, 0o755)
-    postrm_path = staging / "DEBIAN/postrm"
-    postrm_path.write_text(postrm, encoding="utf-8")
-    os.chmod(postrm_path, 0o755)
-
-
-def download_payloads(packages: list[tuple[str, str]], architecture: str, download_directory: Path) -> list[Path]:
+def download_payloads(packages: list[tuple[str, str]], architecture: str, download_directory: Path, apt_options: list[str] = ()) -> list[Path]:
     """Download the complete offline APT closure for a manifest.
 
     ``apt-get download`` retrieves only a requested top-level package.  That
@@ -360,6 +279,7 @@ def download_payloads(packages: list[tuple[str, str]], architecture: str, downlo
     subprocess.run(
         [
             "apt-get",
+            *apt_options,
             "-y",
             "--download-only",
             "--no-install-recommends",
@@ -446,16 +366,47 @@ def write_local_apt_repository(
     return requested
 
 
+def verify_common_carrier(staging: Path, installer_alias: str = "install_common_deps.sh") -> None:
+    """Reject device configuration from a dependency-only common carrier."""
+    forbidden = {
+        "etc/naviai/Middleware.env",
+        "etc/nav01/Middleware.env",
+        "etc/profile.d/zj_humanoid.sh",
+        "etc/zj_humanoid/device.env",
+        "etc/zj_humanoid/cyclonedds.xml",
+    }
+    packaged = {
+        path.relative_to(staging).as_posix()
+        for path in staging.rglob("*") if path.is_file()
+    }
+    unexpected = sorted(forbidden & packaged)
+    if unexpected:
+        raise RuntimeError("common carrier must not ship device configuration: " + ", ".join(unexpected))
+    conffiles = staging / "DEBIAN/conffiles"
+    if conffiles.exists() and conffiles.read_text(encoding="utf-8").strip():
+        raise RuntimeError("common carrier must not declare conffiles")
+    installer = staging / "usr/sbin" / configured_path(installer_alias, description="installer alias").name
+    if not installer.is_file():
+        raise RuntimeError("common carrier installer alias is missing")
+    contents = installer.read_text(encoding="utf-8")
+    if "validate-config" in contents or "ROBOT_TYPE" in contents or "deploy_common.py" in contents:
+        raise RuntimeError("common carrier installer must not depend on device configuration")
+
+
 def build(config_path: Path) -> Path:
     config = json.loads(config_path.read_text(encoding="utf-8"))
     package_name = str(config["package_name"])
     target = config["target"]
     if not isinstance(target, dict):
         raise ValueError("target must be an object")
-    validate_build_host(config, target)
+    isolated = config.get("isolated_humble_arm64_apt", False)
+    if isolated:
+        if (target.get("os_id"), target.get("os_version"), target.get("architecture")) != ("ubuntu", "22.04", "arm64"):
+            raise ValueError("isolated Humble APT requires Ubuntu 22.04 arm64")
+    else:
+        validate_build_host(config, target)
     manifest_path = DEPLOYMENT_ROOT / str(config["manifest"])
-    environment_only = bool(config.get("environment_only", False))
-    packages = parse_manifest(manifest_path, allow_empty=environment_only)
+    packages = parse_manifest(manifest_path)
     output_dir = (DEPLOYMENT_ROOT / str(config["output_dir"])).resolve()
     if DEPLOYMENT_ROOT.parent not in output_dir.parents:
         raise ValueError("output_dir must stay under the deployment workspace")
@@ -463,18 +414,21 @@ def build(config_path: Path) -> Path:
 
     with tempfile.TemporaryDirectory(prefix="navi-common-bundle-") as temporary_directory:
         temporary_path = Path(temporary_directory)
-        payloads = download_payloads(packages, str(target["architecture"]), temporary_path) if packages else []
+        if isolated:
+            from isolated_humble_apt import prepare
+            options = prepare(temporary_path / "apt")
+            payloads = download_payloads(packages, "arm64", temporary_path, options)
+        else:
+            payloads = download_payloads(packages, str(target["architecture"]), temporary_path) if packages else []
         staging = temporary_path / "staging"
         (staging / "DEBIAN").mkdir(parents=True)
         payload_directory = staging / "usr/lib" / package_name / "payload"
-        if not environment_only:
-            payload_directory.mkdir(parents=True)
-            for payload in payloads:
-                shutil.copy2(payload, payload_directory / payload.name)
+        payload_directory.mkdir(parents=True)
+        for payload in payloads:
+            shutil.copy2(payload, payload_directory / payload.name)
 
-        requested_packages = (
-            write_local_apt_repository(payload_directory, list(payload_directory.glob("*.deb")), packages)
-            if not environment_only else []
+        requested_packages = write_local_apt_repository(
+            payload_directory, list(payload_directory.glob("*.deb")), packages
         )
 
         lock_payloads = [
@@ -487,8 +441,7 @@ def build(config_path: Path) -> Path:
             }
             for payload in payloads
         ]
-        if not environment_only:
-            (payload_directory / "payloads.sha256").write_text(
+        (payload_directory / "payloads.sha256").write_text(
                 "".join(
                     f"{sha256(path)}  {path.name}\n" for path in sorted(payload_directory.iterdir())
                 ),
@@ -518,11 +471,7 @@ def build(config_path: Path) -> Path:
         ):
             raise ValueError("deb_replaces must be a list of non-empty Debian package names")
         replaces_field = f"Replaces: {', '.join(replaces)}\n" if replaces else ""
-        carrier_description = (
-            " Environment configuration only; this package does not contain dependency payloads.\n"
-            if environment_only
-            else " Offline payload carrier. Install the carrier, then run its installer alias.\n"
-        )
+        carrier_description = " Offline dependency payload carrier. Install the carrier, then run its installer alias.\n"
         control = (
             f"Package: {package_name}\n"
             f"Version: {config['release_version']}\n"
@@ -538,10 +487,9 @@ def build(config_path: Path) -> Path:
         aliases = [str(alias) for alias in config.get("installer_aliases", [])]
         if not aliases:
             raise ValueError("at least one installer_alias is required")
-        device_config_target = str(config["device_config_target"])
-        write_installer(staging, package_name, aliases, device_config_target, environment_only=environment_only)
-        write_bash_startup_hook(staging)
+        write_installer(staging, package_name, aliases)
         copy_extra_files(staging, config)
+        verify_common_carrier(staging, aliases[0])
 
         output_dir.mkdir(parents=True, exist_ok=True)
         temporary_artifact = output_dir / f".{artifact.name}.tmp"
@@ -555,10 +503,7 @@ def build(config_path: Path) -> Path:
         print(f"Built compatibility package {compatibility_artifact}")
     print(f"Offline payload count: {len(payloads)}")
     print(f"Install carrier with: sudo dpkg -i {artifact.name}")
-    if environment_only:
-        print(f"Validate configured environment with: sudo {aliases[0]}")
-    else:
-        print(f"Install payloads with: sudo {aliases[0]}")
+    print(f"Install payloads with: sudo {aliases[0]}")
     return artifact
 
 
