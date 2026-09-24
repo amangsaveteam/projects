@@ -19,15 +19,19 @@ for path_var in PATH LD_LIBRARY_PATH PYTHONPATH PKG_CONFIG_PATH CMAKE_PREFIX_PAT
     strip_path_entries "$path_var" /opt/ros/noetic
 done
 
+# The Humble setup script references optional variables while nounset is
+# enabled.  Load the environment with nounset temporarily disabled.
+set +u
 source /etc/nav01/Middleware.env
 source /opt/ros/humble/setup.bash
+set -u
 export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-72}"
 export RMW_IMPLEMENTATION="${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}"
 if [[ "${ROS_LOCALHOST_ONLY:-0}" == 1 ]]; then unset CYCLONEDDS_URI; fi
 
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:/opt/zj_humanoid/lib/logging:/opt/zj_humanoid/lib/rtipc_runtime:/opt/zj_humanoid/lib/uplimb_runtime"
-export ROBOT_TYPE="${ROBOT_TYPE:-WA-T}"
-export CONTROLLER="${CONTROLLER:-v1}"
+export ROBOT_TYPE=WA-T
+export CONTROLLER=v1
 
 case "$ROBOT_TYPE" in
 H1|U1|I2|I2-S|I2-D|I2-E)
@@ -46,7 +50,7 @@ ZYD_V1)
     export UPLIMB_CONFIG_FILE_PATH=/opt/zj_humanoid/share/uplimb_runtime/config/robot_define_ZYD_V2.yaml
     export UPLIMB_HARDWARE_BODY_FILE_PATH=/opt/zj_humanoid/share/uplimb_runtime/config/hardware_body_ZYD_V1.yaml
     ;;
-JK2_V1)
+JK|JK2-V1|JK2_V1)
     export UPLIMB_CONFIG_FILE_PATH=/opt/zj_humanoid/share/uplimb_runtime/config/robot_define_JK2_V1.yaml
     export UPLIMB_HARDWARE_BODY_FILE_PATH=/opt/zj_humanoid/share/uplimb_runtime/config/hardware_body_JK2_V1.yaml
     ;;
@@ -62,5 +66,16 @@ esac
 
 [[ -f "$UPLIMB_CONFIG_FILE_PATH" ]] || { echo "Missing $UPLIMB_CONFIG_FILE_PATH" >&2; exit 1; }
 [[ -f "$UPLIMB_HARDWARE_BODY_FILE_PATH" ]] || { echo "Missing $UPLIMB_HARDWARE_BODY_FILE_PATH" >&2; exit 1; }
-exec taskset -c "${UPLIMB_CPU:-9}" ros2 launch uplimb_interface uplimb_interface_node.launch.py \
-    controller:="$CONTROLLER" robot_type:="$ROBOT_TYPE"
+params_file=/home/nav01/zj_humanoid/config/naviai_default.yaml
+[[ -f "$params_file" ]] || { echo "Missing $params_file" >&2; exit 1; }
+# Clear global selectors and pass the WA-T profile explicitly.  This prevents
+# Middleware.env (which may contain a different robot model) from overriding
+# the package configuration.
+taskset -c "${UPLIMB_CPU:-9}" env -u ROBOT_TYPE -u CONTROLLER ros2 launch uplimb_interface uplimb_interface_node.launch.py params_file:="$params_file" robot_type:=WA-T controller:=v1 &
+launch_pid=$!
+trap 'kill "$launch_pid" 2>/dev/null || true; wait "$launch_pid" 2>/dev/null || true' EXIT INT TERM
+
+# The vendor launch file configures and activates the node itself.  Do not issue
+# a second configure/activate transition: an already active node rejects it and
+# set -e would make Supervisor restart this otherwise healthy process.
+wait "$launch_pid"

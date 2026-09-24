@@ -3,13 +3,42 @@
   "targets": {
     "orin-humble": {
       "config_files": [
-        {"source": "system_deployment/one_stop/audio", "destination": "/usr/lib/naviai/audio", "owner": "root"},
-        {"source": "system_deployment/one_stop/assets/orin-humble/navigation/config", "destination": "/home/naviai/navi_project/config/navigation/config", "owner": "naviai"},
-        {"source": "system_deployment/one_stop/environment-defaults/orin-humble", "destination": "/etc/naviai/navigation", "owner": "root", "overwrite": false},
-        {"source": "system_deployment/one_stop/tools/orin-humble", "destination": "/usr/lib/naviai", "owner": "root"},
-        {"source": "system_deployment/one_stop/assets/orin-humble/perception/config", "destination": "/home/naviai/navi_project/config/perception", "owner": "naviai"},
-        {"source": "system_deployment/one_stop/assets/orin-humble/shared/schema", "destination": "/home/naviai/navi_project/schema", "owner": "naviai"},
-        {"source": "system_deployment/one_stop/assets/orin-humble/diangosis/config", "destination": "/home/naviai/navi_project/tool/diangosis", "owner": "naviai"}
+        {
+          "source": "system_deployment/one_stop/audio",
+          "destination": "/usr/lib/naviai/audio",
+          "owner": "root"
+        },
+        {
+          "source": "system_deployment/one_stop/assets/orin-humble/navigation/config",
+          "destination": "/home/naviai/navi_project/config/navigation/config",
+          "owner": "naviai"
+        },
+        {
+          "source": "system_deployment/one_stop/environment-defaults/orin-humble",
+          "destination": "/etc/naviai/navigation",
+          "owner": "root",
+          "overwrite": false
+        },
+        {
+          "source": "system_deployment/one_stop/tools/orin-humble",
+          "destination": "/usr/lib/naviai",
+          "owner": "root"
+        },
+        {
+          "source": "system_deployment/one_stop/assets/orin-humble/perception/config",
+          "destination": "/home/naviai/navi_project/config/perception",
+          "owner": "naviai"
+        },
+        {
+          "source": "system_deployment/one_stop/assets/orin-humble/shared/schema",
+          "destination": "/home/naviai/navi_project/schema",
+          "owner": "naviai"
+        },
+        {
+          "source": "system_deployment/one_stop/assets/orin-humble/diangosis/config",
+          "destination": "/home/naviai/navi_project/tool/diangosis",
+          "owner": "naviai"
+        }
       ],
       "device": "ORIN",
       "os_id": "ubuntu",
@@ -206,7 +235,10 @@
           "name": "manip",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/manipulation/develop/navi_manip_installer-2.0.0-release-humble-arm64.run",
           "sha256": "",
-          "arguments": ["--", "--force"]
+          "arguments": [
+            "--",
+            "--force"
+          ]
         },
         {
           "name": "sensor",
@@ -315,6 +347,18 @@
       "os_id": "ubuntu",
       "os_version": "20.04",
       "architecture": "amd64",
+      "config_files": [
+        {
+          "source": "system_deployment/one_stop/pico_upperlimb/config",
+          "destination": "/home/nav01/zj_humanoid/config",
+          "owner": "nav01",
+          "group": "nav01",
+          "overwrite": false,
+          "robot_types": [
+            "WA-T"
+          ]
+        }
+      ],
       "system_config": {
         "configure_target": "pico-humble",
         "base_image_contract": "pico-humble"
@@ -347,6 +391,36 @@
           "installers": [
             "auto"
           ]
+        },
+        {
+          "name": "eyou-client",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-client_3.3.0%2Bfocal_all.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "eyou-interface",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-interface_3.3.0%2Bfocal_amd64.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "eyou-msgs-typesupport",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs-typesupport_3.3.0%2Bfocal_amd64.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "eyou-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs_3.3.0%2Bfocal_all.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "uplimb-runtime",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/uplimb_runtime/develop/zj-humanoid-uplimb-runtime_1.4.2-featwat%2B83.254a81cfocal_amd64.deb",
+          "sha256": "",
+          "installers": []
         }
       ],
       "runs": [
@@ -370,7 +444,9 @@
           "name": "display",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/display/develop/navi_display_installer-2.0.0-release-humble-amd64.run",
           "sha256": "",
-          "arguments": ["--reinstall"]
+          "arguments": [
+            "--reinstall"
+          ]
         }
       ]
     },

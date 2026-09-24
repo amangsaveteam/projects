@@ -14,7 +14,7 @@
       "supervisor_modules": [
         {
           "id": "chassis",
-          "description": "\u5e95\u76d8 ROS 2 \u8282\u70b9",
+          "description": "底盘 ROS 2 节点",
           "mode": "managed",
           "port": 19004,
           "working_directory": "/home/naviai",
@@ -36,7 +36,7 @@
         },
         {
           "id": "vanjee-lidar",
-          "description": "\u4e07\u96c6 716 mini \u96f7\u8fbe",
+          "description": "万集 716 mini 雷达",
           "mode": "managed",
           "port": 19006,
           "working_directory": "/home/naviai",
@@ -57,7 +57,7 @@
         },
         {
           "id": "livox-lidar",
-          "description": "Livox \u96f7\u8fbe",
+          "description": "Livox 雷达",
           "mode": "managed",
           "port": 19007,
           "working_directory": "/home/naviai",
@@ -101,7 +101,7 @@
         },
         {
           "id": "navigation",
-          "description": "\u7edf\u4e00\u5bfc\u822a\u6838\u5fc3",
+          "description": "统一导航核心",
           "mode": "managed",
           "port": 19009,
           "working_directory": "/home/naviai",
@@ -122,7 +122,7 @@
         },
         {
           "id": "naviai-nav2-rawdata",
-          "description": "\u5bfc\u822a\u539f\u59cb\u6570\u636e\u8bb0\u5f55",
+          "description": "导航原始数据记录",
           "mode": "managed",
           "port": 19010,
           "working_directory": "/home/naviai",
@@ -143,7 +143,7 @@
         },
         {
           "id": "diagnosis-system",
-          "description": "\u8bca\u65ad\u7cfb\u7edf",
+          "description": "诊断系统",
           "mode": "managed",
           "port": 19011,
           "working_directory": "/home/naviai",
@@ -164,7 +164,7 @@
         },
         {
           "id": "web-rviz",
-          "description": "Web RViz \u9875\u9762\u670d\u52a1",
+          "description": "Web RViz 页面服务",
           "mode": "managed",
           "port": 19012,
           "working_directory": "/opt/zj_humanoid/lib/web_rviz_ros2",
@@ -253,7 +253,7 @@
         },
         {
           "id": "orbbec-camera",
-          "description": "Orbbec Gemini 305g \u53cc\u8155\u76f8\u673a",
+          "description": "Orbbec Gemini 305g 双腕相机",
           "mode": "managed",
           "port": 19013,
           "working_directory": "/var/lib/navi-sensor",
@@ -290,15 +290,26 @@
         {
           "id": "robot",
           "description": "Navi PICO robot hardware stack",
-          "mode": "external",
+          "mode": "managed",
           "port": 19002,
           "startup_priority": 10,
-          "restart_service": "zj-humanoid-pico-robot-supervisor.service",
+          "working_directory": "/etc/nav01/robot",
+          "source_files": [
+            "/etc/profile.d/zj_humanoid.sh"
+          ],
+          "command": "/etc/nav01/robot/launch.sh",
+          "autorestart": "unexpected",
+          "startsecs": 3,
           "disable_services": [
             "navi-pico-robot-supervisor.service",
             "navi-pico-legged-supervisor.service",
             "zj_humanoid.service"
-          ]
+          ],
+          "prelude": [
+            "export HOME=/home/nav01 ROS_HOME=/home/nav01/.ros ROS_LOG_DIR=/var/log/naviai/robot/ros",
+            "install -d -o nav01 -g nav01 -m 0755 /home/nav01/.ros /var/log/naviai/robot/ros"
+          ],
+          "local_log_file": "/var/log/naviai/robot/robot.log"
         },
         {
           "id": "upperlimb",
@@ -307,14 +318,13 @@
           "port": 19003,
           "startup_priority": 20,
           "working_directory": "/etc/nav01/upperlimb",
-          "source_files": [
-            "/etc/nav01/Middleware.env"
-          ],
+          "source_files": [],
           "prelude": [
             "export HOME=/home/nav01 ROS_HOME=/home/nav01/.ros ROS_LOG_DIR=/var/log/naviai/upperlimb/ros",
-            "install -d -o nav01 -g nav01 -m 0755 /home/nav01/.ros /var/log/naviai/upperlimb/ros"
+            "install -d -o nav01 -g nav01 -m 0755 /home/nav01/.ros /var/log/naviai/upperlimb/ros",
+            "install -d -m 0755 /var/opt",
+            "install -m 0644 /opt/zj_humanoid/share/uplimb_runtime/config/hardware_body_WA_T.yaml /var/opt/hardware_body.yaml"
           ],
-          "readiness_command": "state=\"$(timeout 5 ros2 topic echo --once /zj_humanoid/robot/robot_state 2>/dev/null || true)\"; grep -q '^state: 5$' <<< \"$state\" && grep -q '^state_info: STATE_ROBOT_RUN$' <<< \"$state\"",
           "command": "/bin/bash /etc/nav01/upperlimb/navi-pico-upperlimb-start.sh",
           "local_log_file": "/var/log/naviai/upperlimb/upperlimb.log",
           "autorestart": "unexpected",
@@ -323,11 +333,30 @@
             "navi-pico-upperlimb.service"
           ],
           "package": "upperlimb-common"
+        },
+        {
+          "id": "hand",
+          "description": "Navi PICO dexhand interface",
+          "mode": "managed",
+          "port": 19005,
+          "startup_priority": 25,
+          "working_directory": "/home/nav01",
+          "source_files": [
+            "/etc/profile.d/zj_humanoid.sh"
+          ],
+          "prelude": [
+            "export HOME=/home/nav01 ROS_HOME=/home/nav01/.ros ROS_LOG_DIR=/var/log/naviai/hand/ros",
+            "export LD_LIBRARY_PATH=/opt/zj_humanoid/lib/rtipc_runtime:/opt/zj_humanoid/lib/logging:/opt/zj_humanoid/lib/uplimb_runtime:${LD_LIBRARY_PATH:-}",
+            "install -d -o nav01 -g nav01 -m 0755 /home/nav01/.ros /var/log/naviai/hand/ros"
+          ],
+          "command": "ros2 launch dexhand_interface dexhand_hw_interface.launch.py",
+          "local_log_file": "/var/log/naviai/hand/hand.log",
+          "autorestart": "unexpected",
+          "startsecs": 3,
+          "disable_services": []
         }
       ],
-      "managed_services": [
-        "zj-humanoid-pico-robot-supervisor.service"
-      ]
+      "managed_services": []
     }
   }
 }

@@ -555,18 +555,30 @@
       "os_id": "ubuntu",
       "os_version": "20.04",
       "architecture": "amd64",
-      "system_config": {
-        "configure_target": "pico-humble",
-        "base_image_contract": "pico-humble"
-      },
       "config_files": [
         {
           "source": "system_deployment/one_stop/pico_upperlimb",
           "destination": "/etc/nav01/upperlimb",
           "owner": "root",
-          "robot_types": ["WA-T"]
+          "robot_types": [
+            "WA-T"
+          ]
+        },
+        {
+          "source": "system_deployment/one_stop/pico_upperlimb/config",
+          "destination": "/home/nav01/zj_humanoid/config",
+          "owner": "nav01",
+          "group": "nav01",
+          "overwrite": false,
+          "robot_types": [
+            "WA-T"
+          ]
         }
       ],
+      "system_config": {
+        "configure_target": "pico-humble",
+        "base_image_contract": "pico-humble"
+      },
       "remove_packages": [
         "zj-humanoid-ros-humble-legged-nav2-bringup",
         "zj-humanoid-ros-humble-legged-nav2-hw"
@@ -576,7 +588,10 @@
           "name": "pico-common",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/pico/develop/navi_pico_common_dep-2.0.0-release-humble-amd64.deb",
           "sha256": "",
-          "installers": []
+          "installers": [],
+          "robot_types": [
+            "JK2-V1"
+          ]
         },
         {
           "name": "robot-common-dep",
@@ -606,7 +621,7 @@
         },
         {
           "name": "uplimb-runtime",
-          "url": "http://10.51.33.211:10000/chfs/shared/modules/uplimb_runtime/develop/zj-humanoid-uplimb-runtime_1.4.2-featwat%2B82.69910a4focal_amd64.deb",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/uplimb_runtime/develop/zj-humanoid-uplimb-runtime_1.4.2-featwat%2B83.254a81cfocal_amd64.deb",
           "sha256": "",
           "installers": [],
           "robot_types": [
@@ -630,6 +645,30 @@
           "robot_types": [
             "WA-T"
           ]
+        },
+        {
+          "name": "eyou-client",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-client_3.3.0%2Bfocal_all.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "eyou-interface",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-interface_3.3.0%2Bfocal_amd64.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "eyou-msgs-typesupport",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs-typesupport_3.3.0%2Bfocal_amd64.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "eyou-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs_3.3.0%2Bfocal_all.deb",
+          "sha256": "",
+          "installers": []
         }
       ],
       "runs": [

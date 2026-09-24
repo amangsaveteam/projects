@@ -1,0 +1,35 @@
+# User-facing ROS 2 parameters for the WA-T upper-limb node.
+#
+# The installer copies this factory file to
+# /home/nav01/zj_humanoid/config/naviai_default.yaml on first install. Edit the
+# persistent copy on the robot; later package upgrades keep it unchanged.
+
+/**:
+  ros__parameters:
+    # Upper-limb algorithm profile, distinct from the global ROBOT_TYPE=WA-T.
+    robot_type: WA-T
+    controller: V1
+
+    pub_frequency: 200
+    log_level: DEBUG
+    zmq_plot: true
+    collision_detection: false
+
+    motions_folder: /home/nav01/zj_humanoid/orin/motions/
+    drag_teach_folder: /home/nav01/zj_humanoid/orin/drag_teach_files/
+    record_frequency: 50
+    record_max_time: 180
+
+    hand_links.left.hand_model: F5D6_L
+    hand_links.left.enable: true
+    hand_links.left.mass_kg: 2.4
+    hand_links.left.cog_m: [0.0, 0.0, 0.05]
+    hand_links.right.hand_model: F5D6_L
+    hand_links.right.enable: true
+    hand_links.right.mass_kg: 2.4
+    hand_links.right.cog_m: [0.0, 0.0, 0.05]
+
+    default_payloads.left_arm.mass_kg: 0.0
+    default_payloads.left_arm.cog_m: [0.0, 0.0, 0.0]
+    default_payloads.right_arm.mass_kg: 0.0
+    default_payloads.right_arm.cog_m: [0.0, 0.0, 0.0]

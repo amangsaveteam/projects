@@ -6,3 +6,4 @@
 # their owning common_dep manifests.
 python3-yaml	0	Pico YAML configuration
 python3-psutil	0	Pico resource reporting
+supervisor	0	Supervisor RPC process manager for managed Pico modules

@@ -2,3 +2,4 @@
 #
 # Keep this manifest empty until the missing Pinocchio 3.4 and TinyXML2 ABI 6
 # runtime libraries are available as Noble-compatible offline payloads.
+supervisor	0	Supervisor RPC process manager for managed Pico modules
