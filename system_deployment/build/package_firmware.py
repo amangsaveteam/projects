@@ -27,6 +27,7 @@ MODULE_ID = re.compile(r"^[a-z][a-z0-9-]{0,62}$")
 HOST = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.:-]*$")
 DEPLOYMENT_ROOT = Path(__file__).resolve().parents[1]
 COMMON_ROOT = DEPLOYMENT_ROOT / "common"
+DEPLOY_ROOT = DEPLOYMENT_ROOT / "deploy"
 MIDDLEWARE_TEMPLATES = {
     "ORIN": "Middleware.orin.env",
     "PICO": "Middleware.pico.env",
@@ -1545,13 +1546,13 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                 if start_policy == "vision-preserve-shared" and not dry_run:
                     helper = stage / vision_helper_rel
                     helper.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(Path(__file__).resolve().parent / "install_vision_preserving_shared.py", helper)
+                    shutil.copy2(DEPLOY_ROOT / "install_vision_preserving_shared.py", helper)
                     target_checksums.append((file_sha256(helper), vision_helper_rel))
                 robot_helper_rel = "targets/{}/helpers/install_robot_with_verify_fix.py".format(target_id)
                 if start_policy == "robot-verify-fix" and not dry_run:
                     helper = stage / robot_helper_rel
                     helper.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(Path(__file__).resolve().parent / "install_robot_with_verify_fix.py", helper)
+                    shutil.copy2(DEPLOY_ROOT / "install_robot_with_verify_fix.py", helper)
                     target_checksums.append((file_sha256(helper), robot_helper_rel))
                 runs.append((
                     relpath,
@@ -1563,7 +1564,7 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                     resolve_robot_types(item.get("robot_types"), target_id + ".run"),
                 ))
             if requires_no_final_exec_helper and not dry_run:
-                helper_source = Path(__file__).resolve().parent / "install_run_without_final_exec.py"
+                helper_source = DEPLOY_ROOT / "install_run_without_final_exec.py"
                 helper_rel = "targets/{}/helpers/install_run_without_final_exec.py".format(target_id)
                 helper = stage / helper_rel
                 helper.parent.mkdir(parents=True, exist_ok=True)
@@ -1572,7 +1573,7 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
                 target_checksums.append((file_sha256(helper), helper_rel))
             if not dry_run:
                 helper = stage / "release_state.py"
-                shutil.copy2(Path(__file__).with_name("release_state.py"), helper)
+                shutil.copy2(DEPLOY_ROOT / "release_state.py", helper)
                 target_checksums.append((file_sha256(helper), "release_state.py"))
                 modules = {}
                 for artifact in artifacts:

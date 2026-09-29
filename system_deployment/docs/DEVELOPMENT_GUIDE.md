@@ -181,3 +181,31 @@ python3 -m py_compile system_deployment/build/package_firmware.py
 ```text
 dist/Middleware-2.0.0-1.run
 ```
+
+## 10. 生成 ROS 2 模块接口文档
+
+Python API 文档不等于模块运行接口。模块的 ROS 2 Topic、Service、Action 必须在目标设备上从运行时 graph 采集：
+
+```bash
+source /opt/ros/humble/setup.bash   # 或 jazzy
+source /etc/profile.d/zj_humanoid.sh
+python3 system_deployment/tools/generate_ros2_api_docs.py --output-dir /tmp/middleware-ros2-api
+```
+
+生成：
+
+```text
+/tmp/middleware-ros2-api/ROS2_API.md
+/tmp/middleware-ros2-api/ros2-api.json
+```
+
+采集内容包括节点、Topic 类型、Service 类型和 Action 类型。需要更详细的 QoS、发布者/订阅者和服务端/客户端关系时，再对 JSON 中的名称执行：
+
+```bash
+ros2 topic info -v /topic/name
+ros2 service type /service/name
+ros2 action info /action/name
+ros2 node info /node/name
+```
+
+采集前必须确保模块已经启动、ROS_DOMAIN_ID 正确、DDS 配置已经加载；否则只能得到不完整的 graph。

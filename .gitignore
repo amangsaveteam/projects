@@ -1,26 +1,31 @@
-# Local build outputs and temporary workspaces.
-/marscode/
-/dist/
-/tmp/
-/system_deployment/dist/
-/upperlimb/
-/upperlimb_jazzy/
-/chassis_jazzy/
-/chassis/
-# Generated Python caches
-__pycache__/
-*.py[cod]
+# Local editor/tool state
+.marscode/
 
-# Build and release artifacts
+# Build outputs and temporary workspaces (never source inputs)
+/dist/
+/system_deployment/dist/
+/output/
 /build/
-dist/
-output/
+/tmp/
+
+# Downloaded/device artifacts
 *.run
 *.firmware
 *.deb
 *.ddeb
-
-# Local device dumps and temporary workspaces
 nav01@*
 naviai@*
-tmp/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+
+# Legacy checkout-only payload directories
+/upperlimb/
+/upperlimb_jazzy/
+/chassis/
+/chassis_jazzy/
+
+# Keep source-controlled project structure explicit:
+# system_deployment/build, deploy, release, assets, common, config,
+# packages, image, docs and tests are source directories and must not be ignored.
