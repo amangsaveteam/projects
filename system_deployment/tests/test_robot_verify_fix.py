@@ -37,6 +37,15 @@ echo completed
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("completed", result.stdout)
 
+    def test_pico_verifier(self):
+        for status, check, expected in [(3, 0, 0), (0, 0, 1), (3, 7, 7)]:
+            original = self.script(status, check).replace("verify_robot_runtime", "verify_pico_robot_runtime").replace("Legacy service", "Legacy Robot service")
+            if status == 3 and check == 0:
+                self.assertEqual(self.run_script(original).returncode, 3)
+            fixed = helper.fix_robot_verifier(original)
+            self.assertEqual(self.run_script(fixed).returncode, expected)
+            self.assertEqual(helper.fix_robot_verifier(fixed), fixed)
+
     def test_active_service_still_fails(self):
         result = self.run_script(helper.fix_robot_verifier(self.script(service_status=0)))
         self.assertEqual(result.returncode, 1)

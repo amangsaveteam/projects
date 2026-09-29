@@ -8,6 +8,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.actions import PushRosNamespace
+from launch_ros.actions import SetRemap
 
 
 def generate_launch_description():
@@ -34,12 +35,18 @@ def generate_launch_description():
         ),
         # Start gmsl2-7 first, matching the vendor multi_gmsl_camera example.
         TimerAction(period=0.0, actions=[GroupAction([
-            PushRosNamespace("/zj_humanoid/sensor"), IncludeLaunchDescription(
+            PushRosNamespace("/zj_humanoid/sensor"),
+            SetRemap(src="depth_registered/image_raw", dst="aligned_depth_to_color/image_raw"),
+            SetRemap(src="depth_registered/camera_info", dst="aligned_depth_to_color/camera_info"),
+            IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(gmsl_launch),
                 launch_arguments={**common, "camera_name": "right_wrist", "usb_port": LaunchConfiguration("right_gmsl_port")}.items(),
             )])]),
         TimerAction(period=2.0, actions=[GroupAction([
-            PushRosNamespace("/zj_humanoid/sensor"), IncludeLaunchDescription(
+            PushRosNamespace("/zj_humanoid/sensor"),
+            SetRemap(src="depth_registered/image_raw", dst="aligned_depth_to_color/image_raw"),
+            SetRemap(src="depth_registered/camera_info", dst="aligned_depth_to_color/camera_info"),
+            IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(gmsl_launch),
                 launch_arguments={**common, "camera_name": "left_wrist", "usb_port": LaunchConfiguration("left_gmsl_port")}.items(),
             )])]),

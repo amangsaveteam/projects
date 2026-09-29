@@ -84,8 +84,24 @@ orin["extra_debs"] = [
 (work_dir / "package-urls.json").write_text(json.dumps(urls, indent=2) + "\n", encoding="utf-8")
 PY
 
+commit="$(git -C "$script_dir/../.." rev-parse --short HEAD 2>/dev/null || echo manual)"
+build_date="$(date +%Y%m%d)"
+version_file="$work_dir/wa-t-version.json"
+python3 - "$script_dir/special-wa-t-jk2-v1-version.json" "$version_file" "$commit" "$build_date" <<'PY2'
+import json
+import sys
+from pathlib import Path
+source = Path(sys.argv[1])
+destination = Path(sys.argv[2])
+commit = sys.argv[3]
+build_date = sys.argv[4]
+data = json.loads(source.read_text(encoding="utf-8"))
+data["output_name"] = f"Middleware_v2.0.0_project_wa_t_{commit}_{build_date}"
+destination.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+PY2
+
 python3 "$script_dir/build_one_stop_package.py" \
-    --version "$script_dir/special-wa-t-jk2-v1-version.json" \
+    --version "$version_file" \
     --urls "$work_dir/package-urls.json" \
     --supervisor "$script_dir/special-wa-t-jk2-v1-supervisor.json" \
     --output-dir "$script_dir/../../dist" \

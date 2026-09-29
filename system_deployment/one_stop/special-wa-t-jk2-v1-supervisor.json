@@ -14,7 +14,7 @@
       "supervisor_modules": [
         {
           "id": "chassis",
-          "description": "底盘 ROS 2 节点",
+          "description": "\u5e95\u76d8 ROS 2 \u8282\u70b9",
           "mode": "managed",
           "port": 19004,
           "working_directory": "/home/naviai",
@@ -36,7 +36,7 @@
         },
         {
           "id": "vanjee-lidar",
-          "description": "万集 716 mini 雷达",
+          "description": "\u4e07\u96c6 716 mini \u96f7\u8fbe",
           "mode": "managed",
           "port": 19006,
           "working_directory": "/home/naviai",
@@ -57,7 +57,7 @@
         },
         {
           "id": "livox-lidar",
-          "description": "Livox 雷达",
+          "description": "Livox \u96f7\u8fbe",
           "mode": "managed",
           "port": 19007,
           "working_directory": "/home/naviai",
@@ -101,7 +101,7 @@
         },
         {
           "id": "navigation",
-          "description": "统一导航核心",
+          "description": "\u7edf\u4e00\u5bfc\u822a\u6838\u5fc3",
           "mode": "managed",
           "port": 19009,
           "working_directory": "/home/naviai",
@@ -122,7 +122,7 @@
         },
         {
           "id": "naviai-nav2-rawdata",
-          "description": "导航原始数据记录",
+          "description": "\u5bfc\u822a\u539f\u59cb\u6570\u636e\u8bb0\u5f55",
           "mode": "managed",
           "port": 19010,
           "working_directory": "/home/naviai",
@@ -143,7 +143,7 @@
         },
         {
           "id": "diagnosis-system",
-          "description": "诊断系统",
+          "description": "\u8bca\u65ad\u7cfb\u7edf",
           "mode": "managed",
           "port": 19011,
           "working_directory": "/home/naviai",
@@ -164,7 +164,7 @@
         },
         {
           "id": "web-rviz",
-          "description": "Web RViz 页面服务",
+          "description": "Web RViz \u9875\u9762\u670d\u52a1",
           "mode": "managed",
           "port": 19012,
           "working_directory": "/opt/zj_humanoid/lib/web_rviz_ros2",
@@ -248,12 +248,12 @@
             "install -d -m 0755 \"$HOME\" \"$ROS_HOME\" \"$ROS_LOG_DIR\""
           ],
           "command": "/bin/bash /usr/lib/naviai/audio/start_audio.sh intent_router_mode:=bt enable_face_bridge:=true voiceprint_adapter_mode:=real gesture_backend:=pico pico_gateway_url:=ws://192.168.217.66:8765 enable_background_task_test:=true",
-          "autorestart": "unexpected",
+          "autorestart": "true",
           "startsecs": 5
         },
         {
           "id": "orbbec-camera",
-          "description": "Orbbec Gemini 305g 双腕相机",
+          "description": "Orbbec Gemini 305g \u53cc\u8155\u76f8\u673a",
           "mode": "managed",
           "port": 19013,
           "working_directory": "/var/lib/navi-sensor",
@@ -336,24 +336,50 @@
         },
         {
           "id": "hand",
-          "description": "Navi PICO dexhand interface",
+          "description": "Navi PICO EYou hand interface",
           "mode": "managed",
           "port": 19005,
           "startup_priority": 25,
           "working_directory": "/home/nav01",
           "source_files": [
-            "/etc/profile.d/zj_humanoid.sh"
+            "/etc/profile.d/zj_humanoid.sh",
+            "/opt/ros/humble/setup.bash",
+            "/opt/zj_humanoid/eyou/humble/setup.bash"
           ],
           "prelude": [
             "export HOME=/home/nav01 ROS_HOME=/home/nav01/.ros ROS_LOG_DIR=/var/log/naviai/hand/ros",
             "export LD_LIBRARY_PATH=/opt/zj_humanoid/lib/rtipc_runtime:/opt/zj_humanoid/lib/logging:/opt/zj_humanoid/lib/uplimb_runtime:${LD_LIBRARY_PATH:-}",
             "install -d -o nav01 -g nav01 -m 0755 /home/nav01/.ros /var/log/naviai/hand/ros"
           ],
-          "command": "ros2 launch dexhand_interface dexhand_hw_interface.launch.py",
+          "command": "/bin/bash -lc 'source /etc/profile.d/zj_humanoid.sh; source /opt/ros/humble/setup.bash; source /opt/zj_humanoid/eyou/humble/setup.bash; exec ros2 launch eyou_interface dual.launch.py'",
           "local_log_file": "/var/log/naviai/hand/hand.log",
           "autorestart": "unexpected",
           "startsecs": 3,
-          "disable_services": []
+          "disable_services": [],
+          "package": "eyou-interface"
+        },
+        {
+          "id": "hand-force",
+          "description": "Navi PICO DexHand six-axis force sensor publisher",
+          "mode": "managed",
+          "port": 19006,
+          "startup_priority": 26,
+          "working_directory": "/home/nav01",
+          "source_files": [
+            "/etc/profile.d/zj_humanoid.sh",
+            "/opt/ros/humble/setup.bash"
+          ],
+          "prelude": [
+            "export HOME=/home/nav01 ROS_HOME=/home/nav01/.ros ROS_LOG_DIR=/var/log/naviai/hand-force/ros",
+            "export LD_LIBRARY_PATH=/opt/zj_humanoid/lib/rtipc_runtime:/opt/zj_humanoid/lib/logging:/opt/zj_humanoid/lib/uplimb_runtime:${LD_LIBRARY_PATH:-}",
+            "install -d -o nav01 -g nav01 -m 0755 /home/nav01/.ros /var/log/naviai/hand-force/ros"
+          ],
+          "command": "ros2 launch dexhand_interface dexhand_hw_interface.launch.py",
+          "local_log_file": "/var/log/naviai/hand-force/hand-force.log",
+          "autorestart": "true",
+          "startsecs": 3,
+          "disable_services": [],
+          "package": "eyou-interface"
         }
       ],
       "managed_services": []

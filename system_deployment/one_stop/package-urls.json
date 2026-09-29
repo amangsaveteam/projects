@@ -50,6 +50,24 @@
       },
       "extra_debs": [
         {
+          "name": "eyou-client",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-client_3.3.0%2Bjammy_all.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "eyou-msgs-typesupport",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs-typesupport_3.3.0%2Bjammy_arm64.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "eyou-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs_3.3.0%2Bjammy_all.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
           "name": "orin-common",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/navi_common_dep-2.0.0-release-humble-arm64.deb",
           "sha256": "",
@@ -428,7 +446,12 @@
           "name": "robot",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/robot/develop/navi_pico_robot_installer-2.0.0-release-humble-amd64.run",
           "sha256": "",
-          "arguments": []
+          "arguments": [
+            "--",
+            "--robot_type",
+            "{robot_type}"
+          ],
+          "start_policy": "robot-verify-fix"
         },
         {
           "name": "upperlimb",

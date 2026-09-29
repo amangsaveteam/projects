@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """Install an Audio vendor run package but leave its final ROS launch to Supervisor."""
 
 import argparse

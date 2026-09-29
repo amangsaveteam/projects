@@ -351,7 +351,7 @@ def resolve_run_start_policy(value, field):
     """Return how a vendor run package is started after its installation phase."""
     if value is None:
         return "vendor"
-    if value not in {"vendor", "supervisor", "vision-preserve-shared", "robot-verify-fix"}:
+    if value not in {"vendor", "isolated", "supervisor", "vision-preserve-shared", "robot-verify-fix"}:
         raise BuildError(field + ".start_policy must be vendor, supervisor, vision-preserve-shared or robot-verify-fix")
     return value
 
@@ -404,6 +404,8 @@ def render_run_command(relpath, arguments, start_policy="vendor", helper_rel=Non
     for argument in arguments:
         rendered.append('"$robot_type"' if argument == "{robot_type}" else shlex.quote(argument))
     suffix = " " + " ".join(rendered) if rendered else ""
+    if start_policy == "isolated":
+        return '/usr/bin/env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin HOME=/root /usr/bin/sudo /bin/bash "$root/{}"{}'.format(relpath, suffix)
     if start_policy in {"supervisor", "vision-preserve-shared", "robot-verify-fix"}:
         if helper_rel is None:
             raise BuildError("a supervisor-managed run requires its installer helper")
@@ -440,7 +442,7 @@ def supervisor_module(target_id, index, value):
     if not isinstance(value, dict):
         raise BuildError(field + " must be an object")
     allowed = {
-        "id", "description", "mode", "port", "register", "service_name", "restart_service", "systemd_service", "command", "_package_name",
+        "id", "description", "package", "mode", "port", "register", "service_name", "restart_service", "systemd_service", "command", "_package_name",
         "working_directory", "source_files", "unset_environment", "environment", "prelude",
         "autorestart", "exitcodes", "startsecs", "startretries", "timeout_stop_seconds", "readiness_command", "local_log_file",
         "after_services", "part_of_services", "disable_services", "log_maxbytes", "log_backups", "native_rpc_config",
@@ -790,7 +792,7 @@ def services_from_run(run_path):
 
 
 def header():
-    lines = ["#!/bin/sh", "set -eu", "archive_line=10", "work_dir=$(mktemp -d \"${TMPDIR:-/tmp}/navi-one-stop.XXXXXX\")", "cleanup() { rm -rf \"$work_dir\"; }", "trap cleanup EXIT; trap 'exit 129' HUP; trap 'exit 130' INT; trap 'exit 143' TERM", "tail -n +\"$archive_line\" \"$0\" | tar -xzf - -C \"$work_dir\"", "status=0; \"$work_dir/install.sh\" \"$@\" || status=$?; exit \"$status\"", "__ARCHIVE_BELOW__", ""]
+    lines = ["#!/bin/sh", "set -eu", "archive_line=10", "work_dir=$(mktemp -d \"${TMPDIR:-/tmp}/navi-one-stop.XXXXXX\")", "cleanup() { if [ \"${status:-1}\" -eq 0 ]; then rm -rf \"$work_dir\"; else echo \"ERROR: preserving failed installation workspace: $work_dir\" >&2; fi; }", "trap cleanup EXIT; trap 'exit 129' HUP; trap 'exit 130' INT; trap 'exit 143' TERM", "tail -n +\"$archive_line\" \"$0\" | tar -xzf - -C \"$work_dir\"", "status=0; \"$work_dir/install.sh\" \"$@\" || status=$?; exit \"$status\"", "__ARCHIVE_BELOW__", ""]
     return "\n".join(lines).encode("utf-8")
 
 
@@ -1087,8 +1089,8 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
             "    fi",
             "  done",
             "}",
-            "disable_replaced_services",
         ])
+        lines.append("disable_replaced_services")
     if any(len(extra) > 5 and extra[5] for extra in extras):
         lines.extend([
             "wait_for_debian_package() {",
@@ -1197,11 +1199,6 @@ def target_install(target_id, system_config_rel, common_rel, common, extras, run
         lines.append("install_stage=" + shlex.quote("running module installer " + Path(item).name))
         lines.append("wait_for_dpkg_lock")
         if system_config_rel:
-            # A vendor installer may alter Middleware.env (the Pico upperlimb
-            # installer currently does).  Load the known-good carrier before
-            # each installer and restore it immediately afterwards so all
-            # following installers and generated services share one ROS/DDS
-            # identity.
             lines.append("load_shared_middleware")
         module_command = "run_module_installer " + prefix + render_run_command(item, arguments, start_policy, helper_rel)
         lines.extend((

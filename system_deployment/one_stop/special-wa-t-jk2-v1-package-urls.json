@@ -88,6 +88,24 @@
       },
       "extra_debs": [
         {
+          "name": "eyou-client",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-client_3.3.0%2Bjammy_all.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "eyou-msgs-typesupport",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs-typesupport_3.3.0%2Bjammy_arm64.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
+          "name": "eyou-msgs",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs_3.3.0%2Bjammy_all.deb",
+          "sha256": "",
+          "installers": []
+        },
+        {
           "name": "libacl1-dev",
           "version": "2.3.1-1",
           "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/pool/main/a/acl/libacl1-dev_2.3.1-1_arm64.deb",
@@ -676,7 +694,19 @@
           "name": "robot",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/robot/develop/navi_pico_robot_installer-2.0.0-release-humble-amd64.run",
           "sha256": "",
-          "arguments": []
+          "arguments": [
+            "--",
+            "--robot_type",
+            "{robot_type}"
+          ],
+          "start_policy": "robot-verify-fix"
+        },
+        {
+          "name": "back-screen",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/back-screen/zj-humanoid-back-screen-installer.run",
+          "sha256": "",
+          "arguments": [],
+          "start_policy": "isolated"
         }
       ]
     }

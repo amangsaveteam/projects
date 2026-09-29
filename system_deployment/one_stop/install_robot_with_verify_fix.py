@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Correct the known Orin Robot verifier status leak before installation."""
+"""Correct the known Orin/Pico Robot verifier status leak before installation."""
 
 import argparse
 import re
@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 
-VERIFIER = re.compile(r"(?ms)^verify_robot_runtime\(\) \{\n.*?^\}")
+VERIFIER = re.compile(r"(?ms)^verify_(?:pico_)?robot_runtime\(\) \{\n.*?^\}")
 LEGACY_TAIL = '''  for legacy in ${LEGACY_ROBOT_SERVICES}; do
     systemctl is-active --quiet "${legacy}" && die "Legacy service is still active: ${legacy}"
   done
@@ -18,15 +18,16 @@ LEGACY_TAIL = '''  for legacy in ${LEGACY_ROBOT_SERVICES}; do
 def fix_robot_verifier(script: str) -> str:
     matches = list(VERIFIER.finditer(script))
     if len(matches) != 1:
-        raise RuntimeError("cannot identify the Orin Robot runtime verifier")
+        raise RuntimeError("cannot identify the Robot runtime verifier")
     match = matches[0]
     body = match.group()
-    fixed_tail = LEGACY_TAIL[:-1] + "  return 0\n}"
+    legacy_tail = LEGACY_TAIL.replace("Legacy service", "Legacy Robot service") if "verify_pico_robot_runtime()" in body else LEGACY_TAIL
+    fixed_tail = legacy_tail[:-1] + "  return 0\n}"
     if body.endswith(fixed_tail):
         return script
-    if not body.endswith(LEGACY_TAIL):
-        raise RuntimeError("unrecognized Orin Robot verifier; refusing to modify it")
-    fixed = body[:-len(LEGACY_TAIL)] + fixed_tail
+    if not body.endswith(legacy_tail):
+        raise RuntimeError("unrecognized Robot verifier; refusing to modify it")
+    fixed = body[:-len(legacy_tail)] + fixed_tail
     return script[:match.start()] + fixed + script[match.end():]
 
 
