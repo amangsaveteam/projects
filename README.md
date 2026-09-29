@@ -18,10 +18,10 @@
 
 ## 构建与安装
 
-在 `system_deployment/one_stop/package-urls.json` 配置模块 URL、安装顺序和环境参数，在同目录 `supervisor.json` 配置服务，`version.json` 设置 `version`、`output_name`。构建机需能访问配置中的制品服务器，在仓库根目录执行：
+在 `system_deployment/release/package-urls.json` 配置模块 URL、安装顺序和环境参数，在同目录 `supervisor.json` 配置服务，`version.json` 设置 `version`、`output_name`。构建机需能访问配置中的制品服务器，在仓库根目录执行：
 
 ```bash
-./system_deployment/one_stop/build_release.sh
+./system_deployment/build/build_release.sh
 # 输出：dist/navi_one_stop_installer-<version>.run
 ```
 
@@ -76,7 +76,7 @@ ZYD、ZYD_V1、JK、JK2_V1
 
 `external` 模块的运行环境由其原生服务维护，不能通过此 `runtime` 修改；应由模块启动脚本读取自己的配置文件。此类误配会在构建时报错。环境参数变更后需重新打包安装；敏感凭据不要写入这些随总包交付的配置。
 
-以下操作在仓库根目录完成。修改已有目标时，在 `system_deployment/one_stop/package-urls.json` 找到 `targets.orin-humble` 等对应条目；下面的示例是该目标内的配置片段，不要覆盖整个文件。
+以下操作在仓库根目录完成。修改已有目标时，在 `system_deployment/release/package-urls.json` 找到 `targets.orin-humble` 等对应条目；下面的示例是该目标内的配置片段，不要覆盖整个文件。
 
 ### 1. 配置模块安装包
 
@@ -244,7 +244,7 @@ Vision 的 `prelude` 在降权前设置日志父目录和子目录的属主，�
 
 ### 3. 设置版本、构建和验收
 
-在 `system_deployment/one_stop/version.json` 同步修改：
+在 `system_deployment/release/version.json` 同步修改：
 
 ```json
 "version": "2.0.0-2",
@@ -254,8 +254,8 @@ Vision 的 `prelude` 在降权前设置日志父目录和子目录的属主，�
 然后执行：
 
 ```bash
-./system_deployment/one_stop/build_release.sh --dry-run
-./system_deployment/one_stop/build_release.sh
+./system_deployment/build/build_release.sh --dry-run
+./system_deployment/build/build_release.sh
 ```
 
 `--dry-run` 不下载工件，不验证 URL 可达性或目标设备上的文件是否存在。正式构建成功后，将产物复制到对应测试设备，先运行 `-- --pretest`，再按上文安装；通过 `navi-version`、Agent 页面和业务用例确认版本、服务及功能。

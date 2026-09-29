@@ -12,12 +12,12 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location("build_one_stop_package", ROOT / "one_stop/build_one_stop_package.py")
+SPEC = importlib.util.spec_from_file_location("build_one_stop_package", ROOT / "build/package_firmware.py")
 builder = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(builder)
 HELPER_SPEC = importlib.util.spec_from_file_location(
-    "install_run_without_final_exec", ROOT / "one_stop/install_run_without_final_exec.py"
+    "install_run_without_final_exec", ROOT / "deploy/install_run_without_final_exec.py"
 )
 audio_install_helper = importlib.util.module_from_spec(HELPER_SPEC)
 assert HELPER_SPEC.loader is not None
@@ -44,8 +44,8 @@ class OneStopPackageTest(unittest.TestCase):
 
     def test_special_navigation_dependencies_precede_function_packages(self):
         config = builder.load_delivery(
-            ROOT / "one_stop/special-wa-t-jk2-v1-package-urls.json",
-            ROOT / "one_stop/special-wa-t-jk2-v1-supervisor.json",
+            ROOT / "release/special-wa-t-jk2-v1-package-urls.json",
+            ROOT / "release/special-wa-t-jk2-v1-supervisor.json",
         )
         extras = config["targets"]["orin-humble"]["extra_debs"]
         first_module_dependency = next(i for i, item in enumerate(extras)
@@ -79,8 +79,8 @@ class OneStopPackageTest(unittest.TestCase):
     def test_orin_deliveries_share_rpc_address_and_retire_conflicting_units(self):
         for prefix in ("", "special-wa-t-jk2-v1-"):
             target = builder.load_delivery(
-                ROOT / ("one_stop/" + prefix + "package-urls.json"),
-                ROOT / ("one_stop/" + prefix + "supervisor.json"),
+                ROOT / ("release/" + prefix + "package-urls.json"),
+                ROOT / ("release/" + prefix + "supervisor.json"),
             )["targets"]["orin-humble"]
             self.assertEqual(target["supervisor"]["internal_ip"], "192.168.217.100")
             retired = builder.supervisor_disabled_services("orin-humble", target)
@@ -89,8 +89,8 @@ class OneStopPackageTest(unittest.TestCase):
 
     def test_special_audio_install_defers_launch_to_supervisor(self):
         config = builder.load_delivery(
-            ROOT / "one_stop/special-wa-t-jk2-v1-package-urls.json",
-            ROOT / "one_stop/special-wa-t-jk2-v1-supervisor.json",
+            ROOT / "release/special-wa-t-jk2-v1-package-urls.json",
+            ROOT / "release/special-wa-t-jk2-v1-supervisor.json",
         )
         audio = next(item for item in config["targets"]["orin-humble"]["runs"]
                      if item["name"] == "audio")
@@ -196,7 +196,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             self.assertFalse(marker.exists())
 
     def test_common_debs_are_downloaded_from_the_artifact_server_not_built_in_one_stop(self) -> None:
-        targets = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]
+        targets = builder.load_delivery(ROOT / "release/package-urls.json")["targets"]
         self.assertEqual(
             targets["orin-humble"]["extra_debs"][0]["url"],
             "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/"
@@ -211,7 +211,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertNotIn("common_builds", targets["pico-humble"])
 
     def test_pico_common_is_downloaded_before_module_dependencies(self) -> None:
-        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["pico-humble"]
+        target = builder.load_delivery(ROOT / "release/package-urls.json")["targets"]["pico-humble"]
         extras = target["extra_debs"]
         self.assertEqual([item["name"] for item in extras[:3]], ["pico-common", "upperlimb-common", "robot-common-dep"])
         self.assertEqual(
@@ -316,7 +316,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         )
 
     def test_orin_run_arguments_match_each_embedded_installer_interface(self) -> None:
-        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
+        config = builder.load_delivery(ROOT / "release/package-urls.json")
         for target_name in ("orin-humble", "orin-jazzy"):
             runs = {
                 item["name"]: item["arguments"]
@@ -337,7 +337,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
                 self.assertEqual(runs["vision"], [])
 
     def test_pico_run_arguments_match_each_installer_interface(self) -> None:
-        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
+        config = builder.load_delivery(ROOT / "release/package-urls.json")
         humble = {
             item["name"]: item["arguments"]
             for item in config["targets"]["pico-humble"]["runs"]
@@ -367,7 +367,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertGreater(script.rfind("\ninstall_system_config\n"), script.index(run))
 
     def test_orin_humble_robot_migrates_the_retired_monolithic_package_before_install(self) -> None:
-        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
+        target = builder.load_delivery(ROOT / "release/package-urls.json")["targets"]["orin-humble"]
         robot = next(item for item in target["runs"] if item["name"] == "robot")
         self.assertEqual(robot["remove_packages"], ["navi-robot-state"])
         install = builder.target_install(
@@ -406,7 +406,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
                 builder.resolve_installers(payload, ["auto"], "extra.installers", False)
 
     def test_orin_humble_audio_is_installed_only_by_its_vendor_run_package(self) -> None:
-        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
+        config = builder.load_delivery(ROOT / "release/package-urls.json")
         humble = config["targets"]["orin-humble"]
         self.assertNotIn("audio", {item["name"] for item in humble["extra_debs"]})
         self.assertNotIn("audio-module", {item["name"] for item in humble["extra_debs"]})
@@ -419,7 +419,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         )
 
     def test_orin_humble_installs_cloud_common_and_legacy_identity_before_sensor(self) -> None:
-        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
+        target = builder.load_delivery(ROOT / "release/package-urls.json")["targets"]["orin-humble"]
         extras = target["extra_debs"]
         self.assertEqual(
             [item["name"] for item in extras[:4]],
@@ -472,7 +472,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             )
 
     def test_vision_is_installed_only_by_its_vendor_run_package_when_available(self) -> None:
-        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
+        config = builder.load_delivery(ROOT / "release/package-urls.json")
         humble = config["targets"]["orin-humble"]
         jazzy = config["targets"]["orin-jazzy"]
         self.assertNotIn("vision", {item["name"] for item in humble["extra_debs"]})
@@ -620,7 +620,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("install_stage='starting managed services'", install)
 
     def test_vision_supervisor_uses_the_documented_isolated_dds_environment(self):
-        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-jazzy"]
+        target = builder.load_delivery(ROOT / "release/package-urls.json")["targets"]["orin-jazzy"]
         with tempfile.TemporaryDirectory() as temporary:
             stage = Path(temporary)
             startup, registrations, _, paths = builder.stage_supervisor_modules(
@@ -639,7 +639,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             self.assertIn("zj-humanoid-orin-vision-supervisor.service", startup[0][0])
 
     def test_humble_vision_repairs_parent_log_permissions_before_dropping_user(self):
-        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
+        target = builder.load_delivery(ROOT / "release/package-urls.json")["targets"]["orin-humble"]
         module = next(item for item in target["supervisor_modules"] if item["id"] == "vision")
         script = builder.supervisor_launch_script(module)
         self.assertLess(script.index("install -d -o naviai -g naviai -m 0750 /var/log/naviai/vision"),
@@ -682,7 +682,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             self.assertNotIn("/bin/bash -c", script)
 
     def test_orin_supervisor_modules_are_generated_from_the_only_delivery_config(self) -> None:
-        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
+        config = builder.load_delivery(ROOT / "release/package-urls.json")
         target = config["targets"]["orin-humble"]
         with tempfile.TemporaryDirectory() as temporary:
             stage = Path(temporary)
@@ -775,7 +775,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("exec /bin/bash /usr/lib/naviai/audio/start_audio.sh", audio_launch)
 
     def test_lingbot_waits_for_sensor_and_restarts_while_camera_initializes(self) -> None:
-        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
+        target = builder.load_delivery(ROOT / "release/package-urls.json")["targets"]["orin-humble"]
         lingbot = next(module for module in target["supervisor_modules"] if module["id"] == "manip-lingbot")
         self.assertEqual(lingbot["after_services"], ["zj-humanoid-sensor.service"])
         self.assertEqual(lingbot["startup_priority"], 110)
@@ -792,7 +792,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("navi-vision-supervisor.service", script)
 
     def test_navigation_chassis_services_are_managed_by_supervisord(self) -> None:
-        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["orin-humble"]
+        target = builder.load_delivery(ROOT / "release/package-urls.json")["targets"]["orin-humble"]
         chassis = next(module for module in target["supervisor_modules"] if module["id"] == "chassis")
         self.assertEqual(chassis["mode"], "managed")
         self.assertEqual(chassis["port"], 19004)
@@ -879,7 +879,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
     def test_build_rejects_duplicate_supervisor_ports_on_one_target(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
-            supervisor = json.loads((ROOT / "one_stop/supervisor.json").read_text(encoding="utf-8"))
+            supervisor = json.loads((ROOT / "release/supervisor.json").read_text(encoding="utf-8"))
             modules = supervisor["targets"]["pico-humble"]["supervisor_modules"]
             next(module for module in modules if module["id"] == "display")["port"] = 19002
             supervisor_path = directory / "supervisor.json"
@@ -887,12 +887,12 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
 
             with self.assertRaisesRegex(builder.BuildError, "duplicate Supervisor port in pico-humble"):
                 builder.build(
-                    ROOT / "one_stop/version.json", ROOT / "one_stop/package-urls.json",
+                    ROOT / "release/version.json", ROOT / "release/package-urls.json",
                     directory / "out", supervisor_file=supervisor_path,
                 )
 
     def test_pico_native_supervisor_modules_are_registered_without_config_injection(self) -> None:
-        config = builder.load_delivery(ROOT / "one_stop/package-urls.json")
+        config = builder.load_delivery(ROOT / "release/package-urls.json")
         target = config["targets"]["pico-humble"]
         with tempfile.TemporaryDirectory() as temporary:
             stage = Path(temporary)
@@ -958,7 +958,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertNotIn("configure_sensor_rpc.py", script)
 
     def test_pico_startup_priority_waits_for_each_service_to_be_active(self) -> None:
-        target = builder.load_delivery(ROOT / "one_stop/package-urls.json")["targets"]["pico-humble"]
+        target = builder.load_delivery(ROOT / "release/package-urls.json")["targets"]["pico-humble"]
         priorities = builder.supervisor_service_priorities("pico-humble", target)
         script = builder.target_install(
             "pico-humble", "payloads/pico-humble/system-config", "", None, [], [],

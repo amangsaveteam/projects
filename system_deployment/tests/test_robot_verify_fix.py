@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location(
-    "robot_verify_fix", ROOT / "one_stop/install_robot_with_verify_fix.py"
+    "robot_verify_fix", ROOT / "deploy/install_robot_with_verify_fix.py"
 )
 helper = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(helper)

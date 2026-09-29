@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 SPEC = importlib.util.spec_from_file_location(
-    "release_state", Path(__file__).resolve().parents[1] / "one_stop/release_state.py")
+    "release_state", Path(__file__).resolve().parents[1] / "deploy/release_state.py")
 state = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(state)
 

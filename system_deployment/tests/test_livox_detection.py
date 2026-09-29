@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "one_stop/tools/orin-humble/detect_livox_model.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "assets/orin-humble/tools/orin-humble/detect_livox_model.py"
 SPEC = importlib.util.spec_from_file_location("detect_livox_model", SCRIPT)
 detector = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('builder_finalization', ROOT / 'one_stop/build_one_stop_package.py')
+spec = importlib.util.spec_from_file_location('builder_finalization', ROOT / 'build/package_firmware.py')
 builder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builder)
 
@@ -15,8 +15,8 @@ spec.loader.exec_module(builder)
 class InstallFinalizationTest(unittest.TestCase):
     def test_all_delivery_targets_finalize_for_both_models(self):
         for prefix in ('', 'special-wa-t-jk2-v1-'):
-            config = builder.load_delivery(ROOT / f'one_stop/{prefix}package-urls.json',
-                                           ROOT / f'one_stop/{prefix}supervisor.json')
+            config = builder.load_delivery(ROOT / f'release/{prefix}package-urls.json',
+                                           ROOT / f'release/{prefix}supervisor.json')
             for target_id, target in config['targets'].items():
                 for model in ('WA-T', 'JK2-V1'):
                     with self.subTest(delivery=prefix, target=target_id, model=model), tempfile.TemporaryDirectory() as tmp:

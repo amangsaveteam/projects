@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 import unittest
 
-SPEC = importlib.util.spec_from_file_location("builder", Path(__file__).resolve().parents[1] / "one_stop/build_one_stop_package.py")
+SPEC = importlib.util.spec_from_file_location("builder", Path(__file__).resolve().parents[1] / "build/package_firmware.py")
 builder = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(builder)
 
@@ -49,7 +49,7 @@ class SplitConfigTest(unittest.TestCase):
             self.assertEqual(result.stdout, value)
 
     def test_current_split_config_loads_without_mutating_packages(self):
-        path = Path(__file__).resolve().parents[1] / "one_stop/package-urls.json"
+        path = Path(__file__).resolve().parents[1] / "release/package-urls.json"
         self.assertNotIn("supervisor_modules", builder.load(path)["targets"]["orin-humble"])
         joined = builder.load_delivery(path)["targets"]["orin-humble"]
         self.assertIn("supervisor_modules", joined)

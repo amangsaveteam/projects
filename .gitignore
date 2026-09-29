@@ -7,3 +7,20 @@
 /upperlimb_jazzy/
 /chassis_jazzy/
 /chassis/
+# Generated Python caches
+__pycache__/
+*.py[cod]
+
+# Build and release artifacts
+/build/
+dist/
+output/
+*.run
+*.firmware
+*.deb
+*.ddeb
+
+# Local device dumps and temporary workspaces
+nav01@*
+naviai@*
+tmp/

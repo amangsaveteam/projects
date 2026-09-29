@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess
 import unittest
 
-spec = importlib.util.spec_from_file_location('vision_adapter', Path(__file__).resolve().parents[1] / 'one_stop/install_vision_preserving_shared.py')
+spec = importlib.util.spec_from_file_location('vision_adapter', Path(__file__).resolve().parents[1] / 'deploy/install_vision_preserving_shared.py')
 adapter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(adapter)
 

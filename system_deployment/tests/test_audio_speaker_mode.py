@@ -5,7 +5,7 @@ import subprocess
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('audio_install', ROOT / 'one_stop/install_run_without_final_exec.py')
+spec = importlib.util.spec_from_file_location('audio_install', ROOT / 'deploy/install_run_without_final_exec.py')
 helper = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(helper)
 
@@ -30,7 +30,7 @@ exit 9
             self.assertEqual('microphone-required' in result.stdout, mode == 'full')
 
     def test_runtime_selects_playback_graph_or_preserves_full_arguments(self):
-        script = (ROOT / 'one_stop/audio/start_audio.sh').read_text()
+        script = (ROOT / 'assets/orin-humble/audio/start_audio.sh').read_text()
         # Shadow ros2 through a shell function, including the final exec.
         script = script.replace('exec ros2 ', 'ros2 ')
         stub = 'ros2() { printf "%s\\n" "$@"; }\n'
