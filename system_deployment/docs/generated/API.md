@@ -69,7 +69,7 @@ Validate one legacy Supervisor module now owned by the one-stop config.
 
 #### function `def supervisor_launch_script(module)`
 
-#### function `def supervisor_entrypoint_script(module, paths)`
+#### function `def supervisor_entrypoint_script(module, paths, log_group)`
 
 #### function `def supervisor_systemd_service(module, paths)`
 

@@ -142,6 +142,12 @@ source /path/to/your_workspace/install/setup.bash
 
 ## 发现不到话题时检查
 
+启动链是：模块脚本加载 `Middleware.env`，环境变量设置
+`RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` 和
+`CYCLONEDDS_URI=file:///etc/zj_humanoid/cyclonedds.xml`，随后 CycloneDDS 读取 XML 中的
+`<NetworkInterface address="192.168.218.0"/>`。因此 ROS 2 会选择 218 网段的现有网卡；XML
+负责选择接口，不负责给网卡分配主机地址。
+
 ```bash
 printenv | grep -E 'ROS_|RMW_|CYCLONEDDS'
 ros2 node list
@@ -178,7 +184,7 @@ http://<PICO_IP>:9080
 WA-T Pico 默认地址：
 
 ```text
-http://192.168.217.66:9080
+http://192.168.218.66:9080
 ```
 
 Orin：
@@ -232,9 +238,9 @@ WA-T Pico 模块及 RPC 端口：
 
 | 模块 | RPC 地址 |
 |---|---|
-| robot | `192.168.217.66:19002/RPC2` |
-| upperlimb | `192.168.217.66:19003/RPC2` |
-| hand | `192.168.217.66:19005/RPC2` |
+| robot | `192.168.218.66:19002/RPC2` |
+| upperlimb | `192.168.218.66:19003/RPC2` |
+| hand | `192.168.218.66:19005/RPC2` |
 
 检查端口：
 
@@ -246,7 +252,7 @@ ss -ltnp | grep -E ':19002|:19003|:19005'
 
 ```bash
 curl -i -u agent:1 \
-  http://192.168.217.66:19002/RPC2
+  http://192.168.218.66:19002/RPC2
 ```
 
 HTTP `400 Bad Request` 通常表示 RPC 端点已经连接成功，但请求不是 XML-RPC 格式；`Connection refused` 才表示服务没有监听或端口不可达。

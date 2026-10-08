@@ -15,6 +15,29 @@ This file is the persistent contract for the architecture guardian agent.
 - `docs/`: user and architecture documentation.
 - `tests/`: behavior and architecture checks.
 
+## Release and Agent contracts
+
+- `release/package-urls.json` is the only owner of target delivery inputs. Add
+  DEB/RUN entries under the target's `extra_debs`/`runs`; do not add download
+  or install lists to Python, shell, `assets/`, or Agent files.
+- `release/supervisor.json` is the only owner of Supervisor module ownership,
+  ports, startup order, commands, and systemd/external integration. Every
+  module id and port is unique within a target and every module uses one of
+  `managed`, `external`, or `systemd` mode.
+- The Agent base configuration is installed from
+  `packages/supervisor-agent/resources/{orin,pico}-modules.json`. Per-module
+  additions belong in the configured `modules.d` directory and must be merged
+  by the Agent; do not edit generated device files as a release change.
+- Agent RPC credentials are provisioned by the packaged initializer and native
+  Supervisor RPC adapters must use the configured credential file. Do not add
+  a second credential scheme, ad-hoc service, or direct startup path.
+- Deployment changes must preserve the documented sequence: target/robot
+  identity validation, common and module package installation, configuration
+  staging, Agent/Supervisor registration, then service start and release-state
+  recording.
+- New or changed release structure must update the relevant documentation and
+  pass the architecture guard plus the release dry-run before merge.
+
 ## Required change procedure
 
 1. Read `system_deployment/architecture/ARCHITECTURE.md` and `system_deployment/architecture/FILE_INDEX.md`.

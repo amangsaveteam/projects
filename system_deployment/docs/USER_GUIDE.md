@@ -77,10 +77,10 @@ Orin 聚合页面会通过 Pico Agent 展示 `pico / robot`、`pico / upperlimb`
 
 | Pico 模块 | Supervisor RPC | systemd 服务 |
 | --- | --- | --- |
-| robot | `192.168.217.66:19002/RPC2` | `zj-humanoid-pico-robot-supervisor.service` |
-| upperlimb | `192.168.217.66:19003/RPC2` | `zj-humanoid-pico-upperlimb-supervisor.service` |
-| display | `192.168.217.66:19004/RPC2` | `zj-humanoid-pico-display-supervisor.service` |
-| Pico Agent | `192.168.217.66:9080` | `zj-humanoid-pico-supervisor-agent.service` |
+| robot | `192.168.218.66:19002/RPC2` | `zj-humanoid-pico-robot-supervisor.service` |
+| upperlimb | `192.168.218.66:19003/RPC2` | `zj-humanoid-pico-upperlimb-supervisor.service` |
+| display | `192.168.218.66:19004/RPC2` | `zj-humanoid-pico-display-supervisor.service` |
+| Pico Agent | `192.168.218.66:9080` | `zj-humanoid-pico-supervisor-agent.service` |
 
 WA 设备不使用下肢模块。`navi-pico-legged-supervisor.service` 必须处于禁用状态，避免占用 display 的 `19004` 端口。
 
@@ -118,6 +118,28 @@ Pico display 日志位于：
 ```text
 /var/log/naviai/display/display.log
 /var/log/naviai/display/ros/
+```
+
+Supervisor 主进程继续由 root 管理，但日志目录使用设备用户所在的日志组：Orin 为
+`naviai`，Pico 为 `nav01`。目录使用 setgid 权限，后续 Supervisor 重启创建的日志仍可由对应用户读取。
+已有设备升级前可执行一次权限修复：
+
+```bash
+# Orin
+sudo chgrp -R naviai /var/log/naviai
+sudo find /var/log/naviai -type d -exec chmod g+rx,g+s {} +
+sudo find /var/log/naviai -type f -exec chmod g+r {} +
+
+# Pico（在 Pico 上执行）
+sudo chgrp -R nav01 /var/log/naviai
+sudo find /var/log/naviai -type d -exec chmod g+rx,g+s {} +
+sudo find /var/log/naviai -type f -exec chmod g+r {} +
+```
+
+修复后无需 `sudo` 即可查看，例如：
+
+```bash
+tail -n 200 /var/log/naviai/upperlimb/upperlimb.log
 ```
 
 ## 6. Pico 日常控制

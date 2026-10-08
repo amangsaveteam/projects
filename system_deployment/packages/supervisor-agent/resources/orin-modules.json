@@ -9,7 +9,7 @@
   "modules": {},
   "remote_agents": {
     "pico": {
-      "endpoint": "http://192.168.217.66:9080"
+      "endpoint": "http://192.168.218.66:9080"
     }
   }
 }

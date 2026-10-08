@@ -541,16 +541,17 @@ def supervisor_launch_script(module):
     return "\n".join(lines) + "\n"
 
 
-def supervisor_entrypoint_script(module, paths):
+def supervisor_entrypoint_script(module, paths, log_group):
     identifier = module["id"]
     runtime_dir = "{}/{}".format(paths["runtime_root"], identifier)
     log_dir = "{}/{}".format(paths["log_root"], identifier)
     install_dir = "{}/{}".format(paths["module_root"], identifier)
     lines = [
-        "#!/bin/bash", "set -euo pipefail", 'runtime_dir="{}"'.format(runtime_dir),
+        "#!/bin/bash", "set -euo pipefail", "umask 0007", 'runtime_dir="{}"'.format(runtime_dir),
         'log_dir="{}"'.format(log_dir), 'config_path="${runtime_dir}/supervisord.conf"',
         "password_file={}".format(shlex.quote(paths["agent_password_file"])),
-        'install -d -m 0750 "$runtime_dir" "$log_dir"',
+        'install -d -m 0750 "$runtime_dir"',
+        'install -d -o root -g {} -m 2750 "$(dirname "$log_dir")" "$log_dir"'.format(log_group),
         'install -d -m 0755 {}'.format(shlex.quote(module['working_directory'])),
         'password=$(tr -d "\\r\\n" < "$password_file")',
         '[[ "$password" == 1 || "$password" =~ ^[[:xdigit:]]{64}$ ]] || { echo "invalid Supervisor Agent RPC credential" >&2; exit 1; }',
@@ -560,7 +561,7 @@ def supervisor_entrypoint_script(module, paths):
         '  exit 1',
         'fi',
         'cat > "$config_path" <<EOF',
-        "[supervisord]", "nodaemon=true", "user=root", "logfile={}/supervisord.log".format(log_dir),
+        "[supervisord]", "nodaemon=true", "user=root", "umask=007", "logfile={}/supervisord.log".format(log_dir),
         "pidfile={}/supervisord.pid".format(runtime_dir), "", "[unix_http_server]",
         "file={}/supervisor.sock".format(runtime_dir), "chmod=0700", "", "[inet_http_server]",
         "port={}:{}".format(paths["internal_ip"], module["port"]), "username=agent", "password=${password}", "",
@@ -639,7 +640,8 @@ def stage_supervisor_modules(stage, target_id, target, checksums, dry_run):
             directory.mkdir(parents=True, exist_ok=True)
             launch, entrypoint, unit = stage / launch_rel, stage / entrypoint_rel, stage / unit_rel
             launch.write_text(supervisor_launch_script(module), encoding="utf-8")
-            entrypoint.write_text(supervisor_entrypoint_script(module, paths), encoding="utf-8")
+            log_group = "nav01" if target_id.startswith("pico-") else "naviai"
+            entrypoint.write_text(supervisor_entrypoint_script(module, paths, log_group), encoding="utf-8")
             unit.write_text(supervisor_systemd_service(module, paths), encoding="utf-8")
             launch.chmod(0o755); entrypoint.chmod(0o755); unit.chmod(0o644)
             checksums.extend(((file_sha256(launch), launch_rel), (file_sha256(entrypoint), entrypoint_rel), (file_sha256(unit), unit_rel)))

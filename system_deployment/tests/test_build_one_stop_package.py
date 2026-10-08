@@ -82,7 +82,7 @@ class OneStopPackageTest(unittest.TestCase):
                 ROOT / ("release/" + prefix + "package-urls.json"),
                 ROOT / ("release/" + prefix + "supervisor.json"),
             )["targets"]["orin-humble"]
-            self.assertEqual(target["supervisor"]["internal_ip"], "192.168.217.100")
+            self.assertEqual(target["supervisor"]["internal_ip"], "192.168.218.100")
             retired = builder.supervisor_disabled_services("orin-humble", target)
             self.assertIn("navi-orin-chassis.service", retired)
             self.assertIn("navi-sensor-host.service", retired)
@@ -631,7 +631,10 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
             self.assertIn("vision.json", registrations[0][0])
             self.assertIn("supervisor-entrypoint.sh", service)
             self.assertIn("exec /usr/bin/supervisord", entrypoint)
-            self.assertIn("192.168.217.100:19005", entrypoint)
+            self.assertIn("umask 0007", entrypoint)
+            self.assertIn("install -d -o root -g naviai -m 2750", entrypoint)
+            self.assertIn("umask=007", entrypoint)
+            self.assertIn("192.168.218.100:19005", entrypoint)
             self.assertIn("source /opt/ros/jazzy/setup.bash", launch)
             self.assertIn("source /opt/naviai/venvs/vision/bin/activate", launch)
             self.assertIn("ROS_DOMAIN_ID=72", launch)
@@ -731,7 +734,7 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
                 "zj-humanoid-orin-vision-supervisor.service",
             },
         )
-        self.assertIn("port=192.168.217.100:19002", robot_entrypoint)
+        self.assertIn("port=192.168.218.100:19002", robot_entrypoint)
         self.assertIn('ss -H -ltnp "sport = :19002"', robot_entrypoint)
         self.assertIn("Supervisor RPC port 19002 is already in use", robot_entrypoint)
         self.assertIn("supervisor.rpcinterface:make_main_rpcinterface", robot_entrypoint)
@@ -739,12 +742,12 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         self.assertIn("source /opt/naviai/venvs/audio/bin/activate", audio_launch)
         self.assertIn("export ROS_LOG_DIR=/var/log/naviai/audio/ros", audio_launch)
         self.assertIn('install -d -m 0755 "$HOME" "$ROS_HOME" "$ROS_LOG_DIR"', audio_launch)
-        self.assertIn("pico_gateway_url:=ws://192.168.217.66:8765", audio_launch)
+        self.assertIn("pico_gateway_url:=ws://192.168.218.66:8765", audio_launch)
         self.assertIn("ExecStart=/bin/bash /etc/naviai/supervised-stack/robot/supervisor-entrypoint.sh", robot_unit)
-        self.assertIn("http://192.168.217.100:19002/RPC2", robot_registration)
-        self.assertIn("http://192.168.217.100:19004/RPC2", chassis_registration)
+        self.assertIn("http://192.168.218.100:19002/RPC2", robot_registration)
+        self.assertIn("http://192.168.218.100:19004/RPC2", chassis_registration)
         self.assertIn("ros2 launch chassis chassis.launch.py", chassis_launch)
-        self.assertIn('detect_livox_model.py --lidar-ip "${LIVOX_LIDAR_IP:-192.168.217.17}" --timeout 4', livox_launch)
+        self.assertIn('detect_livox_model.py --lidar-ip "${LIVOX_LIDAR_IP:-192.168.218.17}" --timeout 4', livox_launch)
         self.assertIn("source /etc/naviai/Middleware.env", web_rviz_launch)
         self.assertIn("export ROS_LOG_DIR=/var/log/naviai/web-rviz/ros", web_rviz_launch)
         self.assertIn("exec /opt/zj_humanoid/lib/web_rviz_ros2/start_web_navigation.sh", web_rviz_launch)
@@ -936,12 +939,12 @@ exec_as_runtime_user ros2 launch navi_audio_pkg audio_bringup.launch.py "${AUDIO
         )
         self.assertEqual(
             json.loads(robot)["modules"]["robot"]["endpoint"],
-            "http://192.168.217.66:19002/RPC2",
+            "http://192.168.218.66:19002/RPC2",
         )
         self.assertEqual(
             json.loads(upperlimb)["modules"]["upperlimb"],
             {
-                "endpoint": "http://192.168.217.66:19003/RPC2",
+                "endpoint": "http://192.168.218.66:19003/RPC2",
                 "local_log_file": "/var/log/naviai/upperlimb/upperlimb.log",
             },
         )

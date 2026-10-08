@@ -62,7 +62,7 @@ assets/orin-humble/
 - `ROBOT_TYPE`、`ROBOT_NAME`、`COMPOSE_PROFILES` 来自设备配置；`WA2_LS` 映射 `wa2`。
 - `ROS_DOMAIN_ID` 默认 72，`RMW_IMPLEMENTATION` 默认 CycloneDDS。
 - `NAVIGATION_ROBOT_MODEL` 默认取 `COMPOSE_PROFILES`，再回退 `wa2`；`NAVIGATION_CONFIG_PATH` 默认 `/home/naviai/navi_project/config/navigation`。
-- Livox 服务启动前会调用 `/usr/lib/naviai/detect_livox_model.py`，使用已安装的 Livox SDK 和 `LIVOX_LIDAR_IP` 识别 `MID360` / `MID360S`，成功后写入 `/etc/naviai/navigation/lidar.auto.env`。默认雷达 IP 为 `192.168.217.17`；如果传感器网络调整，在 `navigation.env` 修改 `LIVOX_LIDAR_IP`。SDK 的无配置广播发现模式在当前 SDK 包中会段错误，已禁用。`Middleware.env` 在没有手动值时加载此自动结果；探测失败保留上次结果，不会阻止 Livox 服务启动。
+- Livox 服务启动前会调用 `/usr/lib/naviai/detect_livox_model.py`，使用已安装的 Livox SDK 和 `LIVOX_LIDAR_IP` 识别 `MID360` / `MID360S`，成功后写入 `/etc/naviai/navigation/lidar.auto.env`。默认雷达 IP 为 `192.168.218.17`；如果传感器网络调整，在 `navigation.env` 修改 `LIVOX_LIDAR_IP`。SDK 的无配置广播发现模式在当前 SDK 包中会段错误，已禁用。`Middleware.env` 在没有手动值时加载此自动结果；探测失败保留上次结果，不会阻止 Livox 服务启动。
 - 如果网络拓扑不允许广播发现，或需要固定型号，在 `/etc/naviai/navigation/navigation.env` 中手动设置 `export LIDAR_3D_TYPE=MID360` 或 `MID360S`。手动值优先，服务启动时不再探测；不要直接修改 `lidar.auto.env`，它会在下一次成功探测时更新。
 - `ROS_LOG_DIR` 按模块启动配置设置；当前导航为 `/var/log/naviai/navigation/ros`，公共交互 shell 不保证设置该值。
 
@@ -154,7 +154,7 @@ zj-humanoid-<platform>-<module>-supervisor.service
 安装新版总包时会先停用它们，再创建并启动对应的 `zj-humanoid-*` 服务。Orin Jazzy 还会停用供应商旧
 `navi-vision-supervisor.service`，两套服务不会同时运行。
 
-Pico Humble 的 `display` 使用 `managed` 模式，RPC 为 `192.168.217.66:19004`，服务为 `zj-humanoid-pico-display-supervisor.service`。启动优先级为 1，早于 Robot（10）和上肢（20）；此顺序用于总包安装收尾启动，不保证开机时不同 systemd 服务的启动顺序。`autorestart: "true"`、`startsecs: 0` 使已创建的进程正常或异常退出后持续重启，避免快速退出耗尽启动重试。人工停止仍有效，进程卡住或子节点退出但 launch 存活时不会自动恢复画面。启动时先加载公共 `/etc/nav01/Middleware.env`，再依次加载 `/opt/ros/humble/setup.bash` 和 `/opt/navi_display/ros/setup.bash`，执行 `ros2 launch media_play media_play.launch.py`；通过 Agent `:9080` 查看及启停。安装器暂按无参数调用配置；图形会话所需的环境变量若有额外要求，需由模块方提供。
+Pico Humble 的 `display` 使用 `managed` 模式，RPC 为 `192.168.218.66:19004`，服务为 `zj-humanoid-pico-display-supervisor.service`。启动优先级为 1，早于 Robot（10）和上肢（20）；此顺序用于总包安装收尾启动，不保证开机时不同 systemd 服务的启动顺序。`autorestart: "true"`、`startsecs: 0` 使已创建的进程正常或异常退出后持续重启，避免快速退出耗尽启动重试。人工停止仍有效，进程卡住或子节点退出但 launch 存活时不会自动恢复画面。启动时先加载公共 `/etc/nav01/Middleware.env`，再依次加载 `/opt/ros/humble/setup.bash` 和 `/opt/navi_display/ros/setup.bash`，执行 `ros2 launch media_play media_play.launch.py`；通过 Agent `:9080` 查看及启停。安装器暂按无参数调用配置；图形会话所需的环境变量若有额外要求，需由模块方提供。
 
 Orin Humble 的 `manip` RUN 使用 `--force` 安装参数。厂商安装器在发现其内嵌的
 `ros-humble-navi-manip-msgs` 已安装时会拒绝默认重装；`--force` 允许在相同发布基线或经确认的升级
@@ -187,12 +187,12 @@ Supervisor。总包在共享凭据就绪后，备份原配置并补齐 Sensor �
 支持 DEB 安装到 `/lib/systemd/system` 或 `/usr/lib/systemd/system` 的原生单元；缺失单元会报错。
 原生服务在最终恢复阶段重启一次，Agent 启动成功后才标记总安装完成；任一步骤失败都会尝试停止所有受管服务。
 
-Pico Humble 注册两个原生模块：PICO Robot 使用 `192.168.217.66:19002`，上肢使用
-`192.168.217.66:19003`。两者的 Supervisor 配置和 systemd 服务分别由各自模块包维护；总包仅安装
+Pico Humble 注册两个原生模块：PICO Robot 使用 `192.168.218.66:19002`，上肢使用
+`192.168.218.66:19003`。两者的 Supervisor 配置和 systemd 服务分别由各自模块包维护；总包仅安装
 PICO Agent、写入模块注册并在共享凭据就绪后重启服务。端口可以与 Orin 重复，因为绑定在不同设备。
 PICO Robot 的原生服务名为 `zj-humanoid-pico-robot-supervisor.service`；安装新版模块时总包会停用
 迁移前的 `navi-pico-robot-supervisor.service`，避免两个服务争用 `19002`。
-Orin Agent 经由 PICO Agent（`192.168.217.66:9080`）汇总状态，界面显示为 `orin / robot` 与
+Orin Agent 经由 PICO Agent（`192.168.218.66:9080`）汇总状态，界面显示为 `orin / robot` 与
 `pico / robot`，而非跨设备直接代理 PICO 的 XML-RPC。
 
 Pico Robot 与 Display 安装器按无自定义参数调用（`"arguments": []`）；Pico 上肢安装器需要机型，必须

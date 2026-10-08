@@ -30,6 +30,6 @@ class LivoxDetectionTest(unittest.TestCase):
             )
 
     def test_sdk_config_uses_the_known_lidar_and_host_addresses(self):
-        config = detector.sdk_config("MID360S", "192.168.217.100", "192.168.217.17")
-        self.assertEqual(config["Mid360s"]["host_net_info"][0]["host_ip"], "192.168.217.100")
-        self.assertEqual(config["lidar_configs"][0]["ip"], "192.168.217.17")
+        config = detector.sdk_config("MID360S", "192.168.218.100", "192.168.218.17")
+        self.assertEqual(config["Mid360s"]["host_net_info"][0]["host_ip"], "192.168.218.100")
+        self.assertEqual(config["lidar_configs"][0]["ip"], "192.168.218.17")

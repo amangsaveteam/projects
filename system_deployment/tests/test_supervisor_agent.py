@@ -53,7 +53,7 @@ class SupervisorAgentTest(unittest.TestCase):
             password.write_text("1\n")
             agent = agent_module.Agent({
                 "rpc_password_file": str(password),
-                "modules": {"upperlimb": {"endpoint": "http://192.168.217.66:19003/RPC2"}},
+                "modules": {"upperlimb": {"endpoint": "http://192.168.218.66:19003/RPC2"}},
             })
             proxy = MagicMock()
             proxy.supervisor.tailProcessStdoutLog.side_effect = http.client.RemoteDisconnected(
@@ -73,7 +73,7 @@ class SupervisorAgentTest(unittest.TestCase):
             agent = agent_module.Agent({
                 "rpc_password_file": str(password),
                 "modules": {"upperlimb": {
-                    "endpoint": "http://192.168.217.66:19003/RPC2",
+                    "endpoint": "http://192.168.218.66:19003/RPC2",
                     "local_log_file": str(log_file),
                 }},
             })
@@ -165,7 +165,7 @@ class SupervisorAgentTest(unittest.TestCase):
                     "rpc_password_file": str(rpc_password),
                     "modules": {},
                     "remote_agents": {
-                        "pico": {"endpoint": "http://192.168.217.66:9080"}
+                        "pico": {"endpoint": "http://192.168.218.66:9080"}
                     },
                 },
             )
@@ -204,16 +204,16 @@ class SupervisorAgentTest(unittest.TestCase):
                 encoding="utf-8",
             )
             (overlays / "robot.json").write_text(
-                json.dumps({"modules": {"robot": {"endpoint": "http://192.168.217.100:19002/RPC2"}}}),
+                json.dumps({"modules": {"robot": {"endpoint": "http://192.168.218.100:19002/RPC2"}}}),
                 encoding="utf-8",
             )
             config = agent_module.load_config(base)
-            self.assertEqual(config["modules"]["robot"]["endpoint"], "http://192.168.217.100:19002/RPC2")
+            self.assertEqual(config["modules"]["robot"]["endpoint"], "http://192.168.218.100:19002/RPC2")
 
     def test_rpc_transport_separates_credentials_from_host(self):
         transport = agent_module.TimeoutTransport(3)
-        connection = transport.make_connection("agent:0123456789abcdef@192.168.217.66:19003")
-        self.assertEqual(connection.host, "192.168.217.66")
+        connection = transport.make_connection("agent:0123456789abcdef@192.168.218.66:19003")
+        self.assertEqual(connection.host, "192.168.218.66")
         self.assertEqual(connection.port, 19003)
         self.assertTrue(any(name == "Authorization" and value.startswith("Basic ") for name, value in transport._extra_headers))
 
@@ -223,12 +223,12 @@ class SupervisorAgentTest(unittest.TestCase):
             agent_module.ensure_secret(password)
             agent = agent_module.Agent({
                 "rpc_password_file": str(password),
-                "modules": {"chassis": {"endpoint": "http://192.168.217.100:19004/RPC2"}},
+                "modules": {"chassis": {"endpoint": "http://192.168.218.100:19004/RPC2"}},
             })
             agent.proxy = lambda module: (_ for _ in ()).throw(OSError("Connection refused"))
             status = agent.module_status("chassis")
         self.assertFalse(status["reachable"])
-        self.assertIn("192.168.217.100:19004", status["error"])
+        self.assertIn("192.168.218.100:19004", status["error"])
 
 
 if __name__ == "__main__":

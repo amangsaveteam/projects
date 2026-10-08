@@ -182,7 +182,7 @@ ros2 topic list
 
 ## 9. CycloneDDS 网络配置
 
-包会安装 `/etc/zj_humanoid/cyclonedds.xml`，默认使用 `192.168.217.0/24` 网段并允许
+包会安装 `/etc/zj_humanoid/cyclonedds.xml`，默认使用 `192.168.218.0/24` 网段并允许
 SPDP 组播。环境变量自动设置为：
 
 ```text
@@ -192,7 +192,7 @@ CYCLONEDDS_URI=file:///etc/zj_humanoid/cyclonedds.xml
 设备必须有一个已激活网卡配置在该网段。例如 Orin 可配置：
 
 ```text
-192.168.217.100/24
+192.168.218.100/24
 ```
 
 若运行 `ros2 topic list` 出现 `does not match an available interface`，说明该网段地址未在
@@ -212,7 +212,7 @@ CYCLONEDDS_URI=file:///path/to/site-cyclonedds.xml
 | --- | --- |
 | `ROBOT_TYPE must be configured` | 先执行包内 `deploy_common.py configure --target ... --robot-type ...`，再运行 payload 安装器。 |
 | 当前终端的 `ROBOT_TYPE` 为空 | 执行 `exec bash`，或重新登录。 |
-| `ros2 topic list` 找不到接口 | 检查机器人网卡是否已连接并拥有 `192.168.217.x/24` 地址。 |
+| `ros2 topic list` 找不到接口 | 检查机器人网卡是否已连接并拥有 `192.168.218.x/24` 地址。 |
 | 机型需变更 | 再次执行 `configure` 命令；无需重新安装 deb。 |
 
 ## 11. 已安装文件与完整性信息

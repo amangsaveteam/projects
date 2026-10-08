@@ -188,7 +188,7 @@ def run(args):
         checks.check("Agent module aggregation", aggregate)
     else:
         checks.report("Supervisor", "INFO", "This target has no unified Agent contract; business checks remain manual.")
-    ip = "192.168.217.66" if device == "pico" else "192.168.217.100"
+    ip = "192.168.218.66" if device == "pico" else "192.168.218.100"
     for name, (service, port, managed) in modules.items():
         checks.check(service, lambda service=service: checks.command(["systemctl", "is-active", service]))
         checks.check(service + " enabled", lambda service=service: checks.command(["systemctl", "is-enabled", service]))

@@ -380,15 +380,15 @@ Orin Humble 导航、底盘与工具服务映射如下。每项都由独立 supe
 
 Jazzy 本次接入 Vision；其 Agent 当前仅注册本机 Vision，不套用 Humble 的其他模块及 PICO 聚合配置。
 
-- **聚合页面**：`http://<Orin设备IP>:9080` 查看 Orin 和 PICO 模块；`http://192.168.217.66:9080` 查看 PICO 本机模块。无需账号密码，仅用于可信内网。
+- **聚合页面**：`http://<Orin设备IP>:9080` 查看 Orin 和 PICO 模块；`http://192.168.218.66:9080` 查看 PICO 本机模块。无需账号密码，仅用于可信内网。
 - **模块 RPC 页面**：访问下表端口，用户名为 `agent`，固定密码为 `1`；测试和运维仍优先使用 `:9080`。
 
 | 设备 IP | 模块端口 |
 | --- | --- |
-| Orin：`192.168.217.100` | sensor 19001、robot 19002、audio 19003、chassis 19004、vision 19005、vanjee 19006、livox 19007、nav2 19008、navigation 19009、rawdata 19010、diagnosis 19011、web-rviz 19012 |
-| PICO：`192.168.217.66` | robot 19002、upperlimb 19003、display 19004 |
+| Orin：`192.168.218.100` | sensor 19001、robot 19002、audio 19003、chassis 19004、vision 19005、vanjee 19006、livox 19007、nav2 19008、navigation 19009、rawdata 19010、diagnosis 19011、web-rviz 19012 |
+| PICO：`192.168.218.66` | robot 19002、upperlimb 19003、display 19004 |
 
-浏览器可打开 `http://192.168.217.100:19002`（Orin Robot 示例），输入用户名 `agent`、密码 `1`。浏览器所在机器需能访问该设备内网 IP。已有设备重新安装新版总包后，旧密码会更新为 `1`。
+浏览器可打开 `http://192.168.218.100:19002`（Orin Robot 示例），输入用户名 `agent`、密码 `1`。浏览器所在机器需能访问该设备内网 IP。已有设备重新安装新版总包后，旧密码会更新为 `1`。
 
 测试与运维优先使用 `:9080`；`19001～` 为模块 RPC / 研发调试入口。后续可限制这些端口仅允许 Agent 访问，当前尚未实施该访问限制。
 

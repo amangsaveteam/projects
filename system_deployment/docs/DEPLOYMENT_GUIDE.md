@@ -100,11 +100,10 @@ PICO 常用路径：
 ```text
 ROS_DOMAIN_ID
 RMW_IMPLEMENTATION
+ROS_LOCALHOST_ONLY
 CYCLONEDDS_URI
-ROS_IP
-ROS_MASTER_URI
-ROS_HOSTNAME
 ROBOT_TYPE
+ZJ_DEVICE
 ```
 
 检查当前环境：
@@ -121,6 +120,95 @@ env | grep -E '^(ROS_|RMW_|CYCLONEDDS_URI|ROBOT_TYPE|ZJ_)'
 ```
 
 升级时安装器应保留用户已有字段，并合并当前型号默认值；不要直接覆盖用户配置。
+
+### 5.1 WA-T 网络与配置文件位置
+
+当前 WA-T 网络约定如下：
+
+| 设备或部件 | 地址 | 由什么配置决定 |
+| --- | --- | --- |
+| Orin 主机 | `192.168.218.100/24` | 现场已有网卡地址 |
+| Pico 主机 | `192.168.218.66/24` | 现场已有网卡地址 |
+| Livox 雷达 | `192.168.218.17` | Orin 的 `LIVOX_LIDAR_IP` |
+| ROS 2 网段选择 | `192.168.218.0/24` | `/etc/zj_humanoid/cyclonedds.xml` |
+
+CycloneDDS XML 只负责从已有网卡中选择通信接口，不能给网卡分配地址。现场网卡已经使用
+`192.168.218.100/24`（Orin）和 `192.168.218.66/24`（Pico）时，ROS 2 启动会按下面的 XML 选择
+`192.168.218.0/24` 网段；这次仓库变更不包含网卡管理。
+
+```bash
+ip -brief address
+ip route
+```
+
+配置链和设备上的最终位置如下：
+
+| 作用 | 仓库源文件 | 设备最终位置 |
+| --- | --- | --- |
+| 设备身份、机型、ROS Domain | `common/deploy_common.py`、`common/templates/device.env.example` | `/etc/zj_humanoid/device.env` |
+| 公共 Shell 环境 | `common/files/etc/profile.d/zj_humanoid.sh` | `/etc/profile.d/zj_humanoid.sh` |
+| Orin 公共环境 | `common/templates/Middleware.orin.env` | `/etc/naviai/Middleware.env` |
+| Pico 公共环境 | `common/templates/Middleware.pico.env` | `/etc/nav01/Middleware.env` |
+| CycloneDDS 接口选择 | `common/files/etc/zj_humanoid/cyclonedds.xml` | `/etc/zj_humanoid/cyclonedds.xml` |
+| Orin 导航与 Livox 地址 | `assets/orin-humble/environment-defaults/orin-humble/navigation.env` | `/etc/naviai/navigation/navigation.env` |
+| Livox 自动识别结果 | 运行时生成 | `/etc/naviai/navigation/lidar.auto.env` |
+| Agent 基础配置 | `packages/supervisor-agent/resources/{orin,pico}-modules.json` | `/etc/naviai/supervisor-agent/modules.json` 或 `/etc/nav01/supervisor-agent/modules.json` |
+| 模块 RPC 注册 | `release/supervisor.json` 或 WA-T 特殊 Supervisor 配置 | 对应 Agent 的 `modules.d/*.json` |
+
+环境加载顺序是：`/etc/profile.d/zj_humanoid.sh` 读取并校验 `device.env`，随后
+`Middleware.env` 加载目标 ROS、DDS 和导航环境，最后由各模块的 Supervisor 启动脚本加载它。
+常用基础值为 `ROS_DOMAIN_ID=72`、`RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`、
+`ROS_LOCALHOST_ONLY=0` 和 `CYCLONEDDS_URI=file:///etc/zj_humanoid/cyclonedds.xml`。
+`CYCLONEDDS_URI` 的值通常不需要改；换网段时修改 XML 的 `NetworkInterface` 和操作系统网卡地址即可。
+
+在已经安装的 Orin 上，确认这条链路：
+
+```bash
+source /etc/naviai/Middleware.env
+printf 'ROBOT_TYPE=%s\nROS_DOMAIN_ID=%s\nRMW_IMPLEMENTATION=%s\nROS_LOCALHOST_ONLY=%s\nCYCLONEDDS_URI=%s\nLIVOX_LIDAR_IP=%s\n' \
+  "$ROBOT_TYPE" "$ROS_DOMAIN_ID" "$RMW_IMPLEMENTATION" "$ROS_LOCALHOST_ONLY" \
+  "$CYCLONEDDS_URI" "${LIVOX_LIDAR_IP:-}"
+grep -n 'NetworkInterface' /etc/zj_humanoid/cyclonedds.xml
+```
+
+Pico 将第一行替换为 `source /etc/nav01/Middleware.env`。修改仓库源配置后必须重新构建并安装总包；
+设备上的 XML 会由 system-config 重新部署，导航目录则按 `overwrite=false` 保留已有的
+`navigation.env`，所以已有设备若要切换 Livox 地址，需要确认该文件中的 `LIVOX_LIDAR_IP` 已更新。
+
+### 5.2 Supervisor 监控地址
+
+Supervisor 监控链路包含三类地址，不能只改其中一处：
+
+1. `release/supervisor.json`（或 WA-T 专用的 `release/special-wa-t-jk2-v1-supervisor.json`）中，
+   `targets.<target>.supervisor.internal_ip` 是本机各模块 XML-RPC 的绑定地址。Orin 为
+   `192.168.218.100`，Pico 为 `192.168.218.66`。
+2. `packages/supervisor-agent/resources/orin-modules.json` 中的 `remote_agents.pico.endpoint`
+   必须指向 `http://192.168.218.66:9080`；Pico 的 `pico-modules.json` 中本机模块 endpoint 也使用
+   `192.168.218.66`。
+3. `supervisor_modules` 的端口和模块注册由构建器生成到设备的
+   `/etc/naviai/supervisor-agent/modules.d/*.json` 或 `/etc/nav01/supervisor-agent/modules.d/*.json`。
+
+修改仓库配置后必须重新构建并安装总包，安装器会重新生成：
+
+```text
+/etc/naviai/supervisor-agent/modules.json
+/etc/nav01/supervisor-agent/modules.json
+/etc/naviai/supervised-stack/<module>/supervisor-entrypoint.sh
+/run/naviai/<module>/supervisord.conf
+```
+
+不要把 `/run/naviai/<module>/supervisord.conf` 当作永久配置直接修改；它会在服务重启时重新生成。
+升级后可用下面的只读检查确认旧地址是否仍残留：
+
+```bash
+grep -RInE '192\.168\.217\.(66|100)|192\.168\.218\.' \
+  /etc/naviai/supervisor-agent /etc/nav01/supervisor-agent /etc/naviai/supervised-stack /run/naviai 2>/dev/null
+systemctl restart zj-humanoid-orin-supervisor-agent.service  # Orin
+systemctl restart zj-humanoid-pico-supervisor-agent.service  # Pico
+```
+
+Orin Agent 还会通过 `remote_agents.pico.endpoint` 访问 Pico Agent；如果 Orin 本机模块正常但页面只有
+Orin，没有 `pico/*`，优先检查 Orin 的 `modules.json`、Pico 的 `:9080` 服务和两台设备之间的 218 网段连通性。
 
 ## 6. 服务和聚合 Agent 检查
 
