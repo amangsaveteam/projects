@@ -1,0 +1,35 @@
+
+name: Local Runner CI Test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check runner environment
+        run: |
+          echo "===== Runner ====="
+          hostname
+          uname -m
+          whoami
+
+          echo "===== Docker ====="
+          docker --version
+
+          echo "===== ROS ====="
+          ls /opt/ros/ || true
+
+      - name: Test
+        run: |
+          echo "GitHub Actions local runner works!"

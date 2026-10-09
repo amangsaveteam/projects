@@ -96,7 +96,16 @@ destination = Path(sys.argv[2])
 commit = sys.argv[3]
 build_date = sys.argv[4]
 data = json.loads(source.read_text(encoding="utf-8"))
-data["output_name"] = f"Middleware_v2.0.0_project_wa_t_{commit}_{build_date}"
+# The branch controls whether a reproducible release suffix is added.  Keep
+# output_name as the configured base name and let package_firmware append .run.
+base_name = data.get("output_name")
+if not base_name:
+    base_name = "Middleware_v2.0.0_project_wa_t"
+base_name = base_name.removesuffix(".run")
+if data.get("branch_name") == "release":
+    data["output_name"] = f"{base_name}_{commit}_{build_date}"
+else:
+    data["output_name"] = base_name
 destination.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 PY2
 

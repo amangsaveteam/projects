@@ -13,6 +13,9 @@
 bash system_deployment/build/build_special_wa_t_jk2_v1_package.sh
 ```
 
+输出文件名由 `release/special-wa-t-jk2-v1-version.json` 的 `output_name` 和 `branch_name` 决定：
+`main` 直接使用配置名；`release` 自动追加 `_git_commit_YYYYMMDD`，最后由打包器追加 `.run`。
+
 首次构建会自动生成 `dist/common/orin/sensor/navi_orbbec_dep-2.9.3-humble-arm64.deb`，
 随后嵌入总包；后续构建复用该文件。构建机可以是 x86 Ubuntu，无需在 Orin 上
 安装驱动或手动拷贝依赖包。构建机需要 `apt-get`、`ubuntu-keyring`、`dpkg-deb`
@@ -60,4 +63,3 @@ wrists:
 启动器流程为：执行 `ros2 run orbbec_camera list_devices_node`，过滤 Gemini 305g，
 按上述策略解析左右，校验端口不重复，再分别启动两个
 `gemini_301_series.launch.py` 实例。头部相机保持 USB `2-3` 配置。
-
