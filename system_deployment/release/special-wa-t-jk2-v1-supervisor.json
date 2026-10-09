@@ -335,7 +335,7 @@
           "package": "upperlimb-common"
         },
         {
-          "id": "hand",
+          "id": "gripper",
           "description": "Navi PICO EYou hand interface",
           "mode": "managed",
           "port": 19005,

@@ -6,6 +6,7 @@
 - 服务配置：`release/supervisor.json`
 - 构建：[`build/build_release.sh`](build/build_release.sh)
 - 完整部署与扩展规范：[`docs/DEPLOYMENT_AND_EXTENSION_GUIDE.md`](docs/DEPLOYMENT_AND_EXTENSION_GUIDE.md)
+- 现场配置、日志与故障排查：[`docs/RUNTIME_OPERATIONS_GUIDE.md`](docs/RUNTIME_OPERATIONS_GUIDE.md)
 
 `package-urls.json` 定义各目标的安装包 URL、安装参数、依赖与开发者环境变量；
 `supervisor.json` 定义 Supervisor 服务及安装整合策略。构建时合并两份配置。

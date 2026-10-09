@@ -2,6 +2,9 @@
 
 ## 整体思路
 
+现场运行时配置、日志位置和按现象排查命令见
+[`system_deployment/docs/RUNTIME_OPERATIONS_GUIDE.md`](system_deployment/docs/RUNTIME_OPERATIONS_GUIDE.md)。
+
 - **基础环境**：母盘提供操作系统、ROS 和平台公共依赖。
 - **模块依赖**：目前随各模块安装包交付，后续统一管理依赖；模块运行环境已提供统一配置接口，见下文。
 - **交付方式**：当前只输出一个 `.run` 包，一键安装后自动启动目标设备的全部已配置模块。环境与功能稳定后，计划转为 middleware 包。
