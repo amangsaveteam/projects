@@ -15,6 +15,7 @@ permissions:
 jobs:
   test:
     runs-on: self-hosted
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
@@ -32,3 +33,36 @@ jobs:
           git rev-parse HEAD
 
           echo "Runner working!"
+
+      - name: Architecture guard
+        run: python3 system_deployment/architecture/check_architecture.py
+
+      - name: Python syntax check
+        run: python3 -m py_compile system_deployment/build/package_firmware.py
+
+      - name: Dry-run regular package
+        run: bash system_deployment/build/build_release.sh --dry-run
+
+      - name: Dry-run WA-T package
+        run: bash system_deployment/build/build_special_wa_t_jk2_v1_package.sh --dry-run
+
+      - name: Build regular package
+        if: github.event_name != 'pull_request'
+        run: bash system_deployment/build/build_release.sh
+
+      - name: Build WA-T package
+        if: github.event_name != 'pull_request'
+        run: bash system_deployment/build/build_special_wa_t_jk2_v1_package.sh
+
+      - name: List package artifacts
+        if: github.event_name != 'pull_request'
+        run: ls -lh dist/*.run
+
+      - name: Upload package artifacts
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: middleware-installers-${{ github.ref_name }}-${{ github.sha }}
+          path: dist/*.run
+          if-no-files-found: error
+          retention-days: 14
