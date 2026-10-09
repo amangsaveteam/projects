@@ -28,7 +28,7 @@
 # 输出：dist/navi_one_stop_installer-<version>.run
 ```
 
-将安装包复制到已准备好母盘的设备：
+将安装包复制到目标设备：
 
 ```bash
 sudo ./navi_one_stop_installer-<version>.run -- --robot-type WA1
