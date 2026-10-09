@@ -250,6 +250,7 @@ apt_options=(
     -o Dir::Cache::pkgcache=
     -o Dir::Cache::srcpkgcache=
     -o Acquire::Languages=none
+    -o Acquire::Retries=5
 )
 apt-get "${{apt_options[@]}}" update
 apt-get -y --no-download --no-install-recommends "${{apt_options[@]}}" install "${{required_packages[@]}}"
@@ -290,6 +291,11 @@ def download_payloads(packages: list[tuple[str, str]], architecture: str, downlo
             # usable IPv6 default route.  Keep dependency collection
             # deterministic by using the reachable IPv4 mirror endpoint.
             "Acquire::ForceIPv4=true",
+            # CI/build networks can reset a mirror connection while resolving
+            # the large offline dependency closure.  Let APT retry transient
+            # transport failures before failing the package build.
+            "-o",
+            "Acquire::Retries=5",
             "-o",
             "Dir::State::status={}".format(status_file),
             "-o",

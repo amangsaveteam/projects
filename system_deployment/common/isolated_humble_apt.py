@@ -2,6 +2,8 @@
 import os
 from pathlib import Path
 import subprocess
+import time
+import urllib.error
 import urllib.request
 
 
@@ -13,8 +15,18 @@ def prepare(work: Path) -> list[str]:
         raise RuntimeError('Install ubuntu-keyring on the build host.')
     ros_key = work / 'keys/ros.key'
     # Fetch the current official key: a build host's ROS key can predate rotation.
-    with urllib.request.urlopen('https://raw.githubusercontent.com/ros/rosdistro/master/ros.key', timeout=60) as source:
-        ros_key.write_bytes(source.read())
+    key_url = 'https://raw.githubusercontent.com/ros/rosdistro/master/ros.key'
+    last_error = None
+    for attempt in range(1, 6):
+        try:
+            with urllib.request.urlopen(key_url, timeout=60) as source:
+                ros_key.write_bytes(source.read())
+            break
+        except (OSError, urllib.error.URLError) as error:
+            last_error = error
+            if attempt == 5:
+                raise RuntimeError(f'failed to download ROS key after {attempt} attempts') from error
+            time.sleep(2 * attempt)
     # APT requires the extension to match the key encoding.
     key_suffix = '.asc' if ros_key.read_bytes().startswith(b'-----BEGIN') else '.gpg'
     actual_key = ros_key.with_suffix(key_suffix)
@@ -40,7 +52,7 @@ def prepare(work: Path) -> list[str]:
         'Dir::State::lists': str(work / 'lists'),
         'Dir::State::extended_states': str(work / 'extended_states'),
         'Dir::Cache::pkgcache': '', 'Dir::Cache::srcpkgcache': '',
-        'Acquire::Languages': 'none', 'Acquire::Retries': '3',
+        'Acquire::Languages': 'none', 'Acquire::Retries': '5',
         'APT::Update::Error-Mode': 'any',
         'Acquire::IndexTargets::deb::DEP-11::DefaultEnabled': 'false',
         'Acquire::IndexTargets::deb::DEP-11-icons-small::DefaultEnabled': 'false',
