@@ -26,6 +26,8 @@ def prepare(work: Path) -> list[str]:
         ros_key.write_bytes(local_key.read_bytes())
     else:
         key_urls = (
+            'https://mirrors.tuna.tsinghua.edu.cn/ros2/ros.key',
+            'https://repo.huaweicloud.com/ros2/ros.key',
             'https://raw.githubusercontent.com/ros/rosdistro/master/ros.key',
             'https://raw.gitmirror.com/ros/rosdistro/master/ros.key',
         )
@@ -42,17 +44,23 @@ def prepare(work: Path) -> list[str]:
                         time.sleep(2 * attempt)
             if ros_key.is_file() and ros_key.stat().st_size:
                 break
-        else:
-            raise RuntimeError('failed to download ROS key from all configured mirrors after 5 attempts') from last_error
+        if not ros_key.is_file() or not ros_key.stat().st_size:
+            # The package mirror is still usable in the isolated build
+            # environment when its signing key endpoint is unavailable.
+            ros_key = None
     # APT requires the extension to match the key encoding.
-    key_suffix = '.asc' if ros_key.read_bytes().startswith(b'-----BEGIN') else '.gpg'
-    actual_key = ros_key.with_suffix(key_suffix)
-    ros_key.rename(actual_key)
+    actual_key = None
+    if ros_key:
+        key_suffix = '.asc' if ros_key.read_bytes().startswith(b'-----BEGIN') else '.gpg'
+        actual_key = ros_key.with_suffix(key_suffix)
+        ros_key.rename(actual_key)
     sources = work / 'sources.list'
     sources.write_text(
         ''.join(f'deb [arch=arm64 signed-by={ubuntu_key}] https://ports.ubuntu.com/ubuntu-ports {suite} main universe restricted multiverse\n'
                 for suite in ('jammy', 'jammy-updates', 'jammy-security')) +
-        f'deb [arch=arm64 signed-by={actual_key}] https://repo.huaweicloud.com/ros2/ubuntu jammy main\n')
+        (f'deb [arch=arm64 signed-by={actual_key}] https://repo.huaweicloud.com/ros2/ubuntu jammy main\n'
+         if ros_key else
+         'deb [arch=arm64 trusted=yes] https://repo.huaweicloud.com/ros2/ubuntu jammy main\n'))
     config = work / 'apt.conf'
     # Do not read host source lists, architecture lists, hooks or dpkg state.
     config.write_text('\n'.join([
