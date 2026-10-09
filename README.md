@@ -17,7 +17,7 @@
 | `orin-jazzy` | Ubuntu 24.04 / Jazzy | arm64 |
 | `pico-humble` | Ubuntu 20.04 / 公司 ROS Humble | amd64 |
 | `pico-jazzy` | Ubuntu 24.04 / Jazzy | amd64 |
-| `rdk-jazzy` | RDK OS V5.1.0 / Jazzy（当前仅交付依赖） | arm64 |
+| `rdk-jazzy` | RDK OS V5.1.0 / Jazzy | arm64 |
 
 ## 构建与安装
 
