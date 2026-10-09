@@ -12,6 +12,9 @@ on:
 permissions:
   contents: read
 
+env:
+  WA_T_ARTIFACT_UPLOAD_BASE: http://10.51.33.211:10000/chfs/shared/ros2_modules/Middlware/WA_T/2.0.0
+
 jobs:
   test:
     runs-on: self-hosted
@@ -57,6 +60,31 @@ jobs:
       - name: List package artifacts
         if: github.event_name != 'pull_request'
         run: ls -lh dist/*.run
+
+      - name: Publish WA-T package to internal artifact server
+        if: github.event_name != 'pull_request'
+        env:
+          ARTIFACT_SERVER_USERNAME: ${{ secrets.ARTIFACT_SERVER_USERNAME }}
+          ARTIFACT_SERVER_PASSWORD: ${{ secrets.ARTIFACT_SERVER_PASSWORD }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          artifacts=(dist/*wa_t*.run)
+          if (( ${#artifacts[@]} == 0 )); then
+            echo 'No WA-T .run artifact found under dist/' >&2
+            exit 1
+          fi
+          auth_args=()
+          if [[ -n "${ARTIFACT_SERVER_USERNAME:-}" ]]; then
+            auth_args+=(--user "${ARTIFACT_SERVER_USERNAME}:${ARTIFACT_SERVER_PASSWORD:-}")
+          fi
+          for artifact in "${artifacts[@]}"; do
+            echo "Uploading ${artifact}"
+            curl --fail --show-error --location --retry 3 \
+              "${auth_args[@]}" \
+              --upload-file "$artifact" \
+              "${WA_T_ARTIFACT_UPLOAD_BASE}/$(basename "$artifact")"
+          done
 
       - name: Upload package artifacts
         if: github.event_name != 'pull_request'
