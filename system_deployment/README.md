@@ -11,6 +11,9 @@
 `package-urls.json` 定义各目标的安装包 URL、安装参数、依赖与开发者环境变量；
 `supervisor.json` 定义 Supervisor 服务及安装整合策略。构建时合并两份配置。
 
+版本文件中的 `branch_name` 控制安装包文件名：`main` 直接使用 `output_name`，`release`
+自动追加 `_git_commit_YYYYMMDD`；其他分支名会被构建器拒绝。
+
 构建总安装包：
 
 ```bash

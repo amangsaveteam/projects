@@ -84,28 +84,16 @@ orin["extra_debs"] = [
 (work_dir / "package-urls.json").write_text(json.dumps(urls, indent=2) + "\n", encoding="utf-8")
 PY
 
-commit="$(git -C "$script_dir/../.." rev-parse --short HEAD 2>/dev/null || echo manual)"
-build_date="$(date +%Y%m%d)"
 version_file="$work_dir/wa-t-version.json"
-python3 - "$script_dir/../release/special-wa-t-jk2-v1-version.json" "$version_file" "$commit" "$build_date" <<'PY2'
+python3 - "$script_dir/../release/special-wa-t-jk2-v1-version.json" "$version_file" <<'PY2'
 import json
 import sys
 from pathlib import Path
 source = Path(sys.argv[1])
 destination = Path(sys.argv[2])
-commit = sys.argv[3]
-build_date = sys.argv[4]
 data = json.loads(source.read_text(encoding="utf-8"))
-# The branch controls whether a reproducible release suffix is added.  Keep
-# output_name as the configured base name and let package_firmware append .run.
-base_name = data.get("output_name")
-if not base_name:
-    base_name = "Middleware_v2.0.0_project_wa_t"
-base_name = base_name.removesuffix(".run")
-if data.get("branch_name") == "release":
-    data["output_name"] = f"{base_name}_{commit}_{build_date}"
-else:
-    data["output_name"] = base_name
+if not data.get("output_name"):
+    data["output_name"] = "Middleware_v2.0.0_project_wa_t"
 destination.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 PY2
 

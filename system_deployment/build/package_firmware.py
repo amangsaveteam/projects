@@ -1421,7 +1421,9 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
     if version_data.get("schema_version") != 1 or urls_data.get("schema_version") != 1:
         raise BuildError("schema_version must be 1")
     version = require(version_data.get("version"), "version", safe=True)
-    output_name = require(version_data.get("output_name"), "output_name", safe=True)
+    branch_name = version_data.get("branch_name", "main")
+    if branch_name not in {"main", "release"}:
+        raise BuildError("branch_name must be main or release")
     built_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
     def git_value(*arguments):
         try:
@@ -1430,6 +1432,12 @@ def build(version_file, urls_file, output_dir, dry_run=False, supervisor_file=No
         except FileNotFoundError:
             return None
         return result.stdout.strip() if result.returncode == 0 else None
+    base_output_name = require(version_data.get("output_name"), "output_name", safe=True).removesuffix(".run")
+    if branch_name == "release":
+        commit_id = git_value("rev-parse", "--short", "HEAD") or version_data.get("commit_id") or "manual"
+        output_name = "{}_{}_{}".format(base_output_name, commit_id, datetime.datetime.now().strftime("%Y%m%d"))
+    else:
+        output_name = base_output_name
     release_identity = {
         "schema_version": 1, "release": version,
         "build_id": datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:12],
