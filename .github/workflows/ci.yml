@@ -1,9 +1,12 @@
-
-name: Local Runner CI Test
+name: Local Runner CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -17,19 +20,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check runner environment
+      - name: Check Runner
         run: |
-          echo "===== Runner ====="
+          echo "Runner hostname:"
           hostname
-          uname -m
-          whoami
 
-          echo "===== Docker ====="
-          docker --version
+          echo "Current branch:"
+          echo "$GITHUB_REF_NAME"
 
-          echo "===== ROS ====="
-          ls /opt/ros/ || true
+          echo "Current commit:"
+          git rev-parse HEAD
 
-      - name: Test
-        run: |
-          echo "GitHub Actions local runner works!"
+          echo "Runner working!"
