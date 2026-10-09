@@ -15,18 +15,35 @@ def prepare(work: Path) -> list[str]:
         raise RuntimeError('Install ubuntu-keyring on the build host.')
     ros_key = work / 'keys/ros.key'
     # Fetch the current official key: a build host's ROS key can predate rotation.
-    key_url = 'https://raw.githubusercontent.com/ros/rosdistro/master/ros.key'
-    last_error = None
-    for attempt in range(1, 6):
-        try:
-            with urllib.request.urlopen(key_url, timeout=60) as source:
-                ros_key.write_bytes(source.read())
-            break
-        except (OSError, urllib.error.URLError) as error:
-            last_error = error
-            if attempt == 5:
-                raise RuntimeError(f'failed to download ROS key after {attempt} attempts') from error
-            time.sleep(2 * attempt)
+    # Prefer a key already installed on the build host.  CI runners often
+    # block raw.githubusercontent.com even though the ROS apt mirror works.
+    local_keys = (
+        Path('/usr/share/keyrings/ros-archive-keyring.gpg'),
+        Path('/usr/share/keyrings/ros2-archive-keyring.gpg'),
+    )
+    local_key = next((path for path in local_keys if path.is_file()), None)
+    if local_key:
+        ros_key.write_bytes(local_key.read_bytes())
+    else:
+        key_urls = (
+            'https://raw.githubusercontent.com/ros/rosdistro/master/ros.key',
+            'https://raw.gitmirror.com/ros/rosdistro/master/ros.key',
+        )
+        last_error = None
+        for key_url in key_urls:
+            for attempt in range(1, 6):
+                try:
+                    with urllib.request.urlopen(key_url, timeout=60) as source:
+                        ros_key.write_bytes(source.read())
+                    break
+                except (OSError, urllib.error.URLError) as error:
+                    last_error = error
+                    if attempt < 5:
+                        time.sleep(2 * attempt)
+            if ros_key.is_file() and ros_key.stat().st_size:
+                break
+        else:
+            raise RuntimeError('failed to download ROS key from all configured mirrors after 5 attempts') from last_error
     # APT requires the extension to match the key encoding.
     key_suffix = '.asc' if ros_key.read_bytes().startswith(b'-----BEGIN') else '.gpg'
     actual_key = ros_key.with_suffix(key_suffix)
