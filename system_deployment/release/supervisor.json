@@ -428,53 +428,6 @@
           "command": "ros2 launch media_play media_play.launch.py",
           "autorestart": "true",
           "startsecs": 0
-        },
-        {
-          "id": "hand",
-          "description": "Navi PICO EYou hand interface",
-          "mode": "managed",
-          "port": 19005,
-          "startup_priority": 25,
-          "working_directory": "/home/nav01",
-          "source_files": [
-            "/etc/profile.d/zj_humanoid.sh",
-            "/opt/ros/humble/setup.bash",
-            "/opt/zj_humanoid/eyou/humble/setup.bash"
-          ],
-          "prelude": [
-            "export HOME=/home/nav01 ROS_HOME=/home/nav01/.ros ROS_LOG_DIR=/var/log/naviai/hand/ros",
-            "export LD_LIBRARY_PATH=/opt/zj_humanoid/lib/rtipc_runtime:/opt/zj_humanoid/lib/logging:/opt/zj_humanoid/lib/uplimb_runtime:${LD_LIBRARY_PATH:-}",
-            "install -d -o nav01 -g nav01 -m 0755 /home/nav01/.ros /var/log/naviai/hand/ros"
-          ],
-          "command": "/bin/bash -lc 'source /etc/profile.d/zj_humanoid.sh; source /opt/ros/humble/setup.bash; source /opt/zj_humanoid/eyou/humble/setup.bash; exec ros2 launch eyou_interface dual.launch.py'",
-          "local_log_file": "/var/log/naviai/hand/hand.log",
-          "autorestart": "unexpected",
-          "startsecs": 3,
-          "disable_services": [],
-          "package": "eyou-interface"
-        },
-        {
-          "id": "hand-force",
-          "description": "Navi PICO DexHand six-axis force sensor publisher",
-          "mode": "managed",
-          "port": 19006,
-          "startup_priority": 26,
-          "working_directory": "/home/nav01",
-          "source_files": [
-            "/etc/profile.d/zj_humanoid.sh",
-            "/opt/ros/humble/setup.bash"
-          ],
-          "prelude": [
-            "export HOME=/home/nav01 ROS_HOME=/home/nav01/.ros ROS_LOG_DIR=/var/log/naviai/hand-force/ros",
-            "export LD_LIBRARY_PATH=/opt/zj_humanoid/lib/rtipc_runtime:/opt/zj_humanoid/lib/logging:/opt/zj_humanoid/lib/uplimb_runtime:${LD_LIBRARY_PATH:-}",
-            "install -d -o nav01 -g nav01 -m 0755 /home/nav01/.ros /var/log/naviai/hand-force/ros"
-          ],
-          "command": "ros2 launch dexhand_interface dexhand_hw_interface.launch.py",
-          "local_log_file": "/var/log/naviai/hand-force/hand-force.log",
-          "autorestart": "true",
-          "startsecs": 3,
-          "disable_services": [],
-          "package": "eyou-interface"
         }
       ],
       "managed_services": [

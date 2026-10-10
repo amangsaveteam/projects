@@ -50,24 +50,6 @@
       },
       "extra_debs": [
         {
-          "name": "eyou-client",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-client_3.3.0%2Bjammy_all.deb",
-          "sha256": "",
-          "installers": []
-        },
-        {
-          "name": "eyou-msgs-typesupport",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs-typesupport_3.3.0%2Bjammy_arm64.deb",
-          "sha256": "",
-          "installers": []
-        },
-        {
-          "name": "eyou-msgs",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs_3.3.0%2Bjammy_all.deb",
-          "sha256": "",
-          "installers": []
-        },
-        {
           "name": "orin-common",
           "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/common/orin/develop/navi_common_dep-2.0.0-release-humble-arm64.deb",
           "sha256": "",
@@ -277,7 +259,7 @@
         },
         {
           "name": "audio",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/humble/navi_audio_installer-2.0.0-release-humble-arm64.run",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/humble_offline/navi_audio_installer-2.0.0-release-humble-arm64.run",
           "sha256": "",
           "arguments": []
         },
@@ -371,10 +353,7 @@
           "destination": "/home/nav01/zj_humanoid/config",
           "owner": "nav01",
           "group": "nav01",
-          "overwrite": false,
-          "robot_types": [
-            "WA-T"
-          ]
+          "overwrite": false
         }
       ],
       "system_config": {
