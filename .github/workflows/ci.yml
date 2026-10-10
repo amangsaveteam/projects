@@ -75,6 +75,10 @@ jobs:
             --data-urlencode "user=${ARTIFACT_SERVER_USERNAME:-}" \
             --data-urlencode "pwd=${ARTIFACT_SERVER_PASSWORD:-}" \
             "${CHFS_BASE_URL}/session" >/dev/null
+          curl --fail --show-error --location --retry 3 \
+            --cookie "$cookie_jar" \
+            --data-urlencode 'filepath=/ros2_modules/Middlware/develop' \
+            "${CHFS_BASE_URL}/newdir" >/dev/null || true
           for artifact in "${artifacts[@]}"; do
             echo "Uploading ${artifact}"
             curl --fail --show-error --location --retry 3 \
