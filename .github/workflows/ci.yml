@@ -48,31 +48,44 @@ jobs:
       - name: Python syntax check
         run: python3 -m py_compile system_deployment/build/package_firmware.py
 
-      - name: Test CHFS WA-T upload path
+      - name: Dry-run WA-T package
+        run: bash system_deployment/build/build_special_wa_t_jk2_v1_package.sh --dry-run
+
+      - name: Build WA-T package
+        if: github.event_name != 'pull_request'
+        run: bash system_deployment/build/build_special_wa_t_jk2_v1_package.sh
+
+      - name: List package artifacts
+        if: github.event_name != 'pull_request'
+        run: ls -lh dist/*.run
+
+      - name: Publish WA-T package to internal artifact server
         if: github.event_name != 'pull_request'
         env:
           ARTIFACT_SERVER_USERNAME: ${{ secrets.ARTIFACT_SERVER_USERNAME }}
           ARTIFACT_SERVER_PASSWORD: ${{ secrets.ARTIFACT_SERVER_PASSWORD }}
         run: |
           set -euo pipefail
-          smoke_file="$(mktemp --suffix=.ci-smoke)"
+          shopt -s nullglob
+          artifacts=(dist/*wa_t*.run)
+          (( ${#artifacts[@]} > 0 )) || { echo 'No WA-T .run artifact found' >&2; exit 1; }
           cookie_jar="$(mktemp)"
-          trap 'rm -f "$smoke_file" "$cookie_jar"' EXIT
-          printf 'middleware-ci smoke test %s\n' "$GITHUB_RUN_ID" > "$smoke_file"
+          trap 'rm -f "$cookie_jar"' EXIT
           upload_folder="${WA_T_ARTIFACT_UPLOAD_BASE#"${CHFS_BASE_URL}/shared"}"
-          curl --fail --show-error --location --retry 3 \
-            --cookie-jar "$cookie_jar" --cookie "$cookie_jar" \
-            --data-urlencode "user=${ARTIFACT_SERVER_USERNAME:-}" \
-            --data-urlencode "pwd=${ARTIFACT_SERVER_PASSWORD:-}" \
+          curl --fail --show-error --location --retry 3 --cookie-jar "$cookie_jar" --cookie "$cookie_jar" \
+            --data-urlencode "user=${ARTIFACT_SERVER_USERNAME:-}" --data-urlencode "pwd=${ARTIFACT_SERVER_PASSWORD:-}" \
             "${CHFS_BASE_URL}/session" >/dev/null
-          curl --fail --show-error --location --retry 3 --cookie "$cookie_jar" \
-            --form-string "folder=$upload_folder" \
-            --form "file=@${smoke_file};filename=.middleware-ci-${GITHUB_RUN_ID}.smoke" \
-            "${CHFS_BASE_URL}/upload" >/dev/null
-          curl --fail --silent --show-error --retry 3 --cookie "$cookie_jar" \
-            --get --data-urlencode "filepath=$upload_folder" "${CHFS_BASE_URL}/files" |
-            python3 -c 'import json,sys; d=json.load(sys.stdin); assert any(f.get("name")==sys.argv[1] for f in d.get("files",[])), d' ".middleware-ci-${GITHUB_RUN_ID}.smoke"
-          curl --fail --show-error --retry 3 --cookie "$cookie_jar" \
-            --data-urlencode "filepath=$upload_folder/.middleware-ci-${GITHUB_RUN_ID}.smoke" \
-            "${CHFS_BASE_URL}/rmfiles" >/dev/null
-          echo "CHFS path verified: $upload_folder"
+          for artifact in "${artifacts[@]}"; do
+            curl --fail --show-error --location --retry 3 --cookie "$cookie_jar" \
+              --form-string "folder=$upload_folder" --form "file=@${artifact};filename=$(basename "$artifact")" \
+              "${CHFS_BASE_URL}/upload"
+          done
+
+      - name: Upload package artifacts
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: middleware-installers-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
+          path: dist/*.run
+          if-no-files-found: error
+          retention-days: 14
