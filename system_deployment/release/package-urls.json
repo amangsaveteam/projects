@@ -144,7 +144,22 @@
           "url": "http://10.51.33.211:10000/chfs/shared/modules/navigation/release/msg_ros2/zj-humanoid-ros-humble-navigation-dbg-msgs_2.0.0-0jammy_arm64.deb",
           "sha256": "",
           "installers": [],
-          "install_group": "navigation-chassis-services"
+          "install_group": "navigation-chassis-services",
+          "robot_types": [
+            "WA1",
+            "WA1_400K",
+            "WA1_400L",
+            "WA1-S",
+            "WA1-D",
+            "WA1-E",
+            "WA2_LS",
+            "WA2_TY20",
+            "WA2",
+            "WA2_L",
+            "WA2-S",
+            "WA2-P",
+            "WA2-D"
+          ]
         },
         {
           "name": "diagnosis-msgs",
@@ -160,7 +175,22 @@
           "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/livox_sdk/zj-humanoid-livox-sdk_2.0.0-0jammy_arm64.deb",
           "sha256": "",
           "installers": [],
-          "install_group": "navigation-chassis-services"
+          "install_group": "navigation-chassis-services",
+          "robot_types": [
+            "WA1",
+            "WA1_400K",
+            "WA1_400L",
+            "WA1-S",
+            "WA1-D",
+            "WA1-E",
+            "WA2_LS",
+            "WA2_TY20",
+            "WA2",
+            "WA2_L",
+            "WA2-S",
+            "WA2-P",
+            "WA2-D"
+          ]
         },
         {
           "name": "chassis",
@@ -168,7 +198,22 @@
           "url": "http://10.51.33.211:10000/chfs/shared/modules/chassis/release/chassis_ros2/zj-humanoid-ros-humble-chassis_2.0.0-0jammy_arm64.deb",
           "sha256": "",
           "installers": [],
-          "install_group": "navigation-chassis-services"
+          "install_group": "navigation-chassis-services",
+          "robot_types": [
+            "WA1",
+            "WA1_400K",
+            "WA1_400L",
+            "WA1-S",
+            "WA1-D",
+            "WA1-E",
+            "WA2_LS",
+            "WA2_TY20",
+            "WA2",
+            "WA2_L",
+            "WA2-S",
+            "WA2-P",
+            "WA2-D"
+          ]
         },
         {
           "name": "vanjee-lidar",
@@ -176,7 +221,22 @@
           "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/vanjee716/ros2/zj-humanoid-ros-humble-vanjee-716mini-lidar_2.0.0-0jammy_arm64.deb",
           "sha256": "",
           "installers": [],
-          "install_group": "navigation-chassis-services"
+          "install_group": "navigation-chassis-services",
+          "robot_types": [
+            "WA1",
+            "WA1_400K",
+            "WA1_400L",
+            "WA1-S",
+            "WA1-D",
+            "WA1-E",
+            "WA2_LS",
+            "WA2_TY20",
+            "WA2",
+            "WA2_L",
+            "WA2-S",
+            "WA2-P",
+            "WA2-D"
+          ]
         },
         {
           "name": "livox-lidar",
@@ -184,17 +244,47 @@
           "url": "http://10.51.33.211:10000/chfs/shared/modules/sensor/release/livox_lidar/ros2/zj-humanoid-ros-humble-livox-lidar_2.0.0-0jammy_arm64.deb",
           "sha256": "",
           "installers": [],
-          "install_group": "navigation-chassis-services"
+          "install_group": "navigation-chassis-services",
+          "robot_types": [
+            "WA1",
+            "WA1_400K",
+            "WA1_400L",
+            "WA1-S",
+            "WA1-D",
+            "WA1-E",
+            "WA2_LS",
+            "WA2_TY20",
+            "WA2",
+            "WA2_L",
+            "WA2-S",
+            "WA2-P",
+            "WA2-D"
+          ]
         },
         {
           "name": "naviai-nav2",
           "version": "2.0.0-0jammy",
-          "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_nav2/release/zj-humanoid-ros-humble-naviai-nav2_2.0.0-0jammy_arm64.deb",
+          "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_rawdata/release/zj-humanoid-ros-humble-naviai-nav2-rawdata_2.0.0-0jammy_arm64.deb",
           "sha256": "",
           "installers": [],
           "install_group": "navigation-chassis-services",
           "wait_for_packages": [
             "zj-humanoid-ros-humble-naviai-nav2-bringup"
+          ],
+          "robot_types": [
+            "WA1",
+            "WA1_400K",
+            "WA1_400L",
+            "WA1-S",
+            "WA1-D",
+            "WA1-E",
+            "WA2_LS",
+            "WA2_TY20",
+            "WA2",
+            "WA2_L",
+            "WA2-S",
+            "WA2-P",
+            "WA2-D"
           ]
         },
         {
@@ -203,7 +293,22 @@
           "url": "http://10.51.33.211:10000/chfs/shared/modules/navigation/release/navigation_ros2/zj-humanoid-ros-humble-navigation_2.0.0-0jammy_arm64.deb",
           "sha256": "",
           "installers": [],
-          "install_group": "navigation-chassis-services"
+          "install_group": "navigation-chassis-services",
+          "robot_types": [
+            "WA1",
+            "WA1_400K",
+            "WA1_400L",
+            "WA1-S",
+            "WA1-D",
+            "WA1-E",
+            "WA2_LS",
+            "WA2_TY20",
+            "WA2",
+            "WA2_L",
+            "WA2-S",
+            "WA2-P",
+            "WA2-D"
+          ]
         },
         {
           "name": "naviai-nav2-rawdata",
@@ -211,7 +316,22 @@
           "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_nav2_rawdata/release/zj-humanoid-ros-humble-naviai-nav2-rawdata_2.0.0-0jammy_arm64.deb",
           "sha256": "",
           "installers": [],
-          "install_group": "navigation-chassis-services"
+          "install_group": "navigation-chassis-services",
+          "robot_types": [
+            "WA1",
+            "WA1_400K",
+            "WA1_400L",
+            "WA1-S",
+            "WA1-D",
+            "WA1-E",
+            "WA2_LS",
+            "WA2_TY20",
+            "WA2",
+            "WA2_L",
+            "WA2-S",
+            "WA2-P",
+            "WA2-D"
+          ]
         },
         {
           "name": "diagnosis-system",
@@ -310,6 +430,21 @@
             "--",
             "--robot-type",
             "{robot_type}"
+          ],
+          "robot_types": [
+            "WA1",
+            "WA1_400K",
+            "WA1_400L",
+            "WA1-S",
+            "WA1-D",
+            "WA1-E",
+            "WA2_LS",
+            "WA2_TY20",
+            "WA2",
+            "WA2_L",
+            "WA2-S",
+            "WA2-P",
+            "WA2-D"
           ]
         },
         {
@@ -388,30 +523,6 @@
           "installers": [
             "auto"
           ]
-        },
-        {
-          "name": "eyou-client",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-client_3.3.0%2Bfocal_all.deb",
-          "sha256": "",
-          "installers": []
-        },
-        {
-          "name": "eyou-interface",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-interface_3.3.0%2Bfocal_amd64.deb",
-          "sha256": "",
-          "installers": []
-        },
-        {
-          "name": "eyou-msgs-typesupport",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs-typesupport_3.3.0%2Bfocal_amd64.deb",
-          "sha256": "",
-          "installers": []
-        },
-        {
-          "name": "eyou-msgs",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/hand/zj-humanoid-ros-humble-eyou-msgs_3.3.0%2Bfocal_all.deb",
-          "sha256": "",
-          "installers": []
         },
         {
           "name": "uplimb-runtime",
