@@ -8,7 +8,7 @@
   "rpc_timeout_seconds": 3,
   "modules": {
     "upperlimb": {
-      "endpoint": "http://192.168.218.66:19003/RPC2"
+      "endpoint": "http://192.168.217.66:19003/RPC2"
     }
   }
 }

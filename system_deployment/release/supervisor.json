@@ -3,7 +3,7 @@
   "targets": {
     "orin-humble": {
       "supervisor": {
-        "internal_ip": "192.168.218.100",
+        "internal_ip": "192.168.217.100",
         "agent_service": "zj-humanoid-orin-supervisor-agent.service",
         "agent_modules_directory": "/etc/naviai/supervisor-agent/modules.d",
         "agent_password_file": "/etc/naviai/supervisor-agent/supervisor-rpc.password",
@@ -123,7 +123,7 @@
           ],
           "prelude": [
             "install -d -o naviai -g naviai -m 0755 /var/log/naviai/livox-lidar /var/log/naviai/livox-lidar/ros",
-            "if ! /usr/bin/python3 /usr/lib/naviai/detect_livox_model.py --lidar-ip \"${LIVOX_LIDAR_IP:-192.168.218.17}\" --timeout 4; then echo 'Livox model discovery unavailable; using manual or cached LIDAR_3D_TYPE if present' >&2; fi"
+            "if ! /usr/bin/python3 /usr/lib/naviai/detect_livox_model.py --lidar-ip \"${LIVOX_LIDAR_IP:-192.168.217.17}\" --timeout 4; then echo 'Livox model discovery unavailable; using manual or cached LIDAR_3D_TYPE if present' >&2; fi"
           ],
           "command": "runuser -u naviai -- /bin/bash -c 'set -e; source /etc/naviai/Middleware.env; export HOME=/home/naviai AMENT_PREFIX_PATH=/opt/zj_humanoid:${AMENT_PREFIX_PATH:-} ROS_LOG_DIR=/var/log/naviai/livox-lidar/ros; exec ros2 launch livox_lidar msg_lidar_launch.py'",
           "disable_services": [
@@ -293,7 +293,7 @@
             "export ROS_LOG_DIR=/var/log/naviai/audio/ros",
             "install -d -m 0755 \"$HOME\" \"$ROS_HOME\" \"$ROS_LOG_DIR\""
           ],
-          "command": "/bin/bash /usr/lib/naviai/audio/start_audio.sh intent_router_mode:=bt enable_face_bridge:=true voiceprint_adapter_mode:=real gesture_backend:=pico pico_gateway_url:=ws://192.168.218.66:8765 enable_background_task_test:=true",
+          "command": "/bin/bash /usr/lib/naviai/audio/start_audio.sh intent_router_mode:=bt enable_face_bridge:=true voiceprint_adapter_mode:=real gesture_backend:=pico pico_gateway_url:=ws://192.168.217.66:8765 enable_background_task_test:=true",
           "autorestart": "true",
           "startsecs": 5,
           "start_policy": "supervisor"
@@ -323,7 +323,7 @@
     },
     "orin-jazzy": {
       "supervisor": {
-        "internal_ip": "192.168.218.100",
+        "internal_ip": "192.168.217.100",
         "agent_service": "zj-humanoid-orin-supervisor-agent.service",
         "agent_modules_directory": "/etc/naviai/supervisor-agent/modules.d",
         "agent_password_file": "/etc/naviai/supervisor-agent/supervisor-rpc.password",
@@ -353,7 +353,7 @@
     },
     "pico-humble": {
       "supervisor": {
-        "internal_ip": "192.168.218.66",
+        "internal_ip": "192.168.217.66",
         "agent_service": "zj-humanoid-pico-supervisor-agent.service",
         "agent_modules_directory": "/etc/nav01/supervisor-agent/modules.d",
         "agent_password_file": "/etc/nav01/supervisor-agent/supervisor-rpc.password",
