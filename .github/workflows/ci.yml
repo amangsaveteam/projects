@@ -92,7 +92,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: middleware-installers-${{ github.ref_name }}-${{ github.sha }}
+          name: middleware-installers-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
           path: dist/*.run
           if-no-files-found: error
           retention-days: 14

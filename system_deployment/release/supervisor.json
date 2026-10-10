@@ -344,6 +344,7 @@
             "set -a",
             "source /etc/navi-audio/audio.env",
             "set +a",
+            "export AUDIO_MODE=full",
             "export HOME=/var/lib/navi-audio",
             "export ROS_HOME=/var/lib/navi-audio/ros",
             "export ROS_LOG_DIR=/var/log/naviai/audio/ros",
