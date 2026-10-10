@@ -246,40 +246,6 @@
           ]
         },
         {
-          "id": "naviai-nav2-rawdata",
-          "package": "naviai-nav2-rawdata",
-          "description": "导航原始数据记录",
-          "mode": "managed",
-          "port": 19010,
-          "working_directory": "/home/naviai",
-          "source_files": [
-            "/etc/naviai/Middleware.env"
-          ],
-          "prelude": [
-            "install -d -o naviai -g naviai -m 0755 /var/log/naviai/naviai-nav2-rawdata /var/log/naviai/naviai-nav2-rawdata/ros /var/log/zj_humanoid /var/log/zj_humanoid/l2_raw_log/data"
-          ],
-          "command": "runuser -u naviai -- /bin/bash -c 'set -e; source /etc/naviai/Middleware.env; export HOME=/home/naviai AMENT_PREFIX_PATH=/opt/zj_humanoid:${AMENT_PREFIX_PATH:-} ROS_LOG_DIR=/var/log/naviai/naviai-nav2-rawdata/ros; exec ros2 launch naviai_nav2_rawdata recorder.launch.py'",
-          "disable_services": [
-            "zj-humanoid-naviai-nav2-rawdata.service"
-          ],
-          "startup_priority": 40,
-          "robot_types": [
-            "WA1",
-            "WA1_400K",
-            "WA1_400L",
-            "WA1-S",
-            "WA1-D",
-            "WA1-E",
-            "WA2_LS",
-            "WA2_TY20",
-            "WA2",
-            "WA2_L",
-            "WA2-S",
-            "WA2-P",
-            "WA2-D"
-          ]
-        },
-        {
           "id": "diagnosis-system",
           "package": "diagnosis-system",
           "description": "诊断系统",
