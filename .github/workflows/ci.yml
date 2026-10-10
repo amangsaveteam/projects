@@ -17,7 +17,6 @@ permissions:
   contents: read
 
 env:
-  DEFAULT_ARTIFACT_UPLOAD_BASE: http://10.51.33.211:10000/chfs/shared/ros2_modules/Middlware/develop
   WA_T_ARTIFACT_UPLOAD_BASE: http://10.51.33.211:10000/chfs/shared/ros2_modules/Middlware/WA_T/2.0.0
   CHFS_BASE_URL: http://10.51.33.211:10000/chfs
 
@@ -49,15 +48,8 @@ jobs:
       - name: Python syntax check
         run: python3 -m py_compile system_deployment/build/package_firmware.py
 
-      - name: Dry-run regular package
-        run: bash system_deployment/build/build_release.sh --dry-run
-
       - name: Dry-run WA-T package
         run: bash system_deployment/build/build_special_wa_t_jk2_v1_package.sh --dry-run
-
-      - name: Build regular package
-        if: github.event_name != 'pull_request'
-        run: bash system_deployment/build/build_release.sh
 
       - name: Build WA-T package
         if: github.event_name != 'pull_request'
@@ -87,45 +79,16 @@ jobs:
             --data-urlencode "user=${ARTIFACT_SERVER_USERNAME:-}" \
             --data-urlencode "pwd=${ARTIFACT_SERVER_PASSWORD:-}" \
             "${CHFS_BASE_URL}/session" >/dev/null
+          curl --fail --show-error --location --retry 3 \
+            --cookie "$cookie_jar" \
+            --data-urlencode 'filepath=/ros2_modules/Middlware/WA_T/2.0.0' \
+            "${CHFS_BASE_URL}/newdir" >/dev/null || true
           for artifact in "${artifacts[@]}"; do
             echo "Uploading ${artifact}"
             curl --fail --show-error --location --retry 3 \
               --cookie "$cookie_jar" \
               --form "file=@${artifact};filename=$(basename "$artifact")" \
               --form "folder=/ros2_modules/Middlware/WA_T/2.0.0" \
-              "${CHFS_BASE_URL}/upload"
-          done
-
-      - name: Publish regular package to internal artifact server
-        if: github.event_name != 'pull_request'
-        env:
-          ARTIFACT_SERVER_USERNAME: ${{ secrets.ARTIFACT_SERVER_USERNAME }}
-          ARTIFACT_SERVER_PASSWORD: ${{ secrets.ARTIFACT_SERVER_PASSWORD }}
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          artifacts=()
-          for artifact in dist/*.run; do
-            [[ "$artifact" == *wa_t*.run ]] && continue
-            artifacts+=("$artifact")
-          done
-          if (( ${#artifacts[@]} == 0 )); then
-            echo 'No regular .run artifact found under dist/' >&2
-            exit 1
-          fi
-          cookie_jar="$(mktemp)"
-          trap 'rm -f "$cookie_jar"' EXIT
-          curl --fail --show-error --location --retry 3 \
-            --cookie-jar "$cookie_jar" --cookie "$cookie_jar" \
-            --data-urlencode "user=${ARTIFACT_SERVER_USERNAME:-}" \
-            --data-urlencode "pwd=${ARTIFACT_SERVER_PASSWORD:-}" \
-            "${CHFS_BASE_URL}/session" >/dev/null
-          for artifact in "${artifacts[@]}"; do
-            echo "Uploading ${artifact}"
-            curl --fail --show-error --location --retry 3 \
-              --cookie "$cookie_jar" \
-              --form "file=@${artifact};filename=$(basename "$artifact")" \
-              --form "folder=/ros2_modules/Middlware/develop" \
               "${CHFS_BASE_URL}/upload"
           done
 

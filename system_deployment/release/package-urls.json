@@ -189,7 +189,7 @@
         {
           "name": "naviai-nav2",
           "version": "2.0.0-0jammy",
-          "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_nav2/release/zj-humanoid-ros-humble-naviai-nav2_2.0.0-0jammy_arm64.deb",
+          "url": "file:///home/huyingkai/projects/dist/common/orin/zj-humanoid-ros-humble-naviai-nav2_2.0.0-0jammy_arm64.deb",
           "sha256": "",
           "installers": [],
           "install_group": "navigation-chassis-services",
@@ -201,14 +201,6 @@
           "name": "navigation",
           "version": "2.0.0-0jammy",
           "url": "http://10.51.33.211:10000/chfs/shared/modules/navigation/release/navigation_ros2/zj-humanoid-ros-humble-navigation_2.0.0-0jammy_arm64.deb",
-          "sha256": "",
-          "installers": [],
-          "install_group": "navigation-chassis-services"
-        },
-        {
-          "name": "naviai-nav2-rawdata",
-          "version": "2.0.0-0jammy",
-          "url": "http://10.51.33.211:10000/chfs/shared/modules/naviai_nav2_rawdata/release/zj-humanoid-ros-humble-naviai-nav2-rawdata_2.0.0-0jammy_arm64.deb",
           "sha256": "",
           "installers": [],
           "install_group": "navigation-chassis-services"
