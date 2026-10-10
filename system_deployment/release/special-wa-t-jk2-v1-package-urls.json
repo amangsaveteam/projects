@@ -562,7 +562,7 @@
         },
         {
           "name": "audio",
-          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/humble/navi_audio_installer-2.0.0-release-humble-arm64.run",
+          "url": "http://10.51.33.211:10000/chfs/shared/ros2_modules/audio/humble_offline/navi_audio_installer-2.0.0-release-humble-arm64.run",
           "sha256": "",
           "arguments": []
         }
